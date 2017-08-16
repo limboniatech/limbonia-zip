@@ -1,0 +1,43 @@
+{% if success %}<div class="OmnisysMethodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="OmnisysMethodFailure">{{failure}}</div>{% endif %}
+{% if get.Edit %}
+{% import 'macros.html' as macros %}
+<h2>Edit Software Release</h2>
+ <form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{release.IDColumn}}={{release.ID}}&Edit=1" method="post">
+ <table>
+ {{module.getFormField('Version', release.Version, {'Type': 'varchar'}, true)}}
+ {{module.getFormField('Note', release.Note, {'Type': 'varchar'}, true)}}
+ <tr><td align="center" colspan="2"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display=View&{{currentItem.IDColumn}}={{currentItem.ID}}'"></td></tr>
+ </table>
+ </form>
+{% elseif get.Delete %}
+<h2>Delete Software Release</h2>
+ <form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{release.IDColumn}}={{release.ID}}&Delete=1" method="post">
+Are you sure you want to delete {{currentItem.Name}}'s release number "{{release.Version}}"?
+<input type="submit" name="Yes" value="Yes">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}'"></form>
+{% else %}
+<form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post">
+<table>
+<thead>
+  <tr>
+    <th>Version</th>
+    <th>Note</th>
+    <th></th>
+  </tr>
+</thead>
+<tfoot>
+  <tr>
+    <td><input type="text" name="Version" /></td>
+    <td><input type="text" name="Note" /></td>
+    <td><input type="submit" value="Create Release" /></td>
+  </tr>
+</tfoot>
+<tbody>{% for release in currentItem.releaseList %}
+  <tr>
+    <td>{{release.Version}} [<a href="?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{release.IDColumn}}={{release.ID}}&Edit=1">Edit</a> | <a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{release.TicketID}}">View Ticket</a> | <a href="?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{release.IDColumn}}={{release.ID}}&Delete=1">Delete</a>]</td>
+    <td>{{release.Note}}</td>
+    <td></td>
+  </tr>{% endfor %}
+</tbody>
+</table>
+</form>
+{% endif %}

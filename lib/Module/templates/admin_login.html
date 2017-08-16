@@ -1,0 +1,16 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>OmniSys Password Check</title>
+</head>
+<body onLoad="document.PassCheck.Email.focus();">
+<center>
+{% if error %}<h1>{{ error }}</h1>{% endif %}
+<form action="{{action}}" method="post" name="PassCheck">
+  Email: <input type="Text" Name="Email"><br />
+  Password:&nbsp; <input type="Password" Name="Password"><br />
+  <input type="submit" name="Submit" value="Authorization">
+</form>
+</center>
+<body>
+</html>

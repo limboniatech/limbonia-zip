@@ -1,0 +1,44 @@
+{% if (data | length) == 0  %}
+Sorry!  Your {{module.name | lower}} search has no results at this time!<br />
+Try a different <a href="?Admin=Display&Module={{module.name}}&Display=Search">search</a>?
+{% else %}
+{{table.makeSortable}}{{table.addClass('OmnisysSortGrid')}}{% set x = table.startHeader %}{% set sPopup = module.owner.usePopups ? 'showOmnisys_Popup();' : '' %}{% set sDelete = module.allow('Delete') ? '<span class="OmnisysSortGridDelete" onClick="' ~ sPopup ~ "document.getElementById('Omnisys_SortGrid_Edit').name='Delete';document.getElementById('EditColumn').submit(); \">Delete</span>" : '' %}{% set x = table.addCell(sDelete, false) %}
+{{ module.processSearch_GridHeader(table, 'Name')}}
+{{ module.processSearch_GridHeader(table, 'Assignment Method')}}
+{{ table.EndRow }}
+{% set bEven = true %}
+{% for item in data %}
+  {% set oRow = table.startRow %}
+  {% set sEvenOdd = bEven ? 'even' : 'odd' %}
+  {% set bEven = not bEven %}
+  {{ oRow.setParam('class', sEvenOdd) }}
+  {% set x = table.addCell(module.processSearch_GridRowControl(idColumn, item.ID)) %}
+  {% set x = table.addCell(item.Name) %}
+  {% if item.AssignmentMethod == 'direct' %}
+    {% set user = item.getById('user', item.UserID) %}
+    {% set x = table.addCell('Direct to ' ~ user.Name) %}
+  {% elseif item.AssignmentMethod == 'unassigned' %}
+    {% set x = table.addCell('Leave Unassigned') %}
+  {% elseif item.AssignmentMethod == 'roundrobin' %}
+    {% if item.KeyID == 0 %}
+      {% set x = table.addCell('Round Robin between all internal users') %}
+    {% else %}
+      {% set resourceKey = item.getById('ResourceKey', item.KeyID) %}
+      {% set x = table.addCell('Round Robin between internal users with ' ~ resourceKey.Name ~ ' access ' ~ (item.Level > 0 ? ' at level ' ~ item.Level ~ ' or above' : '')) %}
+    {% endif %}
+  {% elseif item.AssignmentMethod == 'leasttickets' %}
+    {% if item.KeyID == 0 %}
+      {% set x = table.addCell('Least Tickets between all internal users') %}
+    {% else %}
+      {% set resourceKey = item.getById('ResourceKey', item.KeyID) %}
+      {% set x = table.addCell('Least Tickets between internal users with ' ~ resourceKey.Name ~ ' access ' ~ (item.Level > 0 ? ' at level ' ~ item.Level ~ ' or above' : '')) %}
+    {% endif %}
+  {% endif %}
+  {{ table.endRow }}
+{% endfor %}
+{% if module.allow('Edit') %}{% set sTarget = module.owner.usePopups ? ' target="Omnisys_Popup"' : '' %}{% set sType = module.owner.usePopups ? 'Popup' : 'Process' %}
+<form name="Edit" id="Edit"{{sTarget}} action="?Admin={{sType}}&Module={{module.name}}&{{sType}}=EditColumn" method="post">
+<input type="hidden" name="Column" id="Omnisys_SortGrid_Edit" value="">
+{% endif %}
+{{ table.toString }}{% if module.allow('Edit') %}</form>{% endif %}
+{% endif %}

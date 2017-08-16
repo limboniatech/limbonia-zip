@@ -1,0 +1,6 @@
+{% if success %}<div class="OmnisysMethodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="OmnisysMethodFailure">{{failure}}</div>{% endif %}
+{% for key, attachment in currentItem.AttachmentList %}
+<div><a href="{{attachment.link}}" onClick="window.open('{{attachment.link}}','attachment{{key}}'); return false;">{{attachment.name}}</a> (uploaded {{attachment.time}}) <a href="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&Delete={{attachment.name | url_encode}}">delete</a></div>
+{% endfor %}
+
+<form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post" enctype="multipart/form-data">Select a new file to attach: <input type="file" name="Attachment" /><input type="submit" value="Upload" /></form>

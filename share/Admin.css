@@ -1,0 +1,78 @@
+body { padding: 10px 10px 10px 10px; margin: 0px 0px 0px 0px; }
+a { color: #5555ff; text-decoration: none; white-space: nowrap; }
+a:hover { text-decoration: underline; }
+a:focus { outline: none; }
+form { margin: 0px 0px 0px 0px; }
+input, select, option { font-family: Verdana, Arial, Helvetica, sans-serif; }
+
+.OmnisysAdminModuleLink { color: #000000; text-decoration: none; }
+a.OmnisysAdminModuleLink:link { color: #000000; text-decoration: none; }
+a.OmnisysAdminModuleLink:active { color: #000000; text-decoration: none; }
+a.OmnisysAdminModuleLink:visited { color: #000000; text-decoration: none; }
+a.OmnisysAdminModuleLink:hover { color: #5555ff; }
+
+table.OmnisysAdmin { width: 99%; }
+
+.OmnisysAdminMenu { width: 200px; vertical-align: top; font-family: Verdana, Arial, Helvetica, sans-serif; font-weight: normal; text-align: left; }
+.OmnisysAdminModuleMenuHeader { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; color: #000099; padding: 2px; margin: 5px 0px 3px 0px; letter-spacing: 2px; word-spacing: 1px; border-bottom: 1px solid #000099; }
+.OmnisysAdminModule { background-color: #ddddff; border-color: #5555ff; border-width: 1px 1px 1px 1px; border-style: solid solid solid solid; padding: 5px 5px 5px 5px; }
+.OmnisysAdminModuleGroup { font-weight: bold; border-width: 1px; border-style: none none solid none; margin: 5px 5px 5px 0px; }
+
+.OmnisysAdminModuleMenuItem { color: #000000; text-decoration: none; }
+a.OmnisysAdminModuleMenuItem:link { color: #000000; text-decoration: none; }
+a.OmnisysAdminModuleMenuItem:active { color: #000000; text-decoration: none; }
+a.OmnisysAdminModuleMenuItem:visited { color: #000000; text-decoration: none; }
+a.OmnisysAdminModuleMenuItem:hover { background-color: #5555ff; color: white; }
+
+.OmnisysAdminModuleTitle { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; font-style: italic; font-variant: small-caps; margin: 0px 0px 15px 0px; padding: 0px; letter-spacing: 1px; }
+
+.OmnisysAdminHeaderRow { min-width: 99%; font-family: Verdana, Arial, Helvetica, sans-serif; background-color: #000099; color: #FFFFFF; font-size: 16px; font-weight: bold; text-align: left; line-height: 20px; padding-right: 10px; float: left; }
+.OmnisysAdminHeaderRow a { color: #FFFFFF; text-decoration: none; white-space: nowrap; }
+.OmnisysAdminHeaderTools { font-size: 11px; text-align: right; float: right; }
+
+div.OmnisysSortGridDiv { vertical-align: top; }
+.OmnisysSortGrid { border-color: #ffffff;  min-width: 50%; border-width: 1px; border-style: solid; }
+.OmnisysSortGrid thead tr { background-color: #ffffff; }
+.OmnisysSortGrid th { padding: 5px; }
+.OmnisysSortGrid tr.even { background-color: #ccccff; border-style: hidden;  border-width: 0px; }
+.OmnisysSortGrid tr.even td  { border-style: hidden;  border-width: 0px;  padding: 5px;}
+.OmnisysSortGrid tr.even:hover { background-color: #5555ff; color: #ffffff; }
+.OmnisysSortGrid tr.even:hover a { background-color: #5555ff; color: #ffffff; }
+.OmnisysSortGrid tr.odd { background-color: #ffffff; border-style: hidden; border-width: 0px; }
+.OmnisysSortGrid tr.odd  td { border-style: hidden;  border-width: 0px;  padding: 5px;}
+.OmnisysSortGrid tr.odd:hover { background-color: #5555ff; color: #ffffff; }
+.OmnisysSortGrid tr.odd:hover a { background-color: #5555ff; color: #ffffff; }
+
+.OmnisysAdminContent { background-color: #ddddff; border-color: #5555ff; min-width: 400px; border-width: 1px 1px 1px 1px; padding: 20px 10px 20px 25px; border-style: none solid solid solid; font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; vertical-align: top;}
+
+.OmnisysTabSet { border-bottom: 1px solid; padding: 0px 3px 3px 3px; margin: 0px 0px 20px 0px; white-space: nowrap; text-align: left; }
+.OmnisysCurrentTabNoLink { border-width: 1px 1px 1px 1px; border-style: solid; border-color: #000000 #000000 #ddddff #000000; padding: 3px 6px 3px 6px; font-weight: bold; margin: 0px 4px 0px 4px; color: #000000; }
+.OmnisysCurrentTab a { border-width: 1px 1px 1px 1px; border-style: solid; border-color: #000000 #000000 #ddddff #000000; padding: 3px 6px 3px 6px; font-weight: bold; margin: 0px 4px 0px 4px; color: #000000; }
+.OmnisysTab a { border-width: 1px 1px 1px 1px; border-style: solid; border-color: #000000; padding: 3px 6px 3px 6px; background-color: #eeeeff; font-weight: normal; margin: 0px 4px 0px 4px; color: #000000; }
+
+.OmnisysItem { width: 500px; min-width: 70%; max-width:100%; }
+.OmnisysItemTitle { font-size: 15px; font-weight: bold; font-variant: small-caps; }
+.OmnisysSubTabSet { border-bottom: 1px solid #BBBB99; padding: 0px 0px 3px 0px; margin: 20px 0px 0px 0px; white-space: nowrap; }
+.OmnisysCurrentSubTab a { border-width: 1px 1px 1px 1px; border-style: solid; border-color: #BBBB99 #BBBB99 #FFFFFC #BBBB99; padding: 3px 6px 3px 6px; background-color: #FFFFFC; font-weight: bold; margin: 0px 8px 0px 0px; color: #000000; }
+.OmnisysSubTab a { border-width: 1px 1px 1px 1px; border-style: solid; border-color: #BBBB99; padding: 3px 6px 3px 6px; background-color: #eeeeff; font-weight: normal; margin: 0px 8px 0px 0px; color: #000000; }
+.OmnisysSubTabPage { border-style: solid; border-color: #BBBB99; border-width: 0px 1px 1px 1px; background-color: #fefeff; margin: 0px; padding: 20px 10px 10px 10px; }
+
+.OmnisysMethodSuccess { font-weight: bold; padding: 5px 5px 5px 5px; background-color: lightgreen; border: 1px dashed green; }
+.OmnisysMethodFailure { font-weight: bold; padding: 5px 5px 5px 5px; background-color: pink; border: 1px dashed red; }
+
+.OmnisysField { }
+.OmnisysFieldName {text-align: right; white-space: nowrap; }
+.OmnisysFieldValue { }
+
+.OmnisysTicketContent { font-size: 10px; font-weight: normal; padding: 8px 3px 8px 3px; border-top: 1px dashed #888888; }
+th.OmnisysTicketContent { text-align: right; vertical-align: top; width: 30%; }
+.OmnisysTicketHistory { font-size: 10px; border: 1px; border-color: #5555ff; background-color: #eeeeee; }
+
+.OmnisysSystemContent { background-color: #ffeeee; }
+.OmnisysPublicContent {}
+.OmnisysPrivateContent { background-color: #eeeeff; }
+
+div.OmnisysProgress { position: relative; width: 400px; border: 1px solid #d7d7d7; margin-top: 1em; margin-bottom: 1em; padding: 1px; }
+div.OmnisysProgress span.OmnisysProgressBar { display: block; position: relative; background: #6bba70; text-align: center; font-weight: normal; color: #333; height: 2em; line-height: 2em; }
+div.OmnisysIncomplete { font-weight: bold; }
+div.OmnisysCompleted {}

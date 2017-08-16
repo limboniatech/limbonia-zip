@@ -1,0 +1,16 @@
+{% if close %}<script type="text/javascript">{% if action == 'Popup' %}window.close();{% else %}history.go(-2);{% endif %}</script>
+{% else %}
+{% import 'macros.html' as macros %}
+<table>
+<tr>
+  <td>
+    <form name="Edit" action="?Admin=Process&Module={{module.name}}&Process={{method}}" method="post">
+    <table>
+    {{macros.getFormFields(module, editColumns, currentItem.getAll)}}
+    <tr><td align="center" colspan="2"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="No" value="No" onClick="history.go(-1)"></td></tr>
+    </table>
+    </form>
+  </td>
+</tr>
+</table>
+{% endif %}

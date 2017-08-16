@@ -1,0 +1,5 @@
+{% if error %}
+<h3>Failed createing new {{module.name}}: {{error}}</h3>
+{% else %}
+<h3>Successfully created new {{module.name}} called:  "{{currentItem.Resource}} :: {{currentItem.Component}}"</h3><a href="?Admin=Display&Module={{module.name}}&Display=Create">Create another?</a><br />
+{% endif %}

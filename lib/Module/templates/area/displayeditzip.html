@@ -1,0 +1,11 @@
+{% import 'macros.html' as macros %}
+<form name="Edit" action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post">
+{% set success = oStates.create %}
+{{oStates.addEvent('change', "Omnisys_RemoveAll('" ~ oTransferSelect.getFromName ~"'); " ~ sGetCities ~ "(this.options[this.selectedIndex].value, 'areaCity')")}}
+<br />
+{% set success = oCities.create %}
+{{oCities.addEvent('change', "var o=document.getElementById('areaState'); " ~ sGetZips ~ "(this.options[this.selectedIndex].value, o.options[o.selectedIndex].value, '" ~ oTransferSelect.getFromName ~ "')")}}
+<br />
+{% set success = oTransferSelect.create %}
+{{oTransferSelect.submitButton('Update')}}&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display=View&{{currentItem.IDColumn}}={{currentItem.ID}}'">
+</form>

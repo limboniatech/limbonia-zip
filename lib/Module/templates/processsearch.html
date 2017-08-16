@@ -1,0 +1,25 @@
+{% if (data | length) == 0  %}
+Sorry!  Your {{module.name | lower}} {{method | lower}} has no results at this time!<br />
+Try a{% if method != 'List' %} different{% endif %} <a href="?Admin=Display&Module={{module.name}}&Display=Search">search</a>?
+{% else %}
+{{table.makeSortable}}{{table.addClass('OmnisysSortGrid')}}{% set x = table.startHeader %}{% set sPopup = module.owner.usePopups ? 'showOmnisys_Popup();' : '' %}{% set sDelete = module.allow('Delete') ? '<span class="OmnisysSortGridDelete" onClick="' ~ sPopup ~ "document.getElementById('Omnisys_SortGrid_Edit').name='Delete';document.getElementById('EditColumn').submit(); \">Delete</span>" : '' %}{% set x = table.addCell(sDelete, false) %}
+{% for column in dataColumns %}{{ module.processSearch_GridHeader(table, column) }}{% endfor %}
+{{ table.endRow }}
+{% set bEven = true %}
+{% for item in data %}
+  {% set oRow = table.startRow %}
+  {% set sEvenOdd = bEven ? 'even' : 'odd' %}
+  {% set bEven = not bEven %}
+  {{ oRow.setParam('class', sEvenOdd) }}
+  {% set x = table.addCell(module.processSearch_GridRowControl(idColumn, item.ID)) %}
+  {% for column in dataColumns %}
+    {% set x = table.addCell(module.getColumnValue(item, column)) %}
+  {% endfor %}
+  {{ table.endRow }}
+{% endfor %}
+{% if module.allow('Edit') %}{% set sTarget = module.owner.usePopups ? ' target="Omnisys_Popup"' : '' %}{% set sType = module.owner.usePopups ? 'Popup' : 'Process' %}
+<form name="EditColumn" id="EditColumn"{{sTarget}} action="?Admin={{sType}}&Module={{module.name}}&{{sType}}=EditColumn" method="post">
+<input type="hidden" name="Column" id="Omnisys_SortGrid_Edit" value="">
+{% endif %}
+{{ table.toString }}{% if module.allow('Edit') %}</form>{% endif %}
+{% endif %}

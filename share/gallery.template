@@ -1,0 +1,8 @@
+<html>
+<head>
+  <title>Default OmniSys Gallery Popup Template</title>
+</head>
+<body>
+<omnitarget type="gallery" component="popup"/>
+</body>
+</html>

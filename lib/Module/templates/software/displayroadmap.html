@@ -1,0 +1,33 @@
+{% for release in currentItem.releaseList('roadmap') %}
+  {% set completedList = release.ticketList('complete') %}
+  {% set incompleteList = release.ticketList('incomplete') %}
+  {% set incompleteCount = 0 %}
+  {% for ticketList in incompleteList %}
+    {% set incompleteCount = incompleteCount + ticketList.count() %}
+  {% endfor %}
+  {% set completedCount = completedList.count() %}
+  {% set bugCount = completedCount + incompleteCount %}
+  {% if bugCount > 0 %}
+    {% set finishedPercent = ('%01.0f' | format((100 * completedCount / bugCount))) %}
+      <h5><a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{release.TicketID}}">{{currentItem.Name}} - {{release.Version}}</a> {% if release.Ticket.DueDate %}({{release.Ticket.DueDate}}){% else %}(No Due Date){% endif %}</h5>
+      <div class="OmnisysProgress"><span class="OmnisysProgressBar" style="width: {{finishedPercent}}%;">{{finishedPercent}}%</span></div>
+      <hr />
+    {% for priority, ticketList in incompleteList %}
+      {% if ticketList.count() > 0 %}
+      <h3>{{priority | title}}</h3>
+        {% for incompleteBug in ticketList %}
+      <div class="OmnisysIncomplete">- [{{incompleteBug.QualityStatus | title}}] {{incompleteBug.Severity | title}} <a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{incompleteBug.ID}}" title="[{{incompleteBug.DevStatus}}] {{incompleteBug.Subject | escape}}">#{{incompleteBug.ID}}</a>: {{incompleteBug.Element.Name}} - {{incompleteBug.Subject | escape}} ({{incompleteBug.Owner.Name}}) - {{incompleteBug.DevStatus}}</div>
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% if completedList.count() > 0 %}
+      <h3>Complete</h3>
+      {% for completedBug in completedList %}
+      <div class="OmnisysCompleted">- [{{completedBug.QualityStatus | title}}] {{completedBug.Severity | title}} <a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{completedBug.ID}}" title="[{{completedBug.DevStatus}}] {{completedBug.Subject | escape}}">#{{completedBug.ID}}</a>: {{completedBug.Element.Name}} - {{completedBug.Subject | escape}} ({{completedBug.Owner.Name}})</div>
+      {% endfor %}
+    {% endif %}
+      <br />
+      {{completedCount}} of {{bugCount}} issue(s) resolved. Progress ({{finishedPercent}}%).
+      <br />
+  {% endif %}
+{% endfor %}

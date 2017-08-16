@@ -1,0 +1,46 @@
+{% macro getMenuTop(header) %}
+<table class="OmnisysAdminModuleMenu">
+{% if header %}
+  <tr><td class="OmnisysAdminModuleMenuHeader">{{header}}</td></tr>
+  <tr class="OmnisysAdminModuleMenuDivider"><td></td></tr>
+{% endif %}
+  <tr><td class="OmnisysAdminModuleMenuContent">{% endmacro %}
+
+{% macro getMenuBottom(footer) %}</td></tr>
+{% if footer %}
+  <tr class="OmnisysAdminModuleMenuDivider"><td></td></tr>
+  <tr><td class="OmnisysAdminModuleMenuFooter">{{footer}}</td></tr>
+{% endif %}
+</table>
+<br />
+{% endmacro %}
+
+{% macro tableRow(label, value) %}
+<tr class="OmnisysField">
+  <th class="OmnisysFieldName">{{label}}:</th>
+  <td class="OmnisysFieldValue">{{value}}</td>
+</tr>
+{% endmacro %}
+
+{% macro getMenu(content, header, footer) %}
+{{_self.getMenuTop(header)}}{{content}}{{_self.getMenuBottom(footer)}}
+{% endmacro %}
+
+{% macro getFormFields(module, hFields, hValues) %}
+{% for sName, hData in hFields %}
+{% set sValue = (hValues[sName] or hValues[sName] == 0 or hValues[sName] == '') ? hValues[sName] : null %}
+{{module.getFormField(sName, sValue, hData, true)}}
+{% endfor %}
+{% endmacro %}
+
+{% macro getForm(module, sType, hFields, hValues) %}
+{% set sButtonValue = sType %}
+{% set sType = sType | replace('/ /', '') %}
+{% set sProcessType = get.Admin == 'Popup' ? 'Popup' : 'Process' %}
+<form name="{{sType}}" action="?Admin={{sProcessType}}&Module={{module.name}}&{{sProcessType}}={{sType}}" method="post" enctype="multipart/form-data">
+<table>
+{{ _self.getFormFields(module, hFields, hValues) }}
+<tr><td align="center" colspan="2"><input type="reset" value="Reset">&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" value="{{sButtonValue}}!"></td></tr>
+</table>
+</form>
+{% endmacro %}

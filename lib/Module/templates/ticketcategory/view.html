@@ -1,0 +1,9 @@
+{% import 'macros.html' as macros %}{% if success %}<div class="OmnisysMethodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="OmnisysMethodFailure">{{failure}}</div>{% endif %}
+<table>
+{{macros.tableRow(module.getColumnTitle('Name'), module.getColumnValue(currentItem, 'Name'))}}
+{{macros.tableRow(module.getColumnTitle('AssignmentMethod'), module.getColumnValue(currentItem, 'AssignmentMethod'))}}
+{% if currentItem.AssignmentMethod == 'leasttickets' or currentItem.AssignmentMethod == 'roundrobin' %}
+{{macros.tableRow(module.getColumnTitle('KeyID'), module.getColumnValue(currentItem, 'KeyIDe'))}}
+{{macros.tableRow(module.getColumnTitle('Level'), module.getColumnValue(currentItem, 'Level'))}}
+{% endif %}
+</table>

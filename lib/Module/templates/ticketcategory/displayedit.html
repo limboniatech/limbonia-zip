@@ -1,0 +1,72 @@
+{% if close %}<script type="text/javascript">{% if action == 'Popup' %}window.close();{% else %}history.go(-2);{% endif %}</script>
+{% elseif noID %}
+{{module.editFinish(action, 'Sorry, no ID was selected!')}}
+{% else %}
+<script type="text/javascript">
+function toggleMethod(sOption)
+{
+  userDiv = document.getElementById('user');
+  keyDiv = document.getElementById('key');
+  levelDiv = document.getElementById('level');
+
+  if (sOption == 'unassigned')
+  {
+    userDiv.style.display = keyDiv.style.display = levelDiv.style.display = 'none';
+  }
+
+  if (sOption == 'leasttickets' || sOption == 'roundrobin')
+  {
+    userDiv.style.display = 'none';
+    keyDiv.style.display = levelDiv.style.display = 'table-row';
+  }
+
+  if (sOption == 'direct')
+  {
+    userDiv.style.display = 'table-row';
+    keyDiv.style.display = levelDiv.style.display = 'none';
+  }
+
+  return false;
+}
+</script>
+<form name="Edit" action="?Admin=Process&Module={{module.name}}&Process={{method}}&CategoryID={{currentItem.ID}}" method="post">
+<table>
+<tr>
+  <th align="right">Name:</th><td><input type="text" name="{{module.name}}[Name]" id="{{module.name}}[Name]" value="{{currentItem.Name | title | e}}"></td>
+</tr>
+<tr>
+  <th align="right">Assignment Method:</th>
+  <td>
+    <select name="{{module.name}}[AssignmentMethod]" id="{{module.name}}AssignmentMethod" onchange="toggleMethod(this.value);">
+{% for assignmentMethod in currentItem.AssignmentMethodList %}      <option value="{{assignmentMethod}}"{% if assignmentMethod == currentItem.AssignmentMethod %} selected="selected"{% endif %}>{{assignmentMethod | title}}</option>
+{% endfor %}    </select>
+  </td>
+</tr>
+<tr id="user" style="display: none;">
+  <th align="right">User:</th>
+  <td>
+    <select name="{{module.name}}[UserID]" id="{{module.name}}UserID">
+      <option value="">Select a user</option>
+{% for User in currentItem.search('User', {'Active': true, 'Visible': true}) %}      <option value="{{User.ID}}"{% if User.ID == currentItem.UserID %} selected="selected"{% endif %}>{{User.Name | title | e}}</option>
+{% endfor %}
+    </select>
+  </td>
+</tr>
+<tr id="key" style="display: none;">
+  <th align="right">Required resource:</th>
+  <td>
+    <select name="{{module.name}}[KeyID]" id="{{module.name}}KeyID">
+      <option value="">None</option>
+{% for Key in currentItem.search('ResourceKey') %}      <option value="{{Key.ID}}"{% if Key.ID == currentItem.KeyID %} selected="selected"{% endif %}>{{Key.Name | title |e}}</option>
+{% endfor %}
+    </select>
+  </td>
+</tr>
+<tr id="level" style="display: none;">
+  <th align="right">Level:</th><td><input type="text" name="{{module.name}}[Level]" id="{{module.name}}[Level]" value="{{currentItem.Level}}"></td>
+</tr>
+<tr><td colspan="2" align="center"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="No" value="No" onClick="history.go(-1)"></td></tr>
+</table>
+</form>
+<script type="text/javascript">toggleMethod('{{currentItem.AssignmentMethod}}');</script>
+{% endif %}

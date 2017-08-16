@@ -1,0 +1,56 @@
+{% if success %}<div class="OmnisysMethodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="OmnisysMethodFailure">{{failure}}</div>{% endif %}
+{% if get.Edit %}
+{% import 'macros.html' as macros %}
+<h2>Edit Software Element</h2>
+ <form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{element.IDColumn}}={{element.ID}}&Edit=1" method="post">
+ <table>
+ {{module.getFormField('Name', element.Name, {'Type': 'varchar'}, true)}}
+ <tr class="OmnisysField">
+   <th class="OmnisysFieldName">User:</th>
+   <td class="OmnisysFieldValue">
+     <select name="{{module.Name}}[UserID]">
+       <option value="0">None</option>
+       {% for user in internalUserList %}<option value="{{user.ID}}"{% if element.UserID == user.ID %} selected="selected"{% endif %}>{{user.Name}}</option>
+     {% endfor %}</select>
+   </td>
+ </tr>
+ <tr><td align="center" colspan="2"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display=View&{{currentItem.IDColumn}}={{currentItem.ID}}'"></td></tr>
+ </table>
+ </form>
+{% elseif get.Delete %}
+<h2>Delete Software Element</h2>
+ <form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{element.IDColumn}}={{element.ID}}&Delete=1" method="post">
+Are you sure you want to delete {{currentItem.Name}}'s element "{{element.Name}}"?
+<input type="submit" name="Yes" value="Yes">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}'"></form>
+{% else %}
+<form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post">
+<table>
+<thead>
+  <tr>
+    <th>Name</th>
+    <th>User</th>
+    <th></th>
+  </tr>
+</thead>
+<tfoot>
+  <tr>
+    <td><input type="text" name="Name" /></td>
+    <td>
+      <select name="UserID">
+        <option value="0">None</option>
+        {% for user in internalUserList %}<option value="{{user.ID}}">{{user.Name}}</option>
+      {% endfor %}</select>
+    </td>
+    <td><input type="submit" value="Create Element" /></td>
+  </tr>
+</tfoot>
+<tbody>{% for element in currentItem.elementList %}
+  <tr>
+    <td>{{element.Name}} [<a href="?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{element.IDColumn}}={{element.ID}}&Edit=1">Edit</a> | <a href="?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{element.IDColumn}}={{element.ID}}&Delete=1">Delete</a>]</td>
+    <td>{{element.User.Name}}</td>
+    <td></td>
+  </tr>{% endfor %}
+</tbody>
+</table>
+</form>
+{% endif %}

@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>OmniSys Admin {{ get.admin }}</title>
+<link rel="stylesheet" type="text/css" href="{{api.getDir('WebShare')}}/Admin.css" />
+{{ admin_popup }}</head>
+<body>
+<div class="OmnisysAdminHeaderRow">User: {{currentUser.Name}}<span class="OmnisysAdminHeaderTools"><a href="?Admin=Menu&Module=Profile">Profile</a> | <a href="?Admin=Logout" target="_top">Logout</a></span></div>
+<table class="OmnisysAdmin">
+<tr>
+  <td class="OmnisysAdminMenu">{% import 'macros.html' as macros %}{% set groupCount = moduleGroups | length %}
+{% if groupCount == 0 %}    No modules were found!
+{% else %}
+{% for group, moduleList in moduleGroups %}
+{% if groupCount > 1 %}
+
+    <div class="OmnisysAdminModuleGroup">{{group}}</div>
+{% endif %}
+{% for thisModule in moduleList %}
+{% if get.Module and thisModule.name == get.Module %}
+    <div class="OmnisysAdminModule">
+      <span class="OmnisysAdminModuleTitle">{{thisModule.title}}</span><br />
+      {% for item in thisModule.MenuItems %}{% if thisModule.allow(item) and (item | match("/QuickSearch_(.*)/"))%}<form name="QuickSearch" action="?Admin=Process&Module={{thisModule.name}}&Process=Search" method="post">{{item | replace("/QuickSearch_/", '')}}: <input type="text" name="{{thisModule.name}}[{{item | replace("/QuickSearch_/", '')}}]" id="{{thismodule.name}}[{{aMatch.1}}]"></form>{% endif %}{% endfor %}
+    </div>
+    <br />
+{% else %}
+    <a href="?Admin=Menu&Module={{thisModule.name}}" class="OmnisysAdminModuleLink">{{thisModule.name | replace("/([A-Z])/", " $1") | replace('/_/', '')  | title}}</a><br/><br/>
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endif %}
+  </td>
+  <td class="OmnisysAdminContent">
+    <div class="OmnisysTabSet">
+      {% for item in module.MenuItems %}{% if module.allow(item) and not (item | match("/QuickSearch_(.*)/")) %}{% if item == 'Item' and currentItem.ID > 0 %}<span class="OmnisysCurrentTabNoLink">{{module.title}} #{{currentItem.ID}}</span>{% else %}<span class="{% if method == item  %}OmnisysCurrentTab{% else %}OmnisysTab{% endif %}">{% set linkAction = 'Display' %}{% if item == 'List' or item == 'Item' %}{% set linkAction = 'Process' %}{% endif %}<a href="?Admin={{linkAction}}&Module={{module.name}}&{{linkAction}}={% if item == 'Item' %}View{% else %}{{item}}{% endif %}{% if item == 'Item' and currentItem.ID > 0 %}&{{currentItem.getIDColumn}}={{currentItem.ID}}{% endif %}" class="OmnisysAdminModuleMenuItem">{{item | replace("/([A-Z])/", " $1")}}</a></span>{% endif %}{% endif %}{% endfor %}
+    </div>
+{% if currentItem.ID > 0 %}
+    <div class="OmnisysItem">
+      <h2 class="OmnisysItemTitle">{{module.CurrentItemTitle}}</h2>
+      <div class="OmnisysSubTabSet">
+        {% for item in module.SubMenuItems %}{% if module.allow(item) %}<span class="{% if method == item %}OmnisysCurrentSubTab{% else %}OmnisysSubTab{% endif %}"><a href="?Admin=Display&Module={{module.name}}&Display={{item}}&{{currentItem.getIDColumn}}={{currentItem.ID}}" class="OmnisysAdminModuleMenuItem">{{item | replace("/([A-Z])/", " $1")}}</a></span>{% endif %}{% endfor %}
+      </div>
+      <div class="OmnisysSubTabPage">
+{% endif %}

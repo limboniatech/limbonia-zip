@@ -1,0 +1,14 @@
+{% if success %}<div class="OmnisysMethodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="OmnisysMethodFailure">{{failure}}</div>{% endif %}
+{% if currentItem.ParentID > 0 %}
+<div>PARENT:<br /><a href="?Admin=Display&Module={{module.name}}&Display=View&{{currentItem.IDColumn}}={{currentItem.ParentID}}">{{currentItem.Parent.Subject}}</a> [updated {{currentItem.Parent.LastUpdate}}, priority: {{currentItem.Parent.Priority}}, status: {{currentItem.Parent.Status}}] <a href="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&RemoveParent={{currentItem.ParentID}}">delete</a></div>
+{% else %}
+<form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post">Set Parent Ticket: <input type="text" name="SetParent" /><input type="submit" value="Set Parent" /></form>
+{% endif %}
+<br />
+{% if (currentItem.children | length) > 0 %}
+CHILDREN:<br />
+{% for child in currentItem.children %}
+<div><a href="?Admin=Display&Module={{module.name}}&Display=View&{{currentItem.IDColumn}}={{child.ID}}">{{child.Subject}}</a> [updated {{child.LastUpdate}}, priority: {{child.Priority}}, status: {{child.Status}}] <a href="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&RemoveChild={{child.ID}}">delete</a></div>
+{% endfor %}
+{% endif %}
+<form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post">Add Child Ticket: <input type="text" name="AddChild" /><input type="submit" value="Add Child" /></form>

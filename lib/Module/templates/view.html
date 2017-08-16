@@ -1,0 +1,6 @@
+{% import 'macros.html' as macros %}{% if success %}<div class="OmnisysMethodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="OmnisysMethodFailure">{{failure}}</div>{% endif %}
+<table>
+{% for columnName in module.getColumns('view') %}
+{{macros.tableRow(module.getColumnTitle(columnName), module.getColumnValue(currentItem, columnName))}}
+{% endfor %}
+</table>
