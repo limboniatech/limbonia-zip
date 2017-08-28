@@ -12,23 +12,41 @@ namespace Omniverse\Item;
  */
 class TicketContent extends \Omniverse\Item
 {
+  /**
+   * List of this content's history data
+   *
+   * @var array
+   */
   protected $aHistory = null;
+
+  /**
+   * List of columns that history objects contain
+   *
+   * @var array
+   */
   protected static $aHistoryColumns = null;
 
+  /**
+   * Either create or update this object depending on if it's already been created or not
+   *
+   * @return integer The ID of this content object on success or false on failure
+   */
   public function save()
   {
-    if (!$iSave = parent::save())
+    $iSave = parent::save();
+
+    if (empty($iSave))
     {
       return false;
     }
 
     if (!is_null($this->aHistory))
     {
-      $this->getDB()->exec('DELETE FROM TicketHistory WHERE ContentID = ?' . $this->ID);
+      $this->getDB()->exec('DELETE FROM TicketHistory WHERE ContentID = ' . $this->id);
 
       foreach ($this->aHistory as $hHistory)
       {
-        $hHistory['ContentID'] = $this->ID;
+        $hHistory['ContentID'] = $this->id;
         $this->getDB()->insert('TicketHistory', $hHistory);
       }
     }
@@ -36,11 +54,17 @@ class TicketContent extends \Omniverse\Item
     return $iSave;
   }
 
+  /**
+   * Remove any null data from the given history data
+   *
+   * @param array $hData
+   * @return boolean
+   */
   protected function cleanHistory($hData)
   {
     if (is_null(self::$aHistoryColumns))
     {
-      $oHistory = parent::factory('tickethistory', $this->getDB());
+      $oHistory = parent::factory('TicketHistory', $this->getDB());
       self::$aHistoryColumns = $oHistory->columnList;
     }
 
@@ -68,11 +92,16 @@ class TicketContent extends \Omniverse\Item
     return count($hData) == 0 ? false : $hData;
   }
 
+  /**
+   * Get and return the existing history for the current ticket content
+   *
+   * @return array
+   */
   function getHistory()
   {
     if (count($this->aHistory) == 0)
     {
-      $oResult = $this->getDB()->query('SELECT * FROM TicketHistory WHERE ContentID = ' . $this->ID);
+      $oResult = $this->getDB()->query('SELECT * FROM TicketHistory WHERE ContentID = ' . $this->id);
       $aHistory = $oResult->fetchAll();
       $this->setHistory($aHistory);
     }
@@ -80,6 +109,12 @@ class TicketContent extends \Omniverse\Item
     return $this->aHistory;
   }
 
+  /**
+   * Clean the specified history data and then set that result as the history for this ticket content
+   *
+   * @param array $aHistory
+   * @return boolean
+   */
   function setHistory($aHistory)
   {
     if (!is_array($aHistory))
@@ -89,13 +124,15 @@ class TicketContent extends \Omniverse\Item
 
     foreach ($aHistory as $iKey => $hData)
     {
-      if ($hClean = $this->cleanHistory($hData))
+      $hClean = $this->cleanHistory($hData);
+
+      if (empty($hClean))
       {
-        $aHistory[$iKey] = $hClean;
+        unset($aHistory[$iKey]);
       }
       else
       {
-        unset($aHistory[$iKey]);
+        $aHistory[$iKey] = $hClean;
       }
     }
 
@@ -103,21 +140,33 @@ class TicketContent extends \Omniverse\Item
     return true;
   }
 
+  /**
+   * Add the specified data to this content's history
+   *
+   * @param array $hNew
+   * @return boolean
+   */
   function addHistory($hNew)
   {
     $aHistory = $this->getHistory();
 
     if (empty($aHistory))
     {
-      $aHistory = array();
+      $aHistory = [];
     }
 
-    $hNew = $this->cleanHistory($hNew);
-    $this->removeHistory($hNew);
-    $aHistory[] = $hNew;
+    $hClean = $this->cleanHistory($hNew);
+    $this->removeHistory($hClean);
+    $aHistory[] = $hClean;
     return $this->setHistory($aHistory);
   }
 
+  /**
+   * Remove the specified data from the history of this ticket content
+   *
+   * @param array $hNew
+   * @return boolean
+   */
   function removeHistory($hNew)
   {
     if (!is_array($hNew))

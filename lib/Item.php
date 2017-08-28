@@ -14,20 +14,6 @@ namespace Omniverse;
 class Item implements \ArrayAccess, \Countable, \SeekableIterator
 {
   /**
-   * An array of column data for each table type in use
-   *
-   * @var array
-   */
-  protected static $hColumn = [];
-
-  /**
-   * List of alternate column names that tie back to the canonical column name
-   *
-   * @var array
-   */
-  protected static $hColumnAlias = [];
-
-  /**
    * The prepared statements that represent various item queries
    *
    * @var array
@@ -70,7 +56,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   protected $sIdColumn = '';
 
   /**
-   * List of names and thier associated methods, used by __get to generate data
+   * List of names and their associated methods, used by __get to generate data
    *
    * @var array
    */
@@ -84,7 +70,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   ];
 
   /**
-   * List of names and thier associated types, used by __get to generate item objects
+   * List of names and their associated types, used by __get to generate item objects
    *
    * @var array
    */
@@ -176,7 +162,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * @param Database $oDatabase (optional) - The Database to perform the search in
    * @return \Omniverse\ItemList
    */
-  public static function search($sType, $hWhere = null, $xOrder = null, Database $oDatabase = null)
+  public static function search($sType, $hWhere = [], $xOrder = null, Database $oDatabase = null)
   {
     return self::getList($sType, self::factory($sType, $oDatabase)->makeSearchQuery($hWhere, $xOrder), $oDatabase);
   }
@@ -185,9 +171,9 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * The item constructor
    *
    * @param string $sType (optional)
-   * @param Database $oDatabase (optional)
+   * @param \Omniverse\Database $oDatabase (optional)
    */
-  public function __construct($sType = null, Database $oDatabase = null)
+  public function __construct($sType = null, \Omniverse\Database $oDatabase = null)
   {
     if ($oDatabase instanceof \Omniverse\Database)
     {
@@ -234,29 +220,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function getColumns()
   {
-    if (!isset(self::$hColumn[$this->sTable]))
-    {
-      if (SessionManager::isStarted())
-      {
-        if (!isset($_SESSION['OmnisysTableColumns'][$this->sTable]))
-        {
-          if (!isset($_SESSION['OmnisysTableColumns']))
-          {
-            $_SESSION['OmnisysTableColumns'] = [];
-          }
-
-          $_SESSION['OmnisysTableColumns'][$this->sTable] = $this->getDB()->getColumns($this->sTable);
-        }
-
-        self::$hColumn[$this->sTable] = $_SESSION['OmnisysTableColumns'][$this->sTable];
-      }
-      else
-      {
-        self::$hColumn[$this->sTable] = $this->getDB()->getColumns($this->sTable);
-      }
-    }
-
-    return isset(self::$hColumn[$this->sTable]) ? self::$hColumn[$this->sTable] : [];
+      return $this->getDB()->getColumns($this->sTable);
   }
 
   /**
@@ -277,8 +241,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function getColumn($sColumn)
   {
-    $sRealColumn = $this->hasColumn($sColumn);
-    return $sRealColumn ? $this->columns[$sRealColumn] : [];
+    return $this->getDB()->getColumnData($this->sTable, $sColumn);
   }
 
   /**
@@ -289,51 +252,6 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   public function getIDColumn()
   {
     return $this->sIdColumn;
-  }
-
-  protected function generateAliasColumns()
-  {
-    if (!isset(self::$hColumnAlias[$this->sTable]))
-    {
-      if (SessionManager::isStarted() && isset($_SESSION['OmnisysTableColumnAlias'][$this->sTable]))
-      {
-        $hColumnAlias = $_SESSION['OmnisysTableColumnAlias'][$this->sTable];
-      }
-      else
-      {
-        $hColumnAlias[$this->sTable] = [];
-
-        foreach ($this->getColumns() as $sColumn => $hColumnData)
-        {
-          $hColumnAlias[$this->sTable][\strtolower($sColumn)] = $sColumn;
-
-          if (isset($hColumnData['Key']) && $hColumnData['Key'] == 'Primary')
-          {
-            $hColumnAlias[$this->sTable]['id'] = $sColumn;
-          }
-        }
-
-        if (SessionManager::isStarted())
-        {
-          $_SESSION['OmnisysTableColumnAlias'][$this->sTable] = $hColumnAlias;
-        }
-      }
-
-      self::$hColumnAlias[$this->sTable] = $hColumnAlias;
-    }
-
-    return self::$hColumnAlias[$this->sTable];
-  }
-
-  /**
-   * Return the list column aliases, if there are any
-   *
-   * @return array
-   */
-  protected function getAliasColumns()
-  {
-    $hColumnAlias = $this->generateAliasColumns();
-    return isset($hColumnAlias[$this->sTable]) ? \array_keys($hColumnAlias[$this->sTable]) : [];
   }
 
   /**
@@ -357,8 +275,9 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   public function setAll(array $hItem = [])
   {
     $iID = null;
+    $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
 
-    foreach (array_keys($hItem) as $sName)
+    foreach (array_keys($hLowerItem) as $sName)
     {
       //if the column exists the processit
       if ($sRealName = $this->hasColumn($sName))
@@ -366,14 +285,14 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
         //don't do the id column until last
         if ($sRealName == $this->sIdColumn)
         {
-          $iID = $hItem[$sName];
+          $iID = $hLowerItem[$sName];
         }
         else
         {
-          $this->__set($sRealName, $hItem[$sName]);
+          $this->__set($sRealName, $hLowerItem[$sName]);
         }
 
-        unset($hItem[$sName]);
+        unset($hLowerItem[$sName]);
       }
     }
 
@@ -383,7 +302,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
       $this->__set($this->sIdColumn, $iID);
     }
 
-    return $hItem;
+    return $hLowerItem;
   }
 
   /**
@@ -418,12 +337,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   protected function getColumnType($sColumn)
   {
-    if ($this->hasColumn($sColumn))
-    {
-      return strtolower($this->getColumn($sColumn)['Type']);
-    }
-
-    return '';
+    return $this->hasColumn($sColumn) ? strtolower($this->getColumn($sColumn)['Type']) : '';
   }
 
   /**
@@ -565,25 +479,28 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
       return call_user_func([$this, $this->hAutoGetter[$sLowerName]]);
     }
 
-    $sIDType = "{$sName}ID";
+    $sIDType = "{$sName}id";
 
     if ($this->hasColumn($sIDType))
     {
-      if (!isset($this->hItemObjects[$sName]))
+      if (!isset($this->hItemObjects[$sLowerName]))
       {
         $sType = isset($this->hAutoExpand[$sLowerName]) ? $this->hAutoExpand[$sLowerName] : $sName;
 
         try
         {
-          $this->hItemObjects[$sName] = self::fromId($sType, $this->__get($sIDType), $this->getDB());
+          $this->hItemObjects[$sLowerName] = self::fromId($sType, $this->__get($sIDType), $this->getDB());
         }
         catch (\Exception $e)
         {
-          $this->hItemObjects[$sName] = null;
+          $this->hItemObjects[$sLowerName] = self::factory($sType, $this->getDB());
         }
       }
 
-      return $this->hItemObjects[$sName];
+      if (!empty($this->hItemObjects[$sLowerName]))
+      {
+        return $this->hItemObjects[$sLowerName];
+      }
     }
 
     if ($this->__isset($sName))
@@ -595,14 +512,12 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   /**
    * Does the specified column exist?
    *
-   * @param string $sName
-   * @return mixed -
+   * @param string $sColumn
+   * @return string -
    */
-  public function hasColumn($sName)
+  public function hasColumn($sColumn)
   {
-    $hColumnAlias = $this->generateAliasColumns();
-    $sLowerName = \strtolower($sName);
-    return isset($hColumnAlias[$this->sTable][$sLowerName]) ? $hColumnAlias[$this->sTable][$sLowerName] : false;
+    return $this->getDB()->hasColumn($this->sTable, $sColumn);
   }
 
   /**
@@ -623,7 +538,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
       return true;
     }
 
-    if ($this->hasColumn("{$sName}ID"))
+    if ($this->hasColumn("{$sName}id"))
     {
       return true;
     }
@@ -658,53 +573,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function makeSearchQuery($hWhere = [], $xOrder = null)
   {
-    $sOrder = Database::makeOrder($xOrder);
-    $sWhere = '';
-
-    if (is_array($hWhere) && count($hWhere) > 0)
-    {
-      $aWhere = [];
-
-      foreach ($hWhere as $sColumn => $xValue)
-      {
-        if (is_array($xValue))
-        {
-          foreach ($xValue as $iKey => $sValue)
-          {
-            $xValue[$iKey] = Database::prepareValue($this->getColumn($sColumn), $sValue);
-          }
-
-          $sList = implode(', ', $xValue);
-          $aWhere[] = "$sColumn IN ($sList)";
-        }
-        else
-        {
-          $sOperator = '=';
-
-          if (preg_match("/(.*?):(.*)/i", $xValue, $aMatch))
-          {
-            $sOperator = strtoupper($aMatch[1]);
-            $xValue = $aMatch[2];
-          }
-
-          if (in_array($sOperator, ['IS', 'IS NOT']) && empty($xValue))
-          {
-            $xValue = null;
-          }
-
-          //only use it if it's really one of this table's columns
-          if ($this->hasColumn($sColumn))
-          {
-            $aWhere[] = "$sColumn $sOperator " . Database::prepareValue($this->getColumn($sColumn), $xValue);
-          }
-        }
-      }
-
-      $sWhere = count($aWhere) > 0 ? ' WHERE '.implode(' AND ', $aWhere) : '';
-    }
-
-    $sTable = $this->getTable();
-    return "SELECT DISTINCT {$sTable}.* FROM $sTable$sWhere$sOrder";
+    return $this->getDB()->makeSearchQuery($this->sTable, $hWhere, $xOrder);
   }
 
   /**
@@ -720,22 +589,21 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   /**
    * Created a row for this object's data in the database
    *
-   * @return integer
+   * @return integer The ID of the row created on success or false on failure
    */
   protected function create()
   {
     $hData = $this->hData;
     unset($hData[$this->sIdColumn]);
-    $aValue = [];
+    $iID = $this->getDB()->insert($this->sTable, $hData);
 
-    foreach ($hData as $sName => $xValue)
+    if (empty($iID))
     {
-      $aValue[] = Database::prepareValue($this->columns[$sName], $xValue);
+      return false;
     }
 
-    $sSQL = "INSERT INTO {$this->sTable} (" . implode(',', array_keys($hData)) . ") VALUES (" . implode(',', $aValue) . ")";
-    $this->hData[$this->sIdColumn] = $this->getDB()->exec($sSQL);
-    return $this->hData[$this->sIdColumn];
+    $this->hData[$this->sIdColumn] = $iID;
+    return $iID;
   }
 
   /**
@@ -745,15 +613,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   protected function update()
   {
-    $aSet = [];
-
-    foreach ($this->hData as $sColumn => $xValue)
-    {
-      $aSet[] = $sColumn . '=' . Database::prepareValue($this->getColumn($sColumn), $xValue);
-    }
-
-    $sSQL = "UPDATE {$this->sTable} SET " . implode(',', $aSet) . " WHERE {$this->sIdColumn} = {$this->id}";
-    return $this->getDB()->exec($sSQL);
+    return $this->getDB()->update($this->sTable, $this->id, $this->hData);
   }
 
   /**
@@ -789,7 +649,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
       throw new \Exception("Failed to load data from $this->sTable: {$aError[2]}");
     }
 
-    $hData = self::$hStatement[$this->sTable]['load']->fetch(\PDO::FETCH_ASSOC);
+    $hData = self::$hStatement[$this->sTable]['load']->fetch();
 
     if ($hData == false)
     {
@@ -811,7 +671,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
       return true;
     }
 
-    return $this->getDB()->exec("DELETE FROM {$this->sTable} WHERE {$this->sIdColumn} = {$this->id}");
+    return $this->getDB()->delete($this->sTable, $this->id);
   }
 
   /**

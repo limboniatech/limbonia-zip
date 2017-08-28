@@ -12,9 +12,23 @@ namespace Omniverse\Module;
  */
 class ResourceLock extends \Omniverse\Module
 {
-  protected $aStaticColumn = array();
+  /**
+   * List of column names that should remain static
+   *
+   * @var array
+   */
+  protected $aStaticColumn = [];
 
-  public function getFormField($sName, $sValue=NULL, $hData=array(), $bInTable=false)
+  /**
+   * Generate and return the HTML for the specified form field based on the specified information
+   *
+   * @param string $sName
+   * @param string $sValue
+   * @param array $hData
+   * @param boolean $bInTable - Should the returned HTML use a table to contain the data
+   * @return string
+   */
+  public function getFormField($sName, $sValue = null, $hData = [], $bInTable = false)
   {
     if ($sName == 'Resource')
     {
@@ -35,10 +49,8 @@ class ResourceLock extends \Omniverse\Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Resource:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Resource:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Resource:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'Component')
@@ -94,22 +106,33 @@ class ResourceLock extends \Omniverse\Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Component:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Component:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Component:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
     }
 
     return parent::getFormField($sName, $sValue, $hData, $bInTable);
   }
 
-  public function processSearch_GridHeader(\Omniverse\Widget\Table $oSortGrid, $sColumn)
+  /**
+   * Generate the search results table headers in the specified grid object
+   *
+   * @param \Omniverse\Widget\Table $oSortGrid
+   * @param string $sColumn
+   */
+  public function processSearchGridHeader(\Omniverse\Widget\Table $oSortGrid, $sColumn)
   {
-    return parent::processSearch_GridHeader($oSortGrid, ($sColumn == 'KeyID' ? 'Name' : $sColumn));
+    return parent::processSearchGridHeader($oSortGrid, ($sColumn == 'KeyID' ? 'Name' : $sColumn));
   }
 
+  /**
+   * Generate and return the value of the specified column
+   *
+   * @param \Omniverse\Item $oItem
+   * @param string $sColumn
+   * @return mixed
+   */
   public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
   {
-    return $sColumn == 'KeyID' ? $this->getController()->itemFromId('ResourceKey', $oItem->KeyID)->Name : parent::getColumnValue($oItem, $sColumn);
+    return $sColumn == 'KeyID' ? $this->getController()->itemFromId('ResourceKey', $oItem->keyId)->name : parent::getColumnValue($oItem, $sColumn);
   }
 }

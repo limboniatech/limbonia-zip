@@ -5,7 +5,7 @@ namespace Omniverse\Controller;
  * Omniverse Admin Controller Class
  *
  * This extends the basic controller with the ability to display and react to
- * domain administraition pages
+ * domain administration pages
  *
  * @author Lonnie Blansett <lonnie@omniverserpg.com>
  * @version $Revision: 1.1 $
@@ -13,27 +13,74 @@ namespace Omniverse\Controller;
  */
 class Admin extends \Omniverse\Controller
 {
+  /**
+   * The Twig object needed to process the templates
+   *
+   * @var \Twig_Environment
+   */
   protected static $oTemplateGenerator = null;
 
+  /**
+   * All the data that will be used by the templates
+   *
+   * @var array
+   */
   protected $hTemplateData = [];
+
+  /**
+   * Should popups be used? (Instead of replacing each page)
+   *
+   * @var boolean
+   */
   protected $bUsePopups = false;
+
+  /**
+   * The currently logged in user
+   *
+   * @var \Omniverse\Item\User
+   */
   protected $oUser = null;
 
+  /**
+   * List of configuration data
+   *
+   * @var array
+   */
   protected $hConfig =
   [
     'defaulttemplate' => 'default.template'
   ];
 
+  /**
+   * Template stand-in function for PHP's preg_replace
+   *
+   * @param string $sText
+   * @param string $sRegExpression
+   * @param string $sValue
+   * @return string
+   */
   public static function replace($sText, $sRegExpression, $sValue)
   {
     return preg_replace($sRegExpression, $sValue, $sText);
   }
 
+  /**
+   * Template stand-in function for PHP's preg_match
+   *
+   * @param string $sText
+   * @param string $sRegExpression
+   * @return boolean
+   */
   public static function match($sText, $sRegExpression)
   {
     return preg_match($sRegExpression, $sText);
   }
 
+  /**
+   * The controller constructor
+   *
+   * @param array $hConfig - A hash of configuration data
+   */
   public function __construct(array $hConfig = [])
   {
     parent::__construct($hConfig);
@@ -113,49 +160,56 @@ class Admin extends \Omniverse\Controller
     self::$oTemplateGenerator->addFilter('match', new \Twig_Filter_Function('\Omniverse\Controller\Admin::match'));
   }
 
+  /**
+   * Return the currently logged in user
+   *
+   * @return \Omniverse\Item\User
+   */
   public function user()
   {
     return $this->oUser;
   }
 
+  /**
+   * Should popups be used? (Instead of replacing each page)
+   *
+   * @return boolean
+   */
   public function usePopups()
   {
     return $this->bUsePopups;
   }
 
+  /**
+   * Add the specified data to the template under the specified name
+   *
+   * @param string $sName
+   * @param mixed $xValue
+   */
   public function templateData($sName, $xValue)
   {
     $this->hTemplateData[$sName] = $xValue;
   }
 
-  public function templateDisplay($sTemplateName, $hData=null)
+  /**
+   * Display the specified template
+   *
+   * @param string $sTemplateName
+   * @param array $hData (optional)
+   */
+  public function templateDisplay($sTemplateName, $hData = null)
   {
     if (!is_null(self::$oTemplateGenerator))
     {
       $oTemplate = self::$oTemplateGenerator->loadTemplate($sTemplateName);
-
-      if (is_null($hData))
-      {
-        $oTemplate->display($this->hTemplateData);
-      }
-      else
-      {
-        $oTemplate->display($hData);
-      }
+      $hTemplateData = is_null($hData) ? $this->hTemplateData : $hData;
+      $oTemplate->display($hTemplateData);
     }
   }
 
-  public function templateRender($sTemplateName, $hData=null)
-  {
-    if (is_null(self::$oTemplateGenerator))
-    {
-      return '';
-    }
-
-    $oTemplate = self::$oTemplateGenerator->loadTemplate($sTemplateName);
-    return $oTemplate->render($this->hTemplateData);
-  }
-
+  /**
+   * Run everything needed to react and display data in the way this controller is intended
+   */
   public function run()
   {
     $this->login();
@@ -212,7 +266,7 @@ class Admin extends \Omniverse\Controller
     {
       $oPopup = $this->widgetFactory('Window', 'Omniverse_Popup');
       $oPopup->hasScrollBars();
-      $oPopup->Allowresize();
+      $oPopup->allowResize();
       $this->templateData('admin_popup', $oPopup->__toString());
     }
 
@@ -269,6 +323,12 @@ class Admin extends \Omniverse\Controller
     $this->templateDisplay('admin-bottom.html');
   }
 
+  /**
+   * Figure out if there is a valid current user or if the login screen should be displayed
+   *
+   * @return boolean
+   * @throws \Exception
+   */
   protected function login()
   {
     if (filter_input(INPUT_GET, 'Admin') == 'Logout')
@@ -306,7 +366,7 @@ class Admin extends \Omniverse\Controller
         }
       }
 
-      if (!empty($sEmail) && !empty($sPassword))
+      elseif (!empty($sEmail) && !empty($sPassword))
       {
         //A Email and password submitted through post or get shouldn't ever be NULL so we use === for the comparison...
         if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $sEmail === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && $sPassword === $this->hConfig['master']['Password'])
@@ -341,7 +401,12 @@ class Admin extends \Omniverse\Controller
     $this->printPasswordForm();
   }
 
-  protected function printPasswordForm($sError=NULL)
+  /**
+   * Display the password form on the login page displaying the specified error, if there is one
+   *
+   * @param string $sError
+   */
+  protected function printPasswordForm($sError = '')
   {
     $sAction = empty($_SERVER['QUERY_STRING']) ? $_SERVER['PHP_SELF'] : $_SERVER['PHP_SELF'] . '?' . $_SERVER['QUERY_STRING'];
     $this->templateData('action', $sAction);
@@ -350,7 +415,15 @@ class Admin extends \Omniverse\Controller
     die();
   }
 
-  public static function getMenu($sContent, $sHeader=NULL, $sFooter=NULL)
+  /**
+   * Generate and return the admin menu
+   *
+   * @param string $sContent
+   * @param string $sHeader (optional)
+   * @param string $sFooter (optional)
+   * @return string
+   */
+  public static function getMenu($sContent, $sHeader = '', $sFooter = '')
   {
     $sMenu = '';
 

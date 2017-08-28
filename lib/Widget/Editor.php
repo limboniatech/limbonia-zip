@@ -12,20 +12,75 @@ namespace Omniverse\Widget;
  */
 class Editor extends \Omniverse\Widget
 {
+  /**
+   * The minimum version of Mozilla that this code will work with
+   *
+   * @var integer
+   */
   protected static $iMinMoz = 20030210;
-  protected static $iMinIE = 5.5;
+
+  /**
+   * The minimum version of IE that this code will work with
+   *
+   * @var float
+   */
+  protected static $fMinIE = 5.5;
+
+  /**
+   * The CSS width of this widget
+   *
+   * @var string
+   */
   protected $sWidth = '100%';
+
+  /**
+   * The CSS height of this widget
+   *
+   * @var string
+   */
   protected $sHeight = '200';
+
+  /**
+   * The name of the toolset that the the editor will use
+   *
+   * @var string
+   */
   protected $sToolbarSet = 'Default';
+
+  /**
+   * The default value of the editor
+   *
+   * @var string
+   */
   protected $sValue = '';
+
+  /**
+   * The configuration data for this editor
+   *
+   * @var array
+   */
   protected $hConfig = [];
 
+  /**
+   * Constructor
+   *
+   * It increments the widget counter and generates a unique (but human readable) name.
+   *
+   * @param string $sName (optional)
+   * @param \Omniverse\Controller $oController (optional)
+   * @throws Omniverse\Exception\Object
+   */
   public function __construct($sName = null, \Omniverse\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->hConfig['customconfigurationspath'] = $this->sWebShareDir . '/WebEditConfig.js';
   }
 
+  /**
+   * Stub create method that will be overridden by a child class.
+   *
+   * @return boolean
+   */
   protected function init()
   {
     $sConfig = NULL;
@@ -77,67 +132,101 @@ class Editor extends \Omniverse\Widget
     return TRUE;
   }
 
+  /**
+   * Is the browser that is currently running compatable with this editor?
+   *
+   * @return boolean
+   */
   function isCompatible()
   {
-    if (($iIEPos = strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')) !== FALSE && strpos($_SERVER['HTTP_USER_AGENT'], 'mac') === FALSE && strpos($_SERVER['HTTP_USER_AGENT'], 'Opera') === FALSE)
+    $sUserAgent = filter_input(INPUT_SERVER, 'HTTP_USER_AGENT');
+    $iIEPos = strpos($sUserAgent, 'MSIE');
+
+    if ($iIEPos !== false && strpos($sUserAgent, 'mac') === FALSE && strpos($sUserAgent, 'Opera') === FALSE)
     {
-      return (float)substr($_SERVER['HTTP_USER_AGENT'], $iIEPos + 5, 3) >= self::$iMinIE;
+      return (float)substr($sUserAgent, $iIEPos + 5, 3) >= self::$fMinIE;
     }
-    elseif (($iMozPos = strpos($_SERVER['HTTP_USER_AGENT'], 'Gecko/')) !== FALSE)
+
+    $iMozPos = strpos($sUserAgent, 'Gecko/');
+
+    if ($iMozPos !== false)
     {
-      return (int)substr($_SERVER['HTTP_USER_AGENT'], $iMozPos + 6, 8) >= self::$iMinMoz;
+      return (int)substr($sUserAgent, $iMozPos + 6, 8) >= self::$iMinMoz;
     }
-    return FALSE;
+
+    return false;
   }
 
+  /**
+   * Set the text for the editor
+   *
+   * @param string $sText
+   * @return boolean
+   */
   public function setText($sText)
   {
-    if (!is_string($sText) || $this->bInit)
+    if (is_string($sText) && !$this->bInit)
     {
-      return FALSE;
+      $this->sValue = $sText;
     }
-
-    $this->sValue = $sText;
   }
 
-  public function setConfig($hConfig=array())
+  /**
+   * Set the specified array as the configuration for this editor
+   *
+   * @param array $hConfig
+   */
+  public function setConfig(array $hConfig)
   {
-    if (!is_array($hConfig))
-    {
-      $hConfig = array();
-    }
     $this->hConfig = $hConfig;
   }
 
+  /**
+   * Set the specified config key to the specified value
+   *
+   * @param string $sKey
+   * @param mixed $xValue
+   * @return boolean
+   */
   public function addConfig($sKey, $xValue)
   {
     if (!is_string($sKey) && (is_array($xValue) || is_object($xValue)))
     {
-      return FALSE;
+      return false;
     }
+
     $this->hConfig[$sKey] = $xValue;
-    return TRUE;
+    return true;
   }
 
-  public function setToolbar($sToolbar=NULL)
+  /**
+   * Set the
+   *
+   * @param string $sToolbar
+   */
+  public function setToolbar($sToolbar = 'Default')
   {
-    if (empty($sToolbar))
-    {
-      $sToolbar = 'Default';
-    }
-    $this->sToolbarSet = $sToolbar;
+    $this->sToolbarSet = empty($sToolbar) ? 'Default' : $sToolbar;
   }
 
+  /**
+   * Return the encoded version of the specified value
+   *
+   * @param type $xValue
+   * @return string
+   */
   protected function encode($xValue)
   {
-    if ($xValue === TRUE)
+    if ($xValue === true)
     {
       return 'true';
     }
-    elseif ($xValue === FALSE)
+
+    if ($xValue === true)
     {
       return 'false';
     }
-    return strtr($xValue, array('&' => '%26', '=' => '%3D', '"' => '%22'));
+
+    return strtr($xValue, ['&' => '%26', '=' => '%3D', '"' => '%22']);
   }
 }

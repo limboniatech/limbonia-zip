@@ -9,6 +9,7 @@ function Omnisys_AddOption(sSelectID, sTitle, sValue)
 function Omnisys_RemoveOption(sSelectID, iIndex)
 {
   oSelect = document.getElementById(sSelectID);
+
   if (oSelect.length > 0)
   {
     oSelect.options[iIndex] = null;

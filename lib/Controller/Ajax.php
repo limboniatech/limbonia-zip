@@ -13,6 +13,9 @@ namespace Omniverse\Controller;
  */
 class Ajax extends \Omniverse\Controller
 {
+  /**
+   * Run everything needed to react and display data in the way this controller is intended
+   */
   public function run()
   {
     ob_start();

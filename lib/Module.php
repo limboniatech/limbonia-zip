@@ -27,6 +27,13 @@ class Module
   protected $sModuleName = '';
 
   /**
+   * The type of module this is
+   *
+   * @var string
+   */
+  protected $sType = '';
+
+  /**
    * The item object associated with this module
    *
    * @var \Omniverse\Item
@@ -179,6 +186,34 @@ class Module
    */
   protected $hPopupSize = ['default' => [400, 300]];
 
+  /**
+   * A list of components the current user is allowed to use
+   *
+   * @var array
+   */
+  protected $hAllow = [];
+
+  /**
+   * Have the settings been loaded yet?
+   *
+   * @var boolean
+   */
+  protected $bSettingsLoaded = false;
+
+  /**
+   * Has the "City / State / Zip" block been output yet?
+   *
+   * @var boolean
+   */
+  protected $bCityStateZipDone = false;
+
+  /**
+   * Module Factory
+   *
+   * @param string $sType - The type of module to create
+   * @param \Omniverse\Controller $oController
+   * @return \Omniverse\Module
+   */
   public static function factory($sType, Controller $oController = null)
   {
     $sTypeClass = __NAMESPACE__ . '\\Module\\' . $sType;
@@ -195,7 +230,7 @@ class Module
    * Instantiate a module
    *
    * @param string $sType (optional) - The type of module this should become
-   * @param \Omniverse\Database $oDatabase (optional) - The database object from the parent admin controller
+   * @param \Omniverse\Controller $oController
    */
   public function __construct($sType = null, Controller $oController = null)
   {
@@ -273,7 +308,7 @@ class Module
   /**
    * Return the parent admin object
    *
-   * @return type
+   * @return \Omniverse\Controller
    * @throws \Exception
    */
   public function getController()
@@ -327,22 +362,19 @@ class Module
   }
 
   /**
-   * Should the specified compontent type be allowed to be used by the current user of this module?
+   * Should the specified component type be allowed to be used by the current user of this module?
    *
-   * @staticvar array $hAllow
    * @param string $sComponent
    * @return boolean
    */
   public function allow($sComponent)
   {
-    static $hAllow = [];
-
-    if (!isset($hAllow[$sComponent]))
+    if (!isset($this->hAllow[$sComponent]))
     {
-      $hAllow[$sComponent] = $this->getController()->user()->hasResource($this->sType, $this->getComponent($sComponent));
+      $this->hAllow[$sComponent] = $this->getController()->user()->hasResource($this->sType, $this->getComponent($sComponent));
     }
 
-    return $hAllow[$sComponent];
+    return $this->hAllow[$sComponent];
   }
 
   /**
@@ -458,7 +490,7 @@ class Module
 
         try
         {
-          $this->oItem->setAll($this->processCreate_getData());
+          $this->oItem->setAll($this->processCreateGetData());
           $iModule = $this->oItem->save();
           $this->getController()->templateData('currentItem', $this->oItem);
         }
@@ -469,7 +501,7 @@ class Module
       }
       elseif ($this->sCurrentMethod == 'Edit')
       {
-        $this->oItem->setAll($this->edit_getData());
+        $this->oItem->setAll($this->editGetData());
 
         if ($this->oItem->save())
         {
@@ -490,23 +522,23 @@ class Module
       }
       elseif ($this->sCurrentMethod == 'Search' || $this->sCurrentMethod == 'List')
       {
-        $xSearch = $this->processSearch_getCriteria();
+        $xSearch = $this->processSearchGetCriteria();
 
         if (is_array($xSearch))
         {
           foreach ($xSearch as $sKey => $sValue)
           {
-            $this->processSearch_Term($xSearch, $sKey);
+            $this->processSearchTerm($xSearch, $sKey);
           }
         }
 
-        $this->getController()->templateData('data', $this->processSearch_getData($xSearch));
+        $this->getController()->templateData('data', $this->processSearchGetData($xSearch));
         $this->getController()->templateData('idColumn', preg_replace("/.*?\./", '', $this->oItem->getIDColumn()));
         $aColumns = $this->getColumns('Search');
 
         foreach ($aColumns as $sKey => $sColumn)
         {
-          $this->processSearch_ColumnHeader($aColumns, $sKey);
+          $this->processSearchColumnHeader($aColumns, $sKey);
         }
 
         $this->getController()->templateData('dataColumns', $aColumns);
@@ -646,24 +678,21 @@ class Module
   /**
    * Return the specified setting, if it exists
    *
-   * @staticvar boolean $bLoad
    * @param string $sName
    * @return mixed
    */
   protected function getSetting($sName=null)
   {
-    static $bLoad = true;
-
     if (count($this->hSettings) == 0)
     {
       return false;
     }
 
     //if this is the first time try to load the settings...
-    if ($bLoad)
+    if (!$this->bSettingsLoaded)
     {
       $this->loadSettings();
-      $bLoad = false;
+      $this->bSettingsLoaded = true;
     }
 
     if (empty($sName))
@@ -752,7 +781,7 @@ class Module
    */
   public function getCurrentItemTitle()
   {
-    return $this->oItem->Name;
+    return $this->oItem->name;
   }
 
   /**
@@ -802,7 +831,7 @@ class Module
    *
    * @return array
    */
-  protected function processCreate_getData()
+  protected function processCreateGetData()
   {
     $hPost = filter_input_array(INPUT_POST);
     $hData = isset($hPost[$this->sModuleName]) ? $hPost[$this->sModuleName] : [];
@@ -833,7 +862,7 @@ class Module
    * @param string $sKey
    * @return boolean
    */
-  protected function processSearch_Term(&$hArray, $sKey)
+  protected function processSearchTerm(&$hArray, $sKey)
   {
     if (empty($hArray[$sKey]))
     {
@@ -848,7 +877,7 @@ class Module
    * @param array $hArray
    * @param string $sKey
    */
-  protected function processSearch_ColumnHeader(array &$hArray, $sKey)
+  protected function processSearchColumnHeader(array &$hArray, $sKey)
   {
     $hArray[$sKey] = preg_replace("/^.*?\./", "", $hArray[$sKey]);
   }
@@ -859,7 +888,7 @@ class Module
    * @param \Omniverse\Widget\Table $oSortGrid
    * @param string $sColumn
    */
-  public function processSearch_GridHeader(\Omniverse\Widget\Table $oSortGrid, $sColumn)
+  public function processSearchGridHeader(\Omniverse\Widget\Table $oSortGrid, $sColumn)
   {
     //any columns that need to be static can be set in the aStaticColumn array...
     if (in_array($sColumn, $this->getStaticColumn()) || !$this->allow('Edit'))
@@ -886,7 +915,7 @@ class Module
    * @param integer $iID
    * @return string
    */
-  public function processSearch_GridRowControl($sIDColumn, $iID)
+  public function processSearchGridRowControl($sIDColumn, $iID)
   {
     $sURL = "?Admin=Process&Module=$this->sModuleName&Process=View&$sIDColumn=$iID";
     return "<input type=\"checkbox\" class=\"OmnisysSortGridCellCheckbox\" name=\"{$sIDColumn}[$iID]\" id=\"{$sIDColumn}[$iID]\" value=\"1\"> [<a href=\"$sURL\">View</a>]";
@@ -897,7 +926,7 @@ class Module
    *
    * @return array
    */
-  protected function processSearch_getCriteria()
+  protected function processSearchGetCriteria()
   {
     //unless overridden by a descendant form data will allways take precendence over URL data
     return isset($_POST[$this->sModuleName]) ? $_POST[$this->sModuleName] : (isset($_GET[$this->sModuleName]) ? $_GET[$this->sModuleName] : null);
@@ -908,7 +937,7 @@ class Module
    *
    * @return string
    */
-  protected function processSearch_getSortColumn()
+  protected function processSearchGetSortColumn()
   {
     return $this->oItem->getIDColumn();
   }
@@ -919,15 +948,14 @@ class Module
    * @param string|array $xSearch
    * @return \Omniverse\ItemList
    */
-  protected function processSearch_getData($xSearch)
+  protected function processSearchGetData($xSearch)
   {
-    return $this->getController()->itemSearch($this->oItem->getTable(), $xSearch, $this->processSearch_getSortColumn());
+    return $this->getController()->itemSearch($this->oItem->getTable(), $xSearch, $this->processSearchGetSortColumn());
   }
 
   /**
    * Generate and return the HTML for the specified form field based on the specified information
    *
-   * @staticvar boolean $bDone
    * @param string $sName
    * @param string $sValue
    * @param array $hData
@@ -936,7 +964,6 @@ class Module
    */
   public function getFormField($sName, $sValue = null, $hData = [], $bInTable = false)
   {
-    static $bDone = false;
     $sLabel = preg_replace("/([A-Z])/", " $1", $sName);
 
     if (is_null($sValue) && isset($hData['Default']))
@@ -946,7 +973,7 @@ class Module
 
     if ($sName == 'State' || $sName == 'City' || $sName == 'Zip')
     {
-      if ($bDone)
+      if ($this->bCityStateZipDone)
       {
         if ($sName == 'State' && !empty($sValue))
         {
@@ -1089,7 +1116,7 @@ class Module
         $sFormField .= "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Zip:</span><span class=\"OmnisysFieldValue\">" . $oZips . "</span></div>";
       }
 
-      $bDone = true;
+      $this->bCityStateZipDone = true;
       return $sFormField;
     }
 
@@ -1110,10 +1137,8 @@ class Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">User:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">User:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">User:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'KeyID')
@@ -1136,10 +1161,8 @@ class Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Required resource:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Required resource:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Required resource:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
     }
 
     if (preg_match('/(.+?)id$/i', $sName, $aMatch))
@@ -1148,7 +1171,7 @@ class Module
       {
         $oTest = Item::factory($aMatch[1]);
 
-        if (isset($oTest->Name))
+        if (isset($oTest->name))
         {
           $oList = Item::search($aMatch[1]);
 
@@ -1157,7 +1180,7 @@ class Module
 
           foreach ($oList as $oTempItem)
           {
-            $oSelect->addOption($oTempItem->Name, $oTempItem->ID);
+            $oSelect->addOption($oTempItem->name, $oTempItem->id);
           }
 
           $oSelect->addArray($hElements);
@@ -1171,10 +1194,8 @@ class Module
           {
             return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">{$aMatch[1]}:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
           }
-          else
-          {
-            return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">{$aMatch[1]}:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-          }
+
+          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">{$aMatch[1]}:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
         }
       }
       catch (\Exception $e)
@@ -1191,10 +1212,8 @@ class Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">File Name:</th><td class=\"OmnisysFieldValue\">" . $oFile . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">File Name:</span><span class=\"OmnisysFieldValue\">" . $oFile . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">File Name:</span><span class=\"OmnisysFieldValue\">" . $oFile . "</span></div>";
     }
 
     $sType = strtolower(preg_replace("/( |\().*/", "", $hData['Type']));
@@ -1207,7 +1226,6 @@ class Module
         $oHidden->setParam('id', $this->sModuleName . $sName);
         $oHidden->setParam('value', $sValue);
         return $oHidden->__toString();
-        break;
 
       case 'enum':
         $sElements = preg_replace("/enum\((.*?)\)/", "$1", $hData['Type']);
@@ -1230,11 +1248,8 @@ class Module
         {
           return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
         }
-        else
-        {
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-        }
-        break;
+
+        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
 
       case 'text':
       case 'mediumtext':
@@ -1248,14 +1263,12 @@ class Module
         {
           return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">" . $oText . "</td></tr>";
         }
-        else
-        {
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">" . $oText . "</span></div>";
-        }
-        break;
+
+        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">" . $oText . "</span></div>";
 
       case 'radio':
         $sFormField = '';
+
         foreach ($hData as $sKey => $sButtonValue)
         {
           if (preg_match("/^Value/", $sKey))
@@ -1269,11 +1282,8 @@ class Module
         {
           return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">$sFormField</td></tr>";
         }
-        else
-        {
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">$sFormField</span></div>\n";
-        }
-        break;
+
+        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">$sFormField</span></div>\n";
 
       case 'float':
       case 'int':
@@ -1283,11 +1293,8 @@ class Module
         {
           return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></td></tr>";
         }
-        else
-        {
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></span></div>";
-        }
-        break;
+
+        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></span></div>";
 
       case 'timestamp':
       case 'date':
@@ -1305,11 +1312,8 @@ class Module
         {
           return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">$sSearchDate" . $oDate . "</td></tr>";
         }
-        else
-        {
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">$sSearchDate" . $oDate . "</span></div>";
-        }
-        break;
+
+        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">$sSearchDate" . $oDate . "</span></div>";
 
       case 'password':
         if ($bInTable)
@@ -1324,11 +1328,9 @@ class Module
         }
 
         return $sField;
-        break;
 
       case 'swing':
         return null;
-        break;
 
       case 'tinyint':
         $sChecked = $sValue ? ' checked="checked"' : '';
@@ -1337,24 +1339,19 @@ class Module
         {
           return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\"><input type=\"checkbox\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"1\"$sChecked></td></tr>";
         }
-        else
-        {
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\"><input type=\"checkbox\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"1\"$sChecked></span></div>";
-        }
-        break;
+
+        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\"><input type=\"checkbox\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"1\"$sChecked></span></div>";
 
       default:
         if ($bInTable)
         {
           return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Not valid:</th><td class=\"OmnisysFieldValue\">$sName :: $sType</td></tr>";
         }
-        else
-        {
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Not valid:</span><span class=\"OmnisysFieldValue\">$sName :: $sType</span></div>";
-        }
+
+        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Not valid:</span><span class=\"OmnisysFieldValue\">$sName :: $sType</span></div>";
     }
 
-    return null;
+    return '';
   }
 
   /**
@@ -1394,7 +1391,7 @@ class Module
    */
   public function getColumnValue(Item $oItem, $sColumn)
   {
-    if (preg_match("/(^.*?)ID$/i", $sColumn, $aMatch))
+    if (preg_match("/(^.*?)id$/i", $sColumn, $aMatch))
     {
       try
       {
@@ -1404,9 +1401,9 @@ class Module
         {
           $oColumnItem = $oItem->__get($sType);
 
-          if ($oColumnItem instanceof Item && $oColumnItem->__isset('Name'))
+          if ($oColumnItem instanceof Item && $oColumnItem->__isset('name'))
           {
-            return $oColumnItem->ID == 0 ? 'None' : $oColumnItem->Name;
+            return $oColumnItem->id == 0 ? 'None' : $oColumnItem->name;
           }
         }
       }
@@ -1582,9 +1579,10 @@ class Module
    *
    * @return array
    */
-  protected function edit_getData()
+  protected function editGetData()
   {
-    $hPost = isset($_POST[$this->sModuleName]) ? $_POST[$this->sModuleName] : $_POST;
+    $hFullPost = filter_input_array(INPUT_POST);
+    $hPost = isset($hFullPost[$this->sModuleName]) ? $hFullPost[$this->sModuleName] : $hFullPost;
     $hTemp = $this->oItem->getColumns();
     $aIgnore = isset($this->aIgnore['Boolean']) ? $this->aIgnore['Boolean'] : [];
 

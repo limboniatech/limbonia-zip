@@ -12,19 +12,57 @@ namespace Omniverse\Item;
  */
 class User extends \Omniverse\Item
 {
+  /**
+   * The default password length
+   */
   const PASSWORD_DEFAULT_LENGTH = 16;
+
+  /**
+   * The "cost" for the encryption function to  use
+   */
   const PASSWORD_ENCRYPTION_COST = 10;
+
+  /**
+   * The name of the algorithm used to encrypt the password
+   */
   const PASSWORD_ENCRYPTION_ALGO = PASSWORD_BCRYPT;
+
+  /**
+   * List of resources that this user has access to
+   *
+   * @var array
+   */
   protected $hResource = null;
+
+  /**
+   * Is this user an admin?
+   *
+   * @var boolean
+   */
   protected $bAdmin = false;
 
-  public static function getByEmail($sEmail, Database $oDatabase = null)
+  /**
+   * Generate and return a user object from the specified email
+   *
+   * @param string $sEmail
+   * @param \Omniverse\Database $oDatabase (optional)
+   * @return \Omniverse\Item\User User object on success or false on failure
+   */
+  public static function getByEmail($sEmail, \Omniverse\Database $oDatabase = null)
   {
     \Omniverse\Email::validate($sEmail, false);
     $oUserList = parent::search('User', ['Email' => $sEmail], null, $oDatabase);
     return count($oUserList) == 0 ? false : $oUserList[0];
   }
 
+  /**
+   * Make sure the specified password follows all the current guidelines
+   *
+   * @todo Create method for adding / controlling the password guidelines with config and scripting options
+   *
+   * @param string $sPassword
+   * @throws \Exception
+   */
   public static function validatePassword($sPassword)
   {
     if (empty($sPassword))
@@ -33,22 +71,30 @@ class User extends \Omniverse\Item
     }
   }
 
+  /**
+   * Generate and return a valid user from the specified email and password
+   *
+   * @param string $sEmail
+   * @param string $sPassword
+   * @return \Omniverse\Item\User
+   * @throws \Exception
+   */
   public static function login($sEmail, $sPassword)
   {
-    $sPass = trim($sPassword);
     self::validatePassword($sPassword);
+    $oUser = self::getByEmail($sEmail);
 
-    if (!$oUser = self::getByEmail($sEmail))
+    if ($oUser == false)
     {
       throw new \Exception("Invalid user/password");
     }
 
-    if (!$oUser->Active)
+    if (!$oUser->active)
     {
       throw new \Exception("Invalid user/password");
     }
 
-    if (!password_verify($sPassword, $oUser->Password))
+    if (!password_verify($sPassword, $oUser->password))
     {
       throw new \Exception("Invalid user/password");
     }
@@ -56,6 +102,12 @@ class User extends \Omniverse\Item
     return $oUser;
   }
 
+  /**
+   * Generate and return and password of the specified length
+   *
+   * @param integer $iLength (optional)
+   * @return string
+   */
   public static function generatePassword($iLength = self::PASSWORD_DEFAULT_LENGTH)
   {
     $iLength = empty($iLength) ? self::PASSWORD_DEFAULT_LENGTH : (integer)$iLength;
@@ -70,6 +122,11 @@ class User extends \Omniverse\Item
     return $sPassword;
   }
 
+  /**
+   * Reset this user's password to something random and return that password
+   *
+   * @return string
+   */
   public function resetPassword()
   {
     $sPassword = self::generatePassword();
@@ -78,6 +135,9 @@ class User extends \Omniverse\Item
     return $sPassword;
   }
 
+  /**
+   * Generate and return the list of resources that this user has access to
+   */
   protected function generateResourceList()
   {
     $oResult = $this->getDB()->prepare("SELECT COUNT(1) FROM User_Key uk NATURAL JOIN ResourceKey rk WHERE rk.Name='Admin' AND uk.Level = 1000 AND uk.UserID = :UserID");
@@ -105,6 +165,11 @@ class User extends \Omniverse\Item
     }
   }
 
+  /**
+   * Is this user an admin?
+   *
+   * @return boolean
+   */
   public function isAdmin()
   {
     if (is_null($this->hResource) && !$this->bAdmin)
@@ -115,7 +180,14 @@ class User extends \Omniverse\Item
     return $this->bAdmin;
   }
 
-  public function hasResource($sResource, $sComponent=null)
+  /**
+   * Does this user have the specified resource?
+   *
+   * @param string $sResource
+   * @param string $sComponent (optional)
+   * @return boolean
+   */
+  public function hasResource($sResource, $sComponent = null)
   {
     if ($this->isAdmin())
     {
@@ -130,17 +202,32 @@ class User extends \Omniverse\Item
     return isset($this->hResource[$sResource]) && in_array($sComponent, $this->hResource[$sResource]);
   }
 
+  /**
+   * Return the list of resource keys and their levels that this user has
+   *
+   * @return array
+   */
   public function getResourceKeys()
   {
-    $oResult = $this->getDB()->prepare("SELECT KeyID, Level FROM User_Key WHERE UserID = :UserID");
-    return $oResult->fetchAssoc([':UserID' => $this->ID]);
+    $oResult = $this->getDB()->query("SELECT KeyID, Level FROM User_Key WHERE UserID = $this->id");
+    return $oResult->fetchAssoc();
   }
 
+  /**
+   * Return the list of resource key objects
+   *
+   * @return \Omniverse\ItemList
+   */
   public function getResourceList()
   {
     return parent::search('ResourceKey', null, 'Name', $this->getDB());
   }
 
+  /**
+   * Set the specified list of resource keys for this user
+   *
+   * @param array $hResource
+   */
   public function setResourceKeys($hResource)
   {
     $this->getDB()->exec('DELETE FROM User_Key WHERE UserID = ' . $this->id);
@@ -156,6 +243,13 @@ class User extends \Omniverse\Item
     }
   }
 
+  /**
+   * Format the specified value to valid input using type data from the specified column
+   *
+   * @param string $sColumn
+   * @param mixed $xValue
+   * @return mixed
+   */
   protected function formatInput($sName, $xValue)
   {
     if ($sName == 'Password' && $this->isCreated())
@@ -173,6 +267,12 @@ class User extends \Omniverse\Item
     return parent::formatInput($sName, $xValue);
   }
 
+  /**
+   * Get the specified data
+   *
+   * @param string $sName
+   * @return mixed
+   */
   public function __get($sName)
   {
     if (strtolower($sName) == 'name')
@@ -183,6 +283,12 @@ class User extends \Omniverse\Item
     return parent::__get($sName);
   }
 
+  /**
+   * Determine if the specified value is set (exists) or not...
+   *
+   * @param string $sName
+   * @return boolean
+   */
   public function __isset($sName)
   {
     if (strtolower($sName) == 'name')

@@ -12,8 +12,18 @@ namespace Omniverse\Module;
  */
 class Template extends \Omniverse\Module
 {
-  protected static $hModule = [];
+  /**
+   * The admin group that this module belongs to
+   *
+   * @var string
+   */
   protected $sGroup = 'Site';
+
+  /**
+   * A list of the actual module settings
+   *
+   * @var array
+   */
   protected $hSettings =
   [
     'baseuri' => '',
@@ -21,6 +31,12 @@ class Template extends \Omniverse\Module
     'templatedir' => '',
     'defaulttemplate' => ''
   ];
+
+  /**
+   * List of fields used by module settings
+   *
+   * @var array
+   */
   protected $hFields =
   [
     'baseuri' => ['Type' => 'char'],
@@ -29,6 +45,12 @@ class Template extends \Omniverse\Module
     'defaulttemplate' => ['Type' => 'char']
   ];
 
+  /**
+   * Instantiate the template module
+   *
+   * @param string $sType (optional) - The type of module this should become
+   * @param \Omniverse\Controller $oController
+   */
   public function __construct($sType = null, \Omniverse\Controller $oController = null)
   {
     parent::__construct($sType, $oController);

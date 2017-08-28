@@ -12,8 +12,18 @@ namespace Omniverse\Item;
  */
 class States extends \Omniverse\Item
 {
-  protected static $hState = array();
+  /**
+   * List of states by zip code
+   *
+   * @var array
+   */
+  protected static $hState = [];
 
+  /**
+   * Return the list of states 
+   *
+   * @return array
+   */
   public static function getStateList()
   {
     if (empty(self::$hState))

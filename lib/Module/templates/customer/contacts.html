@@ -2,7 +2,7 @@
 Sorry! {{currentItem.Name}} has no contacts at this time!
 {% else %}
 {{table.makeSortable}}{{table.addClass('OmnisysSortGrid')}}{% set x = table.startHeader %}{% set sPopup = userModule.owner.usePopups ? 'showOmnisys_Popup();' : '' %}{% set sDelete = userModule.allow('Delete') ? '<span class="OmnisysSortGridDelete" onClick="' ~ sPopup ~ "document.getElementById('Omnisys_SortGrid_Edit').name='Delete';document.getElementById('EditColumn').submit(); \">Delete</span>" : '' %}{% set x = table.addCell(sDelete, false) %}
-{% for column in dataColumns %}{{ userModule.processSearch_GridHeader(table, column) }}{% endfor %}
+{% for column in dataColumns %}{{ userModule.processSearchGridHeader(table, column) }}{% endfor %}
 {{ table.EndRow }}
 {% set bEven = true %}
 {% for item in data %}
@@ -10,7 +10,7 @@ Sorry! {{currentItem.Name}} has no contacts at this time!
   {% set sEvenOdd = bEven ? 'even' : 'odd' %}
   {% set bEven = not bEven %}
   {{ oRow.setParam('class', sEvenOdd) }}
-  {% set x = table.addCell(userModule.processSearch_GridRowControl(idColumn, item.ID)) %}
+  {% set x = table.addCell(userModule.processSearchGridRowControl(idColumn, item.ID)) %}
   {% for column in dataColumns %}
     {% set x = table.addCell(userModule.getColumnValue(item, column)) %}
   {% endfor %}

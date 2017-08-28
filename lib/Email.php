@@ -62,6 +62,13 @@ class Email
   protected $sAttachmentPath = '';
 
   /**
+   * The mime boundary used  attachments
+   *
+   * @var string
+   */
+  protected $sMimeBoundary = '';
+
+  /**
    * Validate the specified email address
    *
    * @param string $sEmailAddress
@@ -168,6 +175,14 @@ class Email
   }
 
   /**
+   * Constructor
+   */
+  public function __construct()
+  {
+    $this->sMimeBoundary = "::[" . md5(time()) . "]::";
+  }
+
+  /**
    * Add one or more email addresses to the "To" array
    *
    * @param string|array $xEmailAddress - Either a single address or an array of addresses
@@ -189,6 +204,16 @@ class Email
     }
 
     $this->aTo = array_unique($this->aTo);
+  }
+
+  /**
+   * Return a comma separated list of to email addresses
+   *
+   * @return string
+   */
+  public function getTo()
+  {
+    return implode(', ', $this->aTo);
   }
 
   /**
@@ -270,6 +295,43 @@ class Email
   }
 
   /**
+   *
+   * @return string
+   */
+  public function getBody()
+  {
+    if (is_readable($this->sAttachmentPath))
+    {
+      $sFileName = basename($this->sAttachmentPath);
+      $rFile = fopen($this->sAttachmentPath, 'r');
+      $sAttachmentRaw = fread($rFile, filesize($this->sAttachmentPath));
+      $sAttachment = chunk_split(base64_encode($sAttachmentRaw));
+      fclose($rFile);
+
+      $sBody  = "";
+      $sBody .= "--" . $this->sMimeBoundary . "\r\n";
+      $sBody .= "Content-Type: text/plain; charset=\"iso-8859-1\"\r\n";
+      $sBody .= "Content-Transfer-Encoding: 7bit\r\n";
+      $sBody .= "\r\n";
+      $sBody .= $this->sBody;
+      $sBody .= "\r\n";
+      $sBody .= "--" . $this->sMimeBoundary . "\r\n";
+      $sBody .= "Content-Type: application/octet-stream;";
+      $sBody .= "name=\"$sFileName\"\r\n";
+      $sBody .= "Content-Transfer-Encoding: base64\r\n";
+      $sBody .= "Content-Disposition: attachment;";
+      $sBody .= " filename=\"$sFileName\"\r\n";
+      $sBody .= "\r\n";
+      $sBody .= $sAttachment;
+      $sBody .= "\r\n";
+      $sBody .= "--" . $this->sMimeBoundary . "--\r\n";
+      return $sBody;
+    }
+
+    return $this->sBody;
+  }
+
+  /**
    * Set the attachment patch to the specified path
    *
    * @param string $sAttachmentPath
@@ -279,18 +341,8 @@ class Email
     $this->sAttachmentPath = trim($sAttachmentPath);
   }
 
-  /**
-   * Send the currerntly configured email
-   *
-   * @return boolean - true on success and false on failure
-   */
-  function send()
+  public function getHeaders()
   {
-    if (empty($this->aTo))
-    {
-      return false;
-    }
-
     $sHeader = 'From: ' . $this->sFrom . "\r\n";
 
     if (!empty($this->aCC))
@@ -305,42 +357,30 @@ class Email
 
     if (is_readable($this->sAttachmentPath))
     {
-      $sFileName = basename($this->sAttachmentPath);
-      $rFile = fopen($this->sAttachmentPath, "r");
-      $sAttachment = fread($rFile, filesize($this->sAttachmentPath));
-      $sAttachment = chunk_split(base64_encode($sAttachment));
-      fclose($rFile);
-
-      $sMimeBoundary = "::[" . md5(time()) . "]::";
-
       $sHeaders .= "MIME-Version: 1.0\r\n";
-      $sHeaders .= "Content-Type: multipart/mixed; boundary=\"" . $sMimeBoundary . "\";\r\n";
-
-      $sBody  = "";
-      $sBody .= "--" . $sMimeBoundary . "\r\n";
-      $sBody .= "Content-Type: text/plain; charset=\"iso-8859-1\"\r\n";
-      $sBody .= "Content-Transfer-Encoding: 7bit\r\n";
-      $sBody .= "\r\n";
-      $sBody .= $this->sBody;
-      $sBody .= "\r\n";
-      $sBody .= "--" . $sMimeBoundary . "\r\n";
-      $sBody .= "Content-Type: application/octet-stream;";
-      $sBody .= "name=\"$sFileName\"\r\n";
-      $sBody .= "Content-Transfer-Encoding: base64\r\n";
-      $sBody .= "Content-Disposition: attachment;";
-      $sBody .= " filename=\"$sFileName\"\r\n";
-      $sBody .= "\r\n";
-      $sBody .= $sAttachment;
-      $sBody .= "\r\n";
-      $sBody .= "--" . $sMimeBoundary . "--\r\n";
+      $sHeaders .= "Content-Type: multipart/mixed; boundary=\"" . $this->sMimeBoundary . "\";\r\n";
     }
     else
     {
       $sHeader .= "Content-type: text/html; charset=utf8\r\n";
-      $sBody = $this->sBody;
     }
 
     $sHeader .= "X-Mailer: Omnisys\r\n";
-    return mail(implode(', ', $this->aTo), $this->sSubject, $sBody, $sHeader);
+    return $sHeader;
+  }
+
+  /**
+   * Send the currently configured email
+   *
+   * @return boolean - true on success and false on failure
+   */
+  function send()
+  {
+    if (empty($this->aTo))
+    {
+      return false;
+    }
+
+    return mail($this->getTo(), $this->sSubject, $this->getBody(), $this->getHeaders());
   }
 }

@@ -12,13 +12,16 @@ namespace Omniverse\Module;
  */
 class Position extends \Omniverse\Module
 {
-  protected static $hModule = [];
+  /**
+   * The admin group that this module belongs to
+   *
+   * @var string
+   */
   protected $sGroup = 'Site';
 
   /**
    * Generate and return the HTML for the specified form field based on the specified information
    *
-   * @staticvar boolean $bDone
    * @param string $sName
    * @param string $sValue
    * @param array $hData

@@ -19,6 +19,6 @@ class Customer extends \Omniverse\Item
    */
   public function getContactList()
   {
-    return parent::getList('user', "SELECT * FROM User U, Customer_User CU WHERE U.UserID = CU.UserID AND U.Type = 'contact' AND CU.CustomerID = ?", [$this->id], $this->getDB());
+    return parent::getList('user', "SELECT * FROM User U, Customer_User CU WHERE U.UserID = CU.UserID AND U.Type = 'contact' AND CU.CustomerID = $this->id", $this->getDB());
   }
 }

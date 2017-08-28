@@ -1,24 +1,93 @@
 <?php
 namespace Omniverse\Widget;
 
+/**
+ * Omniverse Window Widget
+ *
+ * A wrapper around an new window
+ *
+ * @todo This class needs to be reworked to be more modern and further DocBlocks will wait until *after* the rewrite
+ *
+ * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @version $Revision: 1.1 $
+ * @package Omniverse
+ */
 class Window extends \Omniverse\Widget
 {
+  /**
+   * The configuration data
+   *
+   * @var array
+   */
   protected $hConfig = [];
-  protected $iWidth = 500;
-  protected $iHeight = 300;
-  protected $iTop = 100;
-  protected $iLeft = 100;
-  protected $sURL = '';
-  protected $sStatus = '0';
-  protected $sResizable = '0';
-  protected $sScrollBars = '0';
-  protected $sToolbar = '0';
-  protected $sMenubar = '0';
-  protected $sLocation = '0';
-  protected $sScriptName = NULL;
-  protected $sContent = NULL;
-  protected $sOnClick = NULL;
 
+  /**
+   * The window width
+   *
+   * @var integer
+   */
+  protected $iWidth = 500;
+
+  /**
+   * The window height
+   *
+   * @var integer
+   */
+  protected $iHeight = 300;
+
+  /**
+   * The y-coordinate of the top-left hand corner of the window
+   *
+   * @var integer
+   */
+  protected $iTop = 100;
+
+  /**
+   * The x-coordinate of the top-left hand corner of the window
+   *
+   * @var integer
+   */
+  protected $iLeft = 100;
+
+  /**
+   * The URL to be display in the window, if there is one
+   *
+   * @var string
+   */
+  protected $sURL = '';
+
+  /**
+   *
+   *
+   * @var string
+   */
+  protected $sStatus = '0';
+
+  protected $sResizable = '0';
+
+  protected $sScrollBars = '0';
+
+  protected $sToolbar = '0';
+
+  protected $sMenubar = '0';
+
+  protected $sLocation = '0';
+
+  protected $sScriptName = null;
+
+  protected $sContent = null;
+
+  protected $sOnClick = null;
+
+  /**
+   * Constructor
+   *
+   * It increments the widget counter and generates a unique (but human readable) name.
+   *
+   * @param string $sName (optional)
+   * @param \Omniverse\Controller $oController (optional)
+   * @throws Omniverse\Exception\Object
+   */
   public function __construct($sName = null, \Omniverse\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
@@ -26,16 +95,22 @@ class Window extends \Omniverse\Widget
     $this->aScript = array($this->sWebShareDir . "/window.js");
   }
 
+  /**
+   * Stub create method that will be overridden by a child class.
+   *
+   * @return boolean
+   */
   protected function init()
   {
     $this->sScript .= "var {$this->sID}Target = document.getElementById('{$this->sID}');\n";
     $this->sScript .= "function show{$this->sID}(sURL)\n";
     $this->sScript .= "{\n";
-    $sURL = NULL;
+    $sURL = null;
 
     if (!empty($this->sURL))
     {
       $sURL = $this->sURL;
+
       if (count($this->hConfig) > 0)
       {
         $sURL .= (strrpos($this->sURL, "?") === FALSE ? '?' : '&');
@@ -62,7 +137,8 @@ class Window extends \Omniverse\Widget
 
   protected function _create_BETA()
   {
-    $sURL = NULL;
+    $sURL = null;
+
     if (!empty($this->sURL))
     {
       $sURL = $this->sURL;
@@ -81,7 +157,7 @@ class Window extends \Omniverse\Widget
     return TRUE;
   }
 
-  public function setURL($sURL=NULL)
+  public function setURL($sURL=null)
   {
     $this->sURL = $sURL;
   }
@@ -91,6 +167,7 @@ class Window extends \Omniverse\Widget
     static $iButtonCount = 0;
     $sButton = "<input type=\"Button\" name=\"".$this->sName."Button$iButtonCount\" id=\"".$this->sID."Button$iButtonCount\" value=\"$sText\"$this->sOnClick>";
     $iButtonCount++;
+
     if ($this->bInit)
     {
       echo $sButton;
@@ -104,8 +181,9 @@ class Window extends \Omniverse\Widget
   public function image($sSrc)
   {
     static $iImageCount = 0;
-    $sImage = "<img src=\"$sSrc\" name=\"".$this->sName."Image$iImageCount\" id=\"".$this->sID."Image$iImageCount\"$this->sOnClick>";
+    $sImage = "<img src=\"$sSrc\" name=\"" . $this->sName . "Image$iImageCount\" id=\"" .$this->sID. "Image$iImageCount\"$this->sOnClick>";
     $iImageCount++;
+
     if ($this->bInit)
     {
       echo $sImage;
@@ -118,7 +196,8 @@ class Window extends \Omniverse\Widget
 
   public function text($sText)
   {
-    $sText = "<a href=\"javascript:show".$this->sID."();\">$sText</a>";
+    $sText = "<a href=\"javascript:show" . $this->sID . "();\">$sText</a>";
+
     if ($this->bInit)
     {
       echo $sText;

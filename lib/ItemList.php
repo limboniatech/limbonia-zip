@@ -47,7 +47,7 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 	 */
 	protected function getItem(array $hItem = [])
 	{
-		return empty($hItem) ? ['id' => 42] : Item::fromArray($this->sTable, $hItem, $this->oResult->getDatabase());
+		return empty($hItem) ? null : Item::fromArray($this->sTable, $hItem, $this->oResult->getDatabase());
 	}
 
   /**

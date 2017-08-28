@@ -3,7 +3,7 @@ Sorry!  Your {{module.name | lower}} {{method | lower}} has no results at this t
 Try a{% if method != 'List' %} different{% endif %} <a href="?Admin=Display&Module={{module.name}}&Display=Search">search</a>?
 {% else %}
 {{table.makeSortable}}{{table.addClass('OmnisysSortGrid')}}{% set x = table.startHeader %}{% set sPopup = module.owner.usePopups ? 'showOmnisys_Popup();' : '' %}{% set sDelete = module.allow('Delete') ? '<span class="OmnisysSortGridDelete" onClick="' ~ sPopup ~ "document.getElementById('Omnisys_SortGrid_Edit').name='Delete';document.getElementById('EditColumn').submit(); \">Delete</span>" : '' %}{% set x = table.addCell(sDelete, false) %}
-{% for column in dataColumns %}{{ module.processSearch_GridHeader(table, column) }}{% endfor %}
+{% for column in dataColumns %}{{ module.processSearchGridHeader(table, column) }}{% endfor %}
 {{ table.endRow }}
 {% set bEven = true %}
 {% for item in data %}
@@ -11,7 +11,7 @@ Try a{% if method != 'List' %} different{% endif %} <a href="?Admin=Display&Modu
   {% set sEvenOdd = bEven ? 'even' : 'odd' %}
   {% set bEven = not bEven %}
   {{ oRow.setParam('class', sEvenOdd) }}
-  {% set x = table.addCell(module.processSearch_GridRowControl(idColumn, item.ID)) %}
+  {% set x = table.addCell(module.processSearchGridRowControl(idColumn, item.ID)) %}
   {% for column in dataColumns %}
     {% set x = table.addCell(module.getColumnValue(item, column)) %}
   {% endfor %}

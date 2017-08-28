@@ -1,4 +1,6 @@
 <?php
+namespace Omniverse\Tag;
+
 /**
  * Omniverse Table Header Class
  *
@@ -7,13 +9,15 @@
  * @author Lonnie Blansett <lonnie@omniverserpg.com>
  * @version $Revision: 1.1 $
  * @package Omniverse
- */
-namespace Omniverse\Tag;
-
-class TableHeader extends \Omniverse\Tag
+ */class TableHeader extends \Omniverse\Tag
 {
+  /**
+   * Constructor
+   *
+   * Construct a "th" tag
+   */
   public function __construct()
   {
-    \Omniverse\Tag::__construct('th');
+    parent::__construct('th');
   }
 }

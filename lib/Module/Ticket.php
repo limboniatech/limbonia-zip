@@ -12,6 +12,11 @@ namespace Omniverse\Module;
  */
 class Ticket extends \Omniverse\Module
 {
+  /**
+   * Lists of columns to ignore when filling template data
+   *
+   * @var array
+   */
   protected $aIgnore =
   [
     'Edit' =>
@@ -47,6 +52,12 @@ class Ticket extends \Omniverse\Module
     ],
     'View' => []
   ];
+
+  /**
+   * List of column names in nthe order required
+   *
+   * @var array
+   */
   protected $aColumnOrder =
   [
     'Status',
@@ -55,12 +66,29 @@ class Ticket extends \Omniverse\Module
     'Subject',
     'CategoryID'
   ];
+
+  /**
+   * List of sub-menu options
+   *
+   * @var array
+   */
   protected $aSubMenuItems = ['View', 'Edit', 'Attachments', 'Relationships'];
+
+  /**
+   * List of methods that are allowed to run
+   *
+   * @var array
+   */
   protected $aAllowedMethods = ['Search', 'Create', 'EditDialog', 'EditColumn', 'Edit', 'List', 'View', 'Attachments', 'Relationships', 'Watchers'];
 
-  protected function processSearch_getCriteria()
+  /**
+   * Return the module criteria
+   *
+   * @return array
+   */
+  protected function processSearchGetCriteria()
   {
-    $hCriteria = parent::processSearch_getCriteria();
+    $hCriteria = parent::processSearchGetCriteria();
 
     //if the search criteria is empty then assign a default
     //of no closed tickets.
@@ -72,13 +100,21 @@ class Ticket extends \Omniverse\Module
     return $hCriteria;
   }
 
-  protected function processCreate_getData()
+  /**
+   * Generate and return the data for the "Create" process
+   *
+   * @return array
+   */
+  protected function processCreateGetData()
   {
-    $hData = parent::processCreate_getData();
-    $hData['CreatorID'] = $this->getController()->user()->ID;
+    $hData = parent::processCreateGetData();
+    $hData['CreatorID'] = $this->getController()->user()->id;
     return $hData;
   }
 
+  /**
+   * Prepare the template for display based on the current action and current method
+   */
   public function prepareTemplate()
   {
     if ($this->sCurrentAction == 'Process')
@@ -119,7 +155,7 @@ class Ticket extends \Omniverse\Module
           try
           {
             $oParent = $this->getController()->itemFromId('ticket', $_POST['SetParent']);
-            $this->oItem->ParentID = $oParent->ID;
+            $this->oItem->parentId = $oParent->id;
             $this->oItem->save();
             $this->getController()->templateData('success', "Successfully set parent ticket.");
           }
@@ -148,12 +184,12 @@ class Ticket extends \Omniverse\Module
           {
             $oParent = $this->getController()->itemFromId('ticket', $_GET['RemoveParent']);
 
-            if ($this->oItem->ParentID != $oParent->ID)
+            if ($this->oItem->parentId != $oParent->id)
             {
               throw new Exception("The parent id to be removed does not match the actual parent id.");
             }
 
-            $this->oItem->ParentID = 0;
+            $this->oItem->parentId = 0;
             $this->oItem->save();
             $this->getController()->templateData('success', "Successfully removed parent ticket.");
           }
@@ -181,8 +217,8 @@ class Ticket extends \Omniverse\Module
       }
       elseif ($this->sCurrentMethod == 'Watchers')
       {
-        $hPost = $this->edit_getData();
-        $iUser = $this->getController()->user()->ID;
+        $hPost = $this->editGetData();
+        $iUser = $this->getController()->user()->id;
 
         if (isset($hPost['submit']) && $hPost['submit'] == 'Watch this ticket')
         {
@@ -201,18 +237,35 @@ class Ticket extends \Omniverse\Module
     return parent::prepareTemplate();
   }
 
-  protected function edit_getData()
+  /**
+   * Return the appropriate data for the current edit
+   *
+   * @return array
+   */
+  protected function editGetData()
   {
-    $hPost = parent::edit_getData();
-    $hPost['UserID'] = $this->getController()->user()->ID;
+    $hPost = parent::editGetData();
+    $hPost['UserID'] = $this->getController()->user()->id;
     return $hPost;
   }
 
+  /**
+   * Return the subject of this module's current ticket, if there is one
+   *
+   * @return string
+   */
   public function getCurrentItemTitle()
   {
-    return $this->oItem->Subject;
+    return $this->oItem->subject;
   }
 
+  /**
+   * Generate and return the value of the specified column
+   *
+   * @param \Omniverse\Item $oItem
+   * @param string $sColumn
+   * @return mixed
+   */
   public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
   {
     if ($sColumn == 'ReleaseID')
@@ -222,15 +275,15 @@ class Ticket extends \Omniverse\Module
 
     if ($sColumn == 'CreatorID')
     {
-      return $oItem->Creator->ID == 0 ? 'None' : $oItem->Creator->Name;
+      return $oItem->creator->id == 0 ? 'None' : $oItem->creator->name;
     }
 
-    if (in_array($sColumn, array('Type', 'Status', 'Priority', 'Severity', 'Projection', 'DevStatus', 'QualityStatus')))
+    if (in_array($sColumn, ['Type', 'Status', 'Priority', 'Severity', 'Projection', 'DevStatus', 'QualityStatus']))
     {
       return ucfirst(parent::getColumnValue($oItem, $sColumn));
     }
 
-    if (in_array($sColumn, array('LastUpdate', 'CompletionTime')))
+    if (in_array($sColumn, ['LastUpdate', 'CompletionTime']))
     {
       $sValue = parent::getColumnValue($oItem, $sColumn);
       return $sValue == '0000-00-00 00:00:00' || empty($sValue) ? '' : $sValue;
@@ -245,7 +298,16 @@ class Ticket extends \Omniverse\Module
     return parent::getColumnValue($oItem, $sColumn);
   }
 
-  public function getFormField($sName, $sValue=NULL, $hData=array(), $bInTable=false)
+  /**
+   * Generate and return the HTML for the specified form field based on the specified information
+   *
+   * @param string $sName
+   * @param string $sValue
+   * @param array $hData
+   * @param boolean $bInTable - Should the returned HTML use a table to contain the data
+   * @return string
+   */
+  public function getFormField($sName, $sValue = null, $hData = [], $bInTable = false)
   {
     if ($sName == 'CategoryID')
     {
@@ -255,7 +317,7 @@ class Ticket extends \Omniverse\Module
 
       foreach ($oList as $oTempItem)
       {
-        $oSelect->addOption($oTempItem->Name, $oTempItem->ID);
+        $oSelect->addOption($oTempItem->name, $oTempItem->id);
       }
 
       if (!empty($sValue))
@@ -267,10 +329,8 @@ class Ticket extends \Omniverse\Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Category:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Category:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Category:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'OwnerID')
@@ -290,10 +350,8 @@ class Ticket extends \Omniverse\Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Owner:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Owner:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Owner:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'ParentID')
@@ -311,10 +369,8 @@ class Ticket extends \Omniverse\Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Update:</th><td class=\"OmnisysFieldValue\">" . $oText . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update:</span><span class=\"OmnisysFieldValue\">" . $oText . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update:</span><span class=\"OmnisysFieldValue\">" . $oText . "</span></div>";
     }
 
     if ($sName == 'UpdateType')
@@ -325,26 +381,21 @@ class Ticket extends \Omniverse\Module
         {
           return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Update Type:</th><td class=\"OmnisysFieldValue\">Private<input type=\"hidden\" name=\"UpdateType\" value=\"private\" /></td></tr>";
         }
-        else
-        {
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update Type:</span><span class=\"OmnisysFieldValue\">Private<input type=\"hidden\" name=\"UpdateType\" value=\"private\" /></span></div>";
-        }
+
+        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update Type:</span><span class=\"OmnisysFieldValue\">Private<input type=\"hidden\" name=\"UpdateType\" value=\"private\" /></span></div>";
       }
 
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
       $oSelect->addOption('Public', 'public');
       $oSelect->addOption('Private', 'private');
-
       $oSelect->setSelected('public');
 
       if ($bInTable)
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Update Type:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update Type:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update Type:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'TimeWorked')
@@ -353,10 +404,8 @@ class Ticket extends \Omniverse\Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Time Worked:</th><td class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Time Worked:</span><span class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Time Worked:</span><span class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></span></div>";
     }
 
     static $bSoftwareDone = false;
@@ -532,18 +581,22 @@ class Ticket extends \Omniverse\Module
       {
         return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Watchers:</th><td class=\"OmnisysFieldValue\">$sWatcherList<br /><form method=\"post\" action=\"?Admin=Process&Module=Ticket&Process=Watchers&TicketID={$this->oItem->id}\"><input type=\"submit\" name=\"$this->sModuleName[submit]\" value=\"$sButtonValue\"></form></td></tr>";
       }
-      else
-      {
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Watchers:</span><span class=\"OmnisysFieldValue\">$sWatcherList<br /><form method=\"post\" action=\"?Admin=Process&Module=Ticket&Process=Watchers&TicketID={$this->oItem->id}\"><input type=\"submit\" name=\"$this->sModuleName[submit]\" value=\"$sButtonValue\"></form></span></div>";
-      }
+
+      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Watchers:</span><span class=\"OmnisysFieldValue\">$sWatcherList<br /><form method=\"post\" action=\"?Admin=Process&Module=Ticket&Process=Watchers&TicketID={$this->oItem->id}\"><input type=\"submit\" name=\"$this->sModuleName[submit]\" value=\"$sButtonValue\"></form></span></div>";
     }
 
     return parent::getFormField($sName, $sValue, $hData, $bInTable);
   }
 
+  /**
+   * Generate and return the column title from the specified column name
+   *
+   * @param string $sColumn
+   * @return string
+   */
   public function getColumnTitle($sColumn)
   {
-    if (in_array($sColumn, array('CreatorID', 'CategoryID', 'ParentID', 'KeyID', 'OwnerID')))
+    if (in_array($sColumn, ['CreatorID', 'CategoryID', 'ParentID', 'KeyID', 'OwnerID']))
     {
       return preg_replace('/ID$/', '', $sColumn);
     }

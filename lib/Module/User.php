@@ -12,6 +12,11 @@ namespace Omniverse\Module;
  */
 class User extends \Omniverse\Module
 {
+  /**
+   * Lists of columns to ignore when filling template data
+   *
+   * @var array
+   */
   protected $aIgnore =
   [
     'Edit' =>
@@ -40,7 +45,13 @@ class User extends \Omniverse\Module
     ]
   ];
 
-  public function __construct($sType=null, \Omniverse\Controller $oController = null)
+  /**
+   * Instantiate a module
+   *
+   * @param string $sType (optional) - The type of module this should become
+   * @param \Omniverse\Controller $oController
+   */
+  public function __construct($sType = null, \Omniverse\Controller $oController = null)
   {
     $this->aAllowedMethods[] = 'Resources';
     $this->aSubMenuItems[] = 'Resources';
@@ -49,13 +60,16 @@ class User extends \Omniverse\Module
     parent::__construct($sType, $oController);
   }
 
+  /**
+   * Prepare the template for display based on the current action and current method
+   */
   public function prepareTemplate()
   {
     if ($this->sCurrentAction == 'Process' && $this->sCurrentMethod == 'Resources')
     {
       try
       {
-        $hData = $this->edit_getData();
+        $hData = $this->editGetData();
         $this->oItem->setResourceKeys($hData['ResourceKey']);
         $this->getController()->templateData('success', "This user's resource update has been successful.");
       }
@@ -111,9 +125,16 @@ class User extends \Omniverse\Module
     return parent::prepareTemplate();
   }
 
-  protected function processSearch_getData($xSearch)
+  /**
+   * Perform the search based on the specified criteria and return the result
+   *
+   * @param string|array $xSearch
+   * @return \Omniverse\ItemList
+   */
+  protected function processSearchGetData($xSearch)
   {
     $hSearch = (array)$xSearch;
+
     if (!isset($hSearch['Email']))
     {
       $hSearch['Email'] = '!=:MasterAdmin';
@@ -123,12 +144,19 @@ class User extends \Omniverse\Module
       $hSearch['Email'] = '';
     }
 
-    return parent::processSearch_getData($hSearch);
+    return parent::processSearchGetData($hSearch);
   }
 
+  /**
+   * Generate and return the value of the specified column
+   *
+   * @param \Omniverse\Item $oItem
+   * @param string $sColumn
+   * @return mixed
+   */
   public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
   {
-    if (in_array($sColumn, array('Active', 'Visible')))
+    if (in_array($sColumn, ['Active', 'Visible']))
     {
       return $oItem->__get($sColumn) ? 'Yes' : 'No';
     }

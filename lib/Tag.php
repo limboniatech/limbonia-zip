@@ -158,7 +158,7 @@ class Tag
   }
 
   /**
-   * Return the HTML representaton of this tag
+   * Return the HTML representation of this tag
    *
    * @return string
    */
@@ -411,13 +411,19 @@ class Tag
    * Remove the specified content from this tag
    *
    * @param string|Tag $xItem - Either a string of data or another tag
+   * @return integer The index of the removed content or false if there is none
    */
   protected function removeContent($xItem)
   {
-    if ($iKey = array_search($xItem, $this->aContent))
+    $iKey = array_search($xItem, $this->aContent);
+
+    if ($iKey === false)
     {
-      unset($this->aContent[$iKey]);
+      return false;
     }
+
+    unset($this->aContent[$iKey]);
+    return $iKey;
   }
 
   /**

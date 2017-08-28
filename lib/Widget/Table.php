@@ -2,7 +2,7 @@
 /**
  * Omniverse Table Class
  *
- * This is a light wrapper around an HTML table with some javascript for sorting
+ * This is a light wrapper around an HTML table with some JavaScript for sorting
  *
  * @author Lonnie Blansett <lonnie@omniverserpg.com>
  * @version $Revision: 1.4 $
@@ -12,11 +12,50 @@ namespace Omniverse\Widget;
 
 class Table extends \Omniverse\Widget
 {
+  /**
+   * A list of rows to put into the table head
+   *
+   * @var array
+   */
   protected $aHead = null;
+
+  /**
+   * A list of rows to put into the table foot
+   *
+   * @var array
+   */
   protected $aFoot = null;
+
+  /**
+   * The current row object
+   *
+   * @var \Omniverse\Tag
+   */
   protected $oCurrentRow = null;
+
+  /**
+   * The type of the current row... either  head, foot or null
+  *
+   * @var string
+   */
   protected $sCurrentType = null;
 
+  /**
+   * Generate and return the HTML needed to create the sort header
+   *
+   * @param string $sText
+   * @return string
+   */
+  public static function generateSortHeader($sText)
+  {
+    return "<span class=\"sorttable_sort_anchor\">$sText</span>";
+  }
+
+  /**
+   * Stub create method that will be overridden by a child class.
+   *
+   * @return boolean
+   */
   protected function init()
   {
     $sParamList = $this->getParam();
@@ -66,18 +105,32 @@ class Table extends \Omniverse\Widget
     return true;
   }
 
+  /**
+   * Make the current table sortable
+   */
   public function makeSortable()
   {
     \Omniverse\Widget::includeScript($this->sWebShareDir . "/sorttable.js");
     $this->addClass('sortable');
   }
 
+  /**
+   * Is this table already sortable?
+   *
+   * @return boolean
+   */
   public function isSortable()
   {
    return preg_match("#\bsortable\b#", $this->getRawParam('class'));
   }
 
-  public function startRow($sType=null)
+  /**
+   * Start a new row of the specified type for this table abd return the row object
+   *
+   * @param string $sType
+   * @return \Omniverse\Tag
+   */
+  public function startRow($sType = null)
   {
     $this->endRow();
     $this->sCurrentType = strtolower($sType);
@@ -85,17 +138,34 @@ class Table extends \Omniverse\Widget
     return $this->oCurrentRow;
   }
 
+  /**
+   * Start a row of type header
+   *
+   * @return \Omniverse\Tag
+   */
   public function startHeader()
   {
     return $this->startRow('head');
   }
 
+  /**
+   * Start a row of type footer
+   *
+   * @return \Omniverse\Tag
+   */
   public function startFooter()
   {
     return $this->startRow('foot');
   }
 
-  public function addCell($xData, $xSort=null)
+  /**
+   * Add a new cell to the current row
+   *
+   * @param mixed $xData
+   * @param boolean|string $xSort (optional) - Pass false to make the column unsortable or a string to add a custom search key.  Applies only to a sortable table.
+   * @return boolean
+   */
+  public function addCell($xData, $xSort = null)
   {
     if (!($this->oCurrentRow instanceof \Omniverse\Tag))
     {
@@ -120,7 +190,7 @@ class Table extends \Omniverse\Widget
         $xData->addContent($oData);
       }
 
-      if ($this->IsSortable())
+      if ($this->isSortable())
       {
         if ($xSort === false)
         {
@@ -140,6 +210,9 @@ class Table extends \Omniverse\Widget
     return false;
   }
 
+  /**
+   * End the current row
+   */
   public function endRow()
   {
     if ($this->sCurrentType == 'head')
@@ -159,6 +232,11 @@ class Table extends \Omniverse\Widget
     $this->sCurrentType = null;
   }
 
+  /**
+   * Add a whole row of regular data, all at once
+   *
+   * @param array $aRow
+   */
   public function addRow($aRow)
   {
     foreach ($aRow as $sCell)
@@ -169,17 +247,22 @@ class Table extends \Omniverse\Widget
     $this->endRow();
   }
 
-  public static function generateSortHeader($sText)
-  {
-    return "<span class=\"sorttable_sort_anchor\">$sText</span>";
-  }
-
+  /**
+   * Add a whole row of regular data to the table head, all at once
+   *
+   * @param array $aRow
+   */
   public function addHeader($aRow)
   {
     $this->startHeader();
     $this->addRow($aRow);
   }
 
+  /**
+   * Add a whole row of regular data to the table foot, all at once
+   *
+   * @param array $aRow
+   */
   public function addFooter($aRow)
   {
     $this->startFooter();

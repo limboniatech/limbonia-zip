@@ -12,9 +12,23 @@ namespace Omniverse\Module;
  */
 class Customer extends \Omniverse\Module
 {
-  protected $aSubMenuItems = array('View', 'Edit', 'Contacts', 'Attachments', 'Reports');
-  protected $aAllowedMethods = array('Search', 'Create', 'EditDialog', 'EditColumn', 'Edit', 'List', 'View', 'Contacts', 'Attachments', 'Reports', 'AddContact');
+  /**
+   * List of sub-menu options
+   *
+   * @var array
+   */
+  protected $aSubMenuItems = ['View', 'Edit', 'Contacts', 'Attachments', 'Reports'];
 
+  /**
+   * List of methods that are allowed to run
+   *
+   * @var array
+   */
+  protected $aAllowedMethods = ['Search', 'Create', 'EditDialog', 'EditColumn', 'Edit', 'List', 'View', 'Contacts', 'Attachments', 'Reports', 'AddContact'];
+
+  /**
+   * Prepare the template for display based on the current action and current method
+   */
   public function prepareTemplate()
   {
     if ($this->sCurrentMethod == 'Contacts')
@@ -59,6 +73,13 @@ class Customer extends \Omniverse\Module
     return parent::prepareTemplate();
   }
 
+  /**
+   * Generate and return the value of the specified column
+   *
+   * @param \Omniverse\Item $oItem
+   * @param string $sColumn
+   * @return mixed
+   */
   public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
   {
     if (in_array($sColumn, array('Active')))

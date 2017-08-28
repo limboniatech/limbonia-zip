@@ -1,6 +1,17 @@
 <?php
 namespace Omniverse\Widget\Window;
 
+/**
+ * Omniverse Calendar Widget
+ *
+ * A wrapper around a calendar window
+ *
+ * @todo This class needs to be reworked to be more modern and further DocBlocks will wait until *after* the rewrite
+ *
+ * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @version $Revision: 1.1 $
+ * @package Omniverse
+ */
 class Calendar extends \Omniverse\Widget\Window
 {
   protected $iWidth = 200;

@@ -1,4 +1,6 @@
 <?php
+namespace Omniverse\Tag;
+
 /**
  * Omniverse Table Cell Class
  *
@@ -8,16 +10,23 @@
  * @version $Revision: 1.1 $
  * @package Omniverse
  */
-namespace Omniverse\Tag;
-use Omniverse\Tag;
-
-class TableCell extends Tag
+class TableCell extends \Omniverse\Tag
 {
+  /**
+   * Constructor
+   *
+   * Construct a "td" tag
+   */
   public function __construct()
   {
     parent::__construct('td');
   }
 
+  /**
+   * Return the HTML representation of this tag
+   *
+   * @return string
+   */
   protected function toString()
   {
     $sParamList = $this->getParam();

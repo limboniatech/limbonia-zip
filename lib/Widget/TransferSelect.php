@@ -1,39 +1,54 @@
 <?php
 namespace Omniverse\Widget;
 
+/**
+ * Omniverse TransferSelect Widget
+ *
+ * This is a multi-level HTML + JavaScript construct that consists of two
+ * multi-select boxes that allow the transfer of data from one to the other then
+ * before they are submitted to the parent form.
+ *
+ * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @version $Revision: 1.1 $
+ * @package Omniverse
+ */
 class TransferSelect extends \Omniverse\Widget
 {
   /**
-  * @var object $oFrom - Select box that the select options come *from*.
-  * @access protected
-  */
+   * @var \Omniverse\Widget\Select $oFrom - Select box that the select options come *from*.
+   */
   protected $oFrom = NULL;
 
   /**
-  * @var object $oTo - Select box that the select options go *to*.
-  * @access protected
-  */
+   * @var object $oTo - Select box that the select options go *to*.
+   */
   protected $oTo = NULL;
 
   /**
-  * Constructor
-  *
-  * Call the parent constructor and create the child select objects.
-  *
-  * @access public
-  */
+   * Constructor
+   *
+   * Call the parent constructor and create the child select objects.
+   *
+   * @param type $sName
+   * @param \Omniverse\Controller $oController
+   */
   public function __construct($sName = null, \Omniverse\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->oFrom = $this->getController()->widgetFactory('Select', 'From_' . $this->sName);
     $this->sFrom = $this->oFrom->getID();
-    $this->oFrom->IsMultiple(TRUE);
+    $this->oFrom->isMultiple(TRUE);
     $this->oTo = $this->getController()->widgetFactory('Select', $this->sName);
-    $this->oTo->IsMultiple(TRUE);
+    $this->oTo->isMultiple(TRUE);
     $this->sTo = $this->oTo->getID();
   }
 
-  protected function init()
+   /**
+   * Stub create method that will be overridden by a child class.
+   *
+   * @return boolean
+   */
+ protected function init()
   {
     $this->sPreScript .= "<table class=\"OmnisysTransferSelectTable\">\n";
     $this->sPreScript .= "<tr>\n";
@@ -54,97 +69,201 @@ class TransferSelect extends \Omniverse\Widget
     return TRUE;
   }
 
+  /**
+   * Generate and return the HTML of the "From" select
+   *
+   * @return string
+   */
   public function fromSelect()
   {
     return $this->oFrom->__toString();
   }
 
+  /**
+   * Generate and return the HTML of the "To" select
+   *
+   * @return string
+   */
   public function toSelect()
   {
     return $this->oTo->__toString();
   }
 
-  protected function button($sValue=NULL, $sOnClick=NULL)
+  /**
+   * Generate and return an HTML button based on the specified parameters
+   *
+   * @param string $sValue (optional)
+   * @param string $sOnClick (optional)
+   * @return string
+   */
+  protected function button($sValue = '', $sOnClick = '')
   {
     return "<input type=\"button\" value=\"$sValue\" onClick=\"$sOnClick\">";
   }
 
-  public function moveToButton($sValue=NULL)
+  /**
+   * Generate and return the HTML for the "Move to" button
+   *
+   * @param string $sValue (optional)
+   * @return string
+   */
+  public function moveToButton($sValue = '')
   {
     $sValue = empty($sValue) ? 'Move ->' : $sValue;
     return $this->button($sValue, "Omnisys_MoveOptions('$this->sFrom', '$this->sTo');");
   }
 
-  public function moveFromButton($sValue=NULL)
+  /**
+   * Generate and return the HTML for the "Move from" button
+   *
+   * @param string $sValue (optional)
+   * @return string
+   */
+  public function moveFromButton($sValue = '')
   {
     $sValue = empty($sValue) ? 'Move <-' : $sValue;
     return $this->button($sValue, "Omnisys_MoveOptions('$this->sTo', '$this->sFrom');");
   }
 
-  public function moveAllToButton($sValue=NULL)
+  /**
+   * Generate and return the HTML needed to display the "Move All To" button
+   *
+   * @param string $sValue (optional)
+   * @return string
+   */
+  public function moveAllToButton($sValue = '')
   {
     $sValue = empty($sValue) ? 'Move All ->' : $sValue;
     return $this->button($sValue, "Omnisys_SelectAll('$this->sFrom'); Omnisys_MoveOptions('$this->sFrom', '$this->sTo');");
   }
 
-  public function moveAllFromButton($sValue=NULL)
+  /**
+   * Generate and return the HTML needed to display the "Move All From" button
+   *
+   * @param string $sValue (optional)
+   * @return string
+   */
+  public function moveAllFromButton($sValue = '')
   {
     $sValue = empty($sValue) ? 'Move All <-' : $sValue;
     return $this->button($sValue, "Omnisys_SelectAll('$this->sTo'); Omnisys_MoveOptions('$this->sTo', '$this->sFrom');");
   }
 
-  public function submitButton($sValue=NULL, $sName=NULL)
+  /**
+   * Generate and return the HTML needed for the "Submit" button
+   *
+   * @param string $sValue (optional)
+   * @param string $sName (optional)
+   * @return string
+   */
+  public function submitButton($sValue = '', $sName = '')
   {
     $sValue = empty($sValue) ? 'Submit' : $sValue;
     $sName = empty($sName) ? 'Submit' : $sName;
     return "<input type=\"submit\" name=\"$sName\" value=\"$sValue\" onClick=\"Omnisys_SelectAll('$this->sFrom'); Omnisys_SelectAll('$this->sTo');\"></td>\n";
   }
 
-  public function addFromOption($sTitle, $sValue=NULL)
+  /**
+   * Add a new option to the "From" widget
+   *
+   * @param sting $sTitle
+   * @param string $sValue (optional)
+   */
+  public function addFromOption($sTitle, $sValue = '')
   {
     $this->oFrom->addOption($sTitle, $sValue);
   }
 
+  /**
+   * Remove the specified option from the "From" widget
+   *
+   * @param string $sTitle
+   */
   public function removeFromOption($sTitle)
   {
     $this->oFrom->removeOption($sTitle);
   }
 
-  public function addFromArray($hData, $bhash=TRUE)
+  /**
+   * Add a whole array of options to the "From" list, all at once
+   *
+   * @param array $hData
+   * @param boolean $bHash (optional)
+   */
+  public function addFromArray($hData, $bHash = true)
   {
-    $this->oFrom->addArray($hData, $bhash);
+    $this->oFrom->addArray($hData, $bHash);
   }
 
+  /**
+   * Add the specified handler to the specified event on the "From" widget
+   *
+   * @param string $sEvent
+   * @param string $sHandler
+   */
   public function addFromEvent($sEvent, $sHandler)
   {
     $this->oFrom->addEvent($sEvent, $sHandler);
   }
 
+  /**
+   * Return the name of the "From" widget
+   *
+   * @return string
+   */
   public function getFromName()
   {
     return $this->oFrom->getName();
   }
 
+  /**
+   * Add a new option to the "To" widget
+   *
+   * @param sting $sTitle
+   * @param string $sValue (optional)
+   */
   public function addToOption($sTitle, $sValue=NULL)
   {
     $this->oTo->addOption($sTitle, $sValue);
   }
 
+  /**
+   * Remove the specified option from the "To" widget
+   *
+   * @param string $sTitle
+   */
   public function removeToOption($sTitle)
   {
     $this->oTo->removeOption($sTitle);
   }
 
+  /**
+   * Add a whole array of options to the "To" list, all at once
+   *
+   * @param array $hData
+   * @param boolean $bHash (optional)
+   */
   public function addToArray($hData, $bhash=TRUE)
   {
     $this->oTo->addArray($hData, $bhash);
   }
 
+  /**
+   * Add the specified handler to the specified event on the "To" widget
+   *
+   * @param string $sEvent
+   * @param string $sHandler
+   */
   public function addToEvent($sEvent, $sHandler)
   {
     $this->oTo->addEvent($sEvent, $sHandler);
   }
 
+  /**
+   * Return the name of the "From" widget
+   *
+   * @return string
+   */
   public function getToName()
   {
     return $this->oTo->getName();

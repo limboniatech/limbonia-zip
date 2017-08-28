@@ -12,11 +12,21 @@ namespace Omniverse\Module;
  */
 class Resource extends \Omniverse\Module
 {
+  /**
+   * List of menu items that this module shoud display
+   *
+   * @var array
+   */
   protected $aMenuItems = array('List', 'Create');
 
-  public function __construct($sType=null, \Omniverse\Controller $oController = null)
+    /**
+   * Instantiate the resource module
+   *
+   * @param string $sType (optional) - The type of module this should become
+   * @param \Omniverse\Controller $oController
+   */
+public function __construct($sType = null, \Omniverse\Controller $oController = null)
   {
     parent::__construct('ResourceKey', $oController);
   }
-
 }

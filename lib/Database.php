@@ -48,6 +48,13 @@ class Database extends \PDO
   protected $hColumnList = [];
 
   /**
+   * List of alternate column names that tie back to the canonical column name
+   *
+   * @var array
+   */
+  protected $hColumnAlias = [];
+
+  /**
    * Return the existing column type from the data passed in
    *
    * @param string|array $xData - Either and array of column data or the actual column type
@@ -504,57 +511,181 @@ class Database extends \PDO
    *
    * @param string $sTable - name of the table to get column data from
    * @param boolean $bUseTableName (optional) - Should the table name be prepended to each column name (defaults to false)
-   * @return type
+   * @return array
    * @throws \Omniverse\Exception\Database
    */
   public function getColumns($sTable, $bUseTableName = false)
   {
-    if (!isset($this->hColumnList[$sTable]))
+    if (isset($this->hColumnList[$sTable]))
     {
-      switch ($this->getType())
-      {
-        case 'mysql':
-          $sColumnSQL = "DESC $sTable";
-          break;
+      return $this->hColumnList[$sTable];
+    }
 
-        default:
-          throw new Exception\Database(__METHOD__ . ": Can not list columns from this type, yet.", $this->getType());
+    if (SessionManager::isStarted() && isset($_SESSION['OmnisysTableColumns'][$sTable]))
+    {
+      $this->hColumnList[$sTable] = $_SESSION['OmnisysTableColumns'][$sTable];
+      return $this->hColumnList[$sTable];
+    }
+
+    switch ($this->getType())
+    {
+      case 'mysql':
+        $sColumnSQL = "DESC $sTable";
+        break;
+
+      default:
+        throw new Exception\Database(__METHOD__ . ": Can not list columns from this type, yet.", $this->getType());
+    }
+
+    try
+    {
+      $oGetColumns = $this->query($sColumnSQL);
+    }
+    catch (\PDOException $e)
+    {
+      return [];
+    }
+
+    $this->hColumnList[$sTable] = [];
+
+    foreach ($oGetColumns as $hRow)
+    {
+      $sName = $bUseTableName ? "$sTable.{$hRow['Field']}" : $hRow['Field'];
+      $this->hColumnList[$sTable][$sName]['Type'] = $hRow['Type'];
+      $hRow['Key'] = trim($hRow['Key']);
+
+      if (!empty($hRow['Key']))
+      {
+        $this->hColumnList[$sTable][$sName]['Key'] = str_replace('PRI', 'Primary', $hRow['Key']);
+        $this->hColumnList[$sTable][$sName]['Key'] = str_replace('MUL', 'Multi', $this->hColumnList[$sTable][$sName]['Key']);
       }
 
-      try
+      $this->hColumnList[$sTable][$sName]['Default'] = trim($hRow['Default']);
+      $hRow['Extra'] = trim($hRow['Extra']);
+
+      if (!empty($hRow['Extra']))
       {
-        $oGetColumns = $this->query($sColumnSQL);
-      }
-      catch (\PDOException $e)
-      {
-        return [];
-      }
-
-      $this->hColumnList[$sTable] = [];
-
-      foreach ($oGetColumns as $hRow)
-      {
-        $sName = $bUseTableName ? "$sTable.{$hRow['Field']}" : $hRow['Field'];
-        $this->hColumnList[$sTable][$sName]['Type'] = $hRow['Type'];
-        $hRow['Key'] = trim($hRow['Key']);
-
-        if (!empty($hRow['Key']))
-        {
-          $this->hColumnList[$sTable][$sName]['Key'] = str_replace('PRI', 'Primary', $hRow['Key']);
-          $this->hColumnList[$sTable][$sName]['Key'] = str_replace('MUL', 'Multi', $this->hColumnList[$sTable][$sName]['Key']);
-        }
-
-        $this->hColumnList[$sTable][$sName]['Default'] = trim($hRow['Default']);
-        $hRow['Extra'] = trim($hRow['Extra']);
-
-        if (!empty($hRow['Extra']))
-        {
-          $this->hColumnList[$sTable][$sName]['Extra'] = $hRow['Extra'];
-        }
+        $this->hColumnList[$sTable][$sName]['Extra'] = $hRow['Extra'];
       }
     }
 
+    if (SessionManager::isStarted())
+    {
+      if (!isset($_SESSION['OmnisysTableColumns']))
+      {
+        $_SESSION['OmnisysTableColumns'] = [];
+      }
+
+      $_SESSION['OmnisysTableColumns'][$sTable] = $this->hColumnList[$sTable];
+    }
+
     return $this->hColumnList[$sTable];
+  }
+
+  public function getAliasColumns($sTable)
+  {
+    if (isset($this->hColumnAlias[$sTable]))
+    {
+      return $this->hColumnAlias[$sTable];
+    }
+
+    if (SessionManager::isStarted() && isset($_SESSION['OmnisysTableColumnAlias'][$sTable]))
+    {
+      $this->hColumnAlias[$sTable] = $_SESSION['OmnisysTableColumnAlias'][$sTable];
+      return $this->hColumnAlias[$sTable];
+    }
+
+    $this->hColumnAlias[$sTable] = [];
+
+    foreach ($this->getColumns($sTable) as $sColumn => $hColumnData)
+    {
+      $this->hColumnAlias[$sTable][\strtolower($sColumn)] = $sColumn;
+
+      if (isset($hColumnData['Key']) && $hColumnData['Key'] == 'Primary')
+      {
+        $this->hColumnAlias[$sTable]['id'] = $sColumn;
+      }
+    }
+
+    if (SessionManager::isStarted())
+    {
+      $_SESSION['OmnisysTableColumnAlias'][$sTable] = $this->hColumnAlias[$sTable];
+    }
+
+    return $this->hColumnAlias[$sTable];
+  }
+
+  public function hasColumn($sTable, $sColumn)
+  {
+    $hColumnAlias = $this->getAliasColumns($sTable);
+    $sLowerColumn = \strtolower($sColumn);
+    return isset($hColumnAlias[$sLowerColumn]) ? $hColumnAlias[$sLowerColumn] : false;
+  }
+
+  public function getColumnData($sTable, $sColumn)
+  {
+    $sRealColumn = $this->hasColumn($sTable, $sColumn);
+    return $sRealColumn ? $this->getColumns($sTable)[$sRealColumn] : [];
+  }
+
+  public function getIdColumn($sTable)
+  {
+    $sIdColumn = $this->hasColumn($sTable, 'id');
+    return empty($sIdColumn) ? self::makeIdColumn($sTable) : $sIdColumn;
+  }
+
+  public function makeSearchQuery($sTable, $hWhere = [], $xOrder = null)
+  {
+    $sOrder = Database::makeOrder($xOrder);
+    $sWhere = '';
+
+    if (is_array($hWhere) && count($hWhere) > 0)
+    {
+      $aWhere = [];
+      $hColumns = $this->getColumns($sTable);
+
+      foreach ($hWhere as $sColumn => $xValue)
+      {
+        $sRealColumn = $this->hasColumn($sTable, $sColumn);
+
+        if (empty($sRealColumn))
+        {
+          continue;
+        }
+
+        if (is_array($xValue))
+        {
+          foreach ($xValue as $iKey => $sValue)
+          {
+            $xValue[$iKey] = self::prepareValue($hColumns[$sRealColumn], $sValue);
+          }
+
+          $sList = implode(', ', $xValue);
+          $aWhere[] = "$sColumn IN ($sList)";
+        }
+        else
+        {
+          $sOperator = '=';
+
+          if (preg_match("/(.*?):(.*)/i", $xValue, $aMatch))
+          {
+            $sOperator = strtoupper($aMatch[1]);
+            $xValue = $aMatch[2];
+          }
+
+          if (in_array($sOperator, ['IS', 'IS NOT']) && empty($xValue))
+          {
+            $xValue = null;
+          }
+
+          $aWhere[] = "$sColumn $sOperator " . self::prepareValue($hColumns[$sRealColumn], $xValue);
+        }
+      }
+
+      $sWhere = count($aWhere) > 0 ? ' WHERE ' . implode(' AND ', $aWhere) : '';
+    }
+
+    return "SELECT DISTINCT {$sTable}.* FROM $sTable$sWhere$sOrder";
   }
 
   /**
@@ -566,9 +697,12 @@ class Database extends \PDO
    * @param string|array $xColumns (optional) - specify either a single column string or an array of column names
    * @return array
    */
-  public function getRowById($sTable, $iID, $xColumns)
+  public function getRowById($sTable, $iID, $xColumns = null)
   {
-    return $this->getRow("SELECT " . self::makeSelect($xColumns) . " FROM $sTable WHERE " . self::makeIdColumn($sTable) . " = ?", [$iID]);
+    settype($iID, 'integer');
+    $oResult = $this->prepare('SELECT ' . self::makeSelect($xColumns) . " FROM $sTable WHERE " . $this->getIdColumn($sTable) . ' = :ItemId LIMIT 1');
+    $oResult->bindParam(':ItemId', $iID, \PDO::PARAM_INT);
+    return $oResult->execute() ? $oResult->fetch() : [];
   }
 
   /**
@@ -580,28 +714,55 @@ class Database extends \PDO
    */
   public function insert($sTable, $hData)
   {
-    $sSQL = "INSERT INTO $sTable (" . implode(', ', array_keys($hData)) . ") VALUES (" . implode(', ', array_fill(0, count($hData), '?')) . ")";
+    $aValue = [];
+    $hColumns = $this->getColumns($sTable);
 
-    if (false == $this->query($sSQL, array_values($hData)))
+    foreach ($hData as $sName => $xValue)
+    {
+      $aValue[] = Database::prepareValue($hColumns[$sName], $xValue);
+    }
+
+    $sSQL = "INSERT INTO {$sTable} (" . implode(',', array_keys($hData)) . ") VALUES (" . implode(',', $aValue) . ")";
+    $iRowsAffected = $this->exec($sSQL);
+    return empty($iRowsAffected) ? false : $this->lastInsertId();
+  }
+
+  /**
+   * Update the specified row in the specified table with the specified data
+   *
+   * @param string $sTable
+   * @param integer $iID
+   * @param array $hData
+   * @return integer Return the row ID on success or false on failure
+   */
+  public function update($sTable, $iID, $hData)
+  {
+    settype($iID, 'integer');
+    $aSet = [];
+    $hColumns = $this->getColumns($sTable);
+
+    foreach ($hData as $sColumn => $xValue)
+    {
+      $sRealColumn = $this->hasColumn($sTable, $sColumn);
+
+      if ($sRealColumn)
+      {
+        $aSet[] = $sColumn . ' = ' . self::prepareValue($hColumns[$sRealColumn], $xValue);
+      }
+    }
+
+    if (empty($aSet))
     {
       return false;
     }
 
-    return $this->lastInsertId();
+    $sSQL = "UPDATE {$sTable} SET " . implode(',', $aSet) . ' WHERE ' . $this->getIdColumn($sTable) ." = $iID";
+    $xSuccess = $this->exec($sSQL);
+    return empty($xSuccess) ? false : $iID;
   }
 
   /**
-   *
-   *
-   * @param string $sTable
-   * @param array $hData
-   */
-  public function update($sTable, $hData)
-  {
-  }
-
-  /**
-   *
+   * Delete the specified row from the specified table
    *
    * @param string $sTable
    * @param integer $iID
@@ -609,6 +770,8 @@ class Database extends \PDO
    */
   public function delete($sTable, $iID)
   {
-    return $this->query("DELETE FROM $sTable WHERE " . self::makeIdColumn($sTable) . " = ?", [$iID]);
+    settype($iID, 'integer');
+    $xSuccess = $this->exec("DELETE FROM $sTable WHERE " . $this->getIdColumn($sTable) . " = $iID");
+    return !empty($xSuccess);
   }
 }

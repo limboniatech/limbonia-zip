@@ -12,6 +12,7 @@ namespace Omniverse;
  */
 class Controller
 {
+
   /**
    * The current default Controller
    *
@@ -55,8 +56,12 @@ class Controller
    */
   protected $hDatabaseList = [];
 
-  protected $hDatabaseConfig =
-  [
+  /**
+   * List of database configuration settings
+   *
+   * @var array
+   */
+  protected $hDatabaseConfig = [
     'default' =>
     [
       'driver' => '',
@@ -66,12 +71,21 @@ class Controller
     ]
   ];
 
-  protected $hDirectories =
-  [
+  /**
+   * List of configured directories
+   *
+   * @var array
+   */
+  protected $hDirectories = [
     'root' => '',
     'libs' => []
   ];
 
+  /**
+   * List of configuration data
+   *
+   * @var array
+   */
   protected $hConfig = [];
 
   /**
@@ -116,35 +130,52 @@ class Controller
    *
    * @return string
    */
-  public static function EOL()
+  public static function eol()
   {
-    return self::isCLI() ? "\n" : "<br />\n";
+    return self::isCLI() ? "\n" : "<br>\n";
   }
 
   /**
    * Return the build date of the current release of Omniverse.
    *
-   * @param string $sFormat
+   * @param string $sFormat (optional) - Override the default format with this one, if it's is used
    */
   public static function buildDate($sFormat = '')
   {
     self::generateBuildData();
-    $sFormat = empty($sFormat) ? 'r' : $sFormat;
-    return self::$oBuildDate->format($sFormat);
+    return self::$oBuildDate->format(empty($sFormat) ? 'r' : $sFormat);
   }
 
+  /**
+   * Set all controllers to use the specified format as the default format for timestamps
+   *
+   * @param string $sNewFormat
+   */
   public static function setTimeStampFormat($sNewFormat = NULL)
   {
     self::$sTimeStampFormat = empty($sNewFormat) ? 'r' : $sNewFormat;
   }
 
-  public static function formatTime($iTimeStamp, $sFormat = NULL)
+  /**
+   * Format and return the specified UNIX timestamp using the default format
+   *
+   * @param integer $iTimeStamp
+   * @param string $sFormat (optional) - Override the default format with this one, if it's is used
+   * @return string
+   */
+  public static function formatTime($iTimeStamp, $sFormat = '')
   {
     $oTime = new \DateTime('@' . (integer)$iTimeStamp);
     $sFormat = empty($sFormat) ? self::$sTimeStampFormat : $sFormat;
     return $oTime->format($sFormat);
   }
 
+  /**
+   * Generate and return the current time in the default format
+   *
+   * @param string $sFormat (optional) - Override the default format with this one, if it's is used
+   * @return string
+   */
   public static function timeStamp($sFormat = NULL)
   {
     return self::formatTime(time(), $sFormat);
@@ -181,13 +212,24 @@ class Controller
     return self::$oDefaultController;
   }
 
-  public static function flatten($data)
+  /**
+   * Flatten the specified variable into a string and return it...
+   *
+   * @param mixed $data
+   * @return string
+   */
+  public static function flatten($xData)
   {
     ob_start();
-    var_dump($data);
+    var_dump($xData);
     return ob_get_flush();
   }
 
+  /**
+   * Add a new Omniverse library to the current list
+   *
+   * @param string $sLibDir - The root directory to the Omniverse library to add
+   */
   public static function addLib($sLibDir)
   {
     if (is_dir($sLibDir) && !in_array($sLibDir, self::$aLibList))
@@ -196,6 +238,11 @@ class Controller
     }
   }
 
+  /**
+   * Return the list of Omniverse libraries
+   *
+   * @return array
+   */
   public static function getLibs()
   {
     return self::$aLibList;
@@ -207,7 +254,7 @@ class Controller
    * @param string $sType
    * @param array $hConfig
    * @return \Omniverse\Controller
-   * @throws Exception
+   * @throws \Exception
    */
   public static function factory($sType, array $hConfig = [])
   {
@@ -215,7 +262,7 @@ class Controller
 
     if (!\class_exists($sTypeClass, true))
     {
-      throw new Exception("Controller type '$sType' not found");
+      throw new \Exception("Controller type '$sType' not found");
     }
 
     return new $sTypeClass($hConfig);
@@ -311,7 +358,7 @@ class Controller
 
     if (preg_match("#^(.+?)dir$#", $sLowerName, $aMatch))
     {
-    	return $this->getDir($aMatch[1]);
+      return $this->getDir($aMatch[1]);
     }
 
     if ($sLowerName == 'domain')
@@ -342,13 +389,18 @@ class Controller
     return isset($this->hConfig[$sLowerName]);
   }
 
+  /**
+   * Settings should not be unset so this method does nothing...
+   *
+   * @param string $sName
+   */
   public function __unset($sName)
   {
     //don't allow public unsetting of anything
   }
 
   /**
-   * Genertate and return a database object based on the specifed ini section
+   * Generate and return a database object based on the specified database config section
    *
    * @param string $sSection (optional)
    * @return \Omniverse\Database
@@ -504,6 +556,9 @@ class Controller
     return Module::factory($sType, $this);
   }
 
+  /**
+   * Run everything needed to react and display data in the way this controller is intended
+   */
   public function run()
   {
 

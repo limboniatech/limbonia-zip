@@ -12,12 +12,37 @@ namespace Omniverse\Module;
  */
 class Area extends \Omniverse\Module
 {
+  /**
+   * UNKNOWN
+   *
+   * @var integer
+   */
   protected static $count = 0;
 
-  protected $aMenuItems = array('List', 'Create', 'QuickSearch_Name', 'QuickSearch_Zip');
-  protected $aSubMenuItems = array('View', 'Edit',  'EditZip');
-  protected $aAllowedMethods = array('List', 'Create', 'EditDialog', 'Edit', 'EditZip', 'View');
+  /**
+   * List of menu items that this module shoud display
+   *
+   * @var array
+   */
+  protected $aMenuItems = ['List', 'Create', 'QuickSearch_Name', 'QuickSearch_Zip'];
 
+  /**
+   * List of sub-menu options
+   *
+   * @var array
+   */
+  protected $aSubMenuItems = ['View', 'Edit',  'EditZip'];
+
+  /**
+   * List of methods that are allowed to run
+   *
+   * @var array
+   */
+  protected $aAllowedMethods = ['List', 'Create', 'EditDialog', 'Edit', 'EditZip', 'View'];
+
+  /**
+   * Prepare the template for display based on the current action and current method
+   */
   public function prepareTemplate()
   {
     if ($this->sCurrentMethod == 'EditZip')
@@ -29,7 +54,7 @@ class Area extends \Omniverse\Module
       {
         foreach ($oZipList as $oZip)
         {
-          $aAreaZip[] = $oZip->Zip;
+          $aAreaZip[] = $oZip->zip;
         }
       }
     }
@@ -132,12 +157,14 @@ class Area extends \Omniverse\Module
       try
       {
         $aRemove = array_diff($aAreaZip, $_POST['Zip']);
+
         if (count($aRemove) > 0)
         {
           $this->oItem->removeZips($aRemove);
         }
 
         $aAdd = array_diff($_POST['Zip'], $aAreaZip);
+
         if (count($aAdd) > 0)
         {
           $this->oItem->addZips($aAdd);

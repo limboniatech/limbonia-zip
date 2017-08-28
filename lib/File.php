@@ -194,7 +194,6 @@ class File
    * Prints the the passed data
    *
    * @param string $sData - The string to be printed
-   * @access public
    */
   static public function write($sData, $sFilePath = null)
   {
@@ -213,10 +212,9 @@ class File
    * @param string $sData - The string will be printed
    * @param string $sFilePath - the file to be printed to (optional)
    * @return boolean
-   * @access public
    */
   static public function writeLn($sData, $sFilePath = null)
   {
-    return self::write($sData . Controler::EOL(), $sFilePath);
+    return self::write($sData . Controller::eol(), $sFilePath);
   }
 }

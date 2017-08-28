@@ -22,30 +22,51 @@ class Area extends \Omniverse\Item
     return parent::search('Area_Zip', ['AreaID' => $this->ID], null, $this->getDB());
   }
 
-  public function removeZips($aZip)
+  /**
+   * Remove the specified zip(s) from this Area
+   *
+   * @param mixed $xZip Either an array of zips or a single zip
+   * @return boolean True on success and false on failure
+   */
+  public function removeZips($xZip)
   {
-    if (!is_array($aZip))
+    if (empty($xZip))
     {
-      $aZip = (array)$aZip;
+      return true;
     }
 
-    $sZipList = "'" . implode("', '", $aZip) . "'";
-    return $this->getDB()->exec("DELETE FROM Area_Zip WHERE AreaID = {$this->ID} AND Zip IN ($sZipList)");
+    $aZip = is_array($xZip) ? $xZip : (array)$xZip;
+    $iAffected = $this->getDB()->exec("DELETE FROM Area_Zip WHERE AreaID = {$this->id} AND Zip IN ('" . implode("', '", $aZip) . "')");
+    return $iAffected > 0;
   }
 
-  public function addZips($aZip)
+
+  /**
+   * Add the specified zip(s) to this Area
+   *
+   * @param mixed $xZip Either an array of zips or a single zip
+   * @return boolean True on success and false on failure
+   */
+  public function addZips($xZip)
   {
-    if (!is_array($aZip))
+    if (empty($xZip))
     {
-      $aZip = (array)$aZip;
+      return true;
     }
+
+    $aZip = is_array($xZip) ? $xZip : (array)$xZip;
+    $iCount = 0;
 
     foreach ($aZip as $sZip)
     {
-      $oZip = parent::fromArray('Area_Zip', ['AreaID' => $this->ID, 'Zip' => $sZip], $this->getDB());
-      $oZip->save();
+      $oZip = parent::fromArray('Area_Zip', ['AreaID' => $this->id, 'Zip' => $sZip], $this->getDB());
+
+      if ($oZip->save())
+      {
+        $iCount++;
+      }
     }
 
-    return true;
+    return $iCount > 0;
   }
 }

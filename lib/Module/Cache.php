@@ -12,18 +12,68 @@ namespace Omniverse\Module;
  */
 class Cache extends \Omniverse\Module
 {
+  /**
+   * The admin group that this module belongs to
+   *
+   * @var string
+   */
   protected $sGroup = 'Site';
+
+  /**
+   * The default action for this module
+   *
+   * @var string
+   */
   protected $sDefaultAction = 'Display';
+
+  /**
+   * The default method for this module
+   *
+   * @var string
+   */
   protected $sDefaultMethod = 'Reset';
-  protected $hComponent = array
-  (
+
+  /**
+   * List of components that this module contains along with thier descriptions
+   *
+   * @var array
+   */
+  protected $hComponent =
+  [
     'Reset' => "Reset all the cache for this site."
-  );
-  protected $aMenuItems = array('Reset');
-  protected $aAllowedMethods = array('Reset');
+  ];
+
+  /**
+   * List of menu items that this module shoud display
+   *
+   * @var array
+   */
+  protected $aMenuItems = ['Reset'];
+
+  /**
+   * List of methods that are allowed to run
+   *
+   * @var array
+   */
+  protected $aAllowedMethods = ['Reset'];
+
+  /**
+   * The name of the module
+   *
+   * @var string
+   */
   protected $sModuleName = 'Cache';
+
+  /**
+   * The type of module this is
+   *
+   * @var string
+   */
   protected $sType = 'Cache';
 
+  /**
+   * Prepare the template for display based on the current action and current method
+   */
   public function prepareTemplate()
   {
     if ($this->sCurrentAction == 'Process')

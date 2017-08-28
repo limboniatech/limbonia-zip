@@ -12,11 +12,39 @@ namespace Omniverse\Module;
  */
 class Profile extends \Omniverse\Module
 {
-  protected static $hModule = [];
+  /**
+   * The admin group that this module belongs to
+   *
+   * @var string
+   */
   protected $sGroup = 'System';
+
+  /**
+   * Should this module's name appear in the menu?
+   *
+   * @var boolean
+   */
   protected $bVisibleInMenu = false;
+
+  /**
+   * The name of the module
+   *
+   * @var string
+   */
   protected $sModuleName = 'Profile';
+
+  /**
+   * The type of module this is
+   *
+   * @var string
+   */
   protected $sType = 'Profile';
+
+  /**
+   * Lists of columns to ignore when filling template data
+   *
+   * @var array
+   */
   protected $aIgnore =
   [
     'Edit' =>
@@ -51,15 +79,55 @@ class Profile extends \Omniverse\Module
       'Visible'
     ]
   ];
+
+  /**
+   * List of column names in nthe order required
+   *
+   * @var array
+   */
   protected $aColumnOrder = ['FirstName', 'LastName'];
-  protected $sDefaultAction = 'Process';
-  protected $sCurrentAction = 'Process';
+
+  /**
+   * The default method for this module
+   *
+   * @var string
+   */
   protected $sDefaultMethod = 'View';
+
+  /**
+   * The current method being used by this module
+   *
+   * @var string
+   */
   protected $sCurrentMethod = 'View';
+
+  /**
+   * List of menu items that this module shoud display
+   *
+   * @var array
+   */
   protected $aMenuItems = ['View', 'Edit', 'ChangePassword'];
+
+  /**
+   * List of sub-menu options
+   *
+   * @var array
+   */
   protected $aSubMenuItems = [];
+
+  /**
+   * List of methods that are allowed to run
+   *
+   * @var array
+   */
   protected $aAllowedMethods = ['EditDialog', 'Edit', 'View', 'ChangePassword'];
 
+  /**
+   * Instantiate the profile module
+   *
+   * @param string $sType (optional) - The type of module this should become
+   * @param \Omniverse\Controller $oController
+   */
   public function __construct($sType=null, \Omniverse\Controller $oController = null)
   {
     if (!empty($oController))
@@ -75,11 +143,14 @@ class Profile extends \Omniverse\Module
     $this->sCurrentMethod = empty($sAdminSub) || $sAdmin == 'Menu' || !in_array($sAdminSub, $this->aAllowedMethods) ? $this->sDefaultMethod : $sAdminSub;
   }
 
+  /**
+   * Prepare the template for display based on the current action and current method
+   */
   public function prepareTemplate()
   {
     if ($this->sCurrentAction == 'Process' && $this->sCurrentMethod == 'ChangePassword')
     {
-      $hData = $this->edit_getData();
+      $hData = $this->editGetData();
 
       if ($hData['Password'] != $hData['Password2'])
       {
@@ -121,5 +192,4 @@ class Profile extends \Omniverse\Module
 
     return parent::prepareTemplate();
   }
-
 }

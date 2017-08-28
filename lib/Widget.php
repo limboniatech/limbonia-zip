@@ -14,85 +14,71 @@ class Widget extends Tag
 {
   /**
    * @var integer $iCount - number of existing widgets.
-   * @access private
    */
   private static $iCount = 0;
 
   /**
    * @var array $aIncludedScript - the list of already included scripts.
-   * @access private
    */
   private static $aIncludedScript = array();
 
   /**
    * @var string $sName - unique object name for use in submitting form data.
-   * @access protected
    */
   protected $sName = 'OmnisysWidget';
 
   /**
    * @var string $sID - unique object id for use in the scripts.
-   * @access protected
    */
   protected $sID = 'OmnisysWidget';
 
   /**
    * @var string $sType -
-   * @access protected
    */
   protected $sType = '';
 
   /**
    * @var string $sPreScript - HTML to be written out *before* the javascript stuff...
-   * @access protected
    */
   protected $sPreScript = '';
 
   /**
    * @var string $sScript - javascript that forms the main functionality of the object.
-   * @access protected
    */
   protected $sScript = '';
 
   /**
    * @var string $sPostScript - HTML to be written out *after* the javascript stuff...
-   * @access protected
    */
   protected $sPostScript = '';
 
   /**
    * @var array $aScript - a list of required javascripts to included.
-   * @access protected
    */
   protected $aScript = [];
 
   /**
    * @var string $sWarningColor - color to be used for HTML warning messages
-   * @access protected
    */
   protected static $sWarningColor = 'orange';
 
   /**
    * @var string $sErrorColor - color to be used for HTML error messages
-   * @access protected
    */
   protected static $sErrorColor = 'red';
 
   /**
    * @var boolean $bAjaxStatus - update status bar in AJAX functions?
-   * @access protected
    */
   protected static $bAjaxStatus = false;
 
   /**
    * @var boolean $bAjaxDebug - use debug mode for AJAX functions?
-   * @access protected
    */
   protected static $bAjaxDebug = false;
 
   /**
    * @var array $aAjaxFunction - list of registerd AJAX functions
-   * @access protected
    */
   protected static $aAjaxFunction = [];
 
@@ -119,13 +105,10 @@ class Widget extends Tag
 
   /**
    * Factory method that creates an instance of a specific type of widget.
-   * It must be called statically.
    *
-   * @param string $sType - The type of widget to instanciate
-   * @param string $sName (optional) - The name to give the widget when it is instanciated
+   * @param string $sType - The type of widget to instantiate
+   * @param string $sName (optional) - The name to give the widget when it is instantiated
    * @return \Omniverse\Widget - The object requested on success, otherwise false.
-   * @access public
-   * @static
    */
   public static function factory($sType, $sName = null, \Omniverse\Controller $oController = null)
   {
@@ -139,20 +122,109 @@ class Widget extends Tag
     return new $sTypeClass($sName, $oController);
   }
 
+    /**
+   * This "setter" changes the color of HTML warning messages created by this class.
+   *
+   * @param string $sColor - The new warning color.
+   */
+  public static function warningColor($sColor='orange')
+  {
+    self::$sWarningColor = $sColor;
+  }
+
+  /**
+   * This "setter" changes the color of HTML error messages created by this class.
+   *
+   * @param string $sColor - The new error color.
+   */
+  public static function errorColor($sColor='red')
+  {
+    self::$sErrorColor = $sColor;
+  }
+
+  /**
+   * Write an HTML error.
+   *
+   * @param string $sText - Text of the error to write.
+   */
+  public static function errorText($sText)
+  {
+    echo "<br><font color=\"" . self::$sErrorColor . "\">Error: </font>$sText<br>\n";
+  }
+
+  /**
+   * Write an HTML warning.
+   *
+   * @param string $sText - Text of the warning to write.
+   */
+  public static function warningText($sText)
+  {
+    echo "<br><font color=\"" . self::$sWarningColor . "\">Warning: </font>$sText<br>\n";
+  }
+
+
+  /**
+   * Set the Ajax Debug to the specified value
+   *
+   * @param boolean $bDebug
+   */
+  public static function setAjaxDebug($bDebug = true)
+  {
+    self::$bAjaxDebug = (boolean)$bDebug;
+  }
+
+  /**
+   * Return the Ajax Debug value
+   *
+   * @return boolean
+   */
+  public static function getAjaxDebug()
+  {
+    return self::$bAjaxDebug;
+  }
+
+  /**
+   * Set the Ajax Status to the specified value
+   *
+   * @param type $bReportStatus
+   */
+  public static function setAjaxStatus($bReportStatus = true)
+  {
+    self::$bAjaxStatus = (boolean)$bReportStatus;
+  }
+
+  /**
+   * Return the Ajax Status value
+   *
+   * @return boolean
+   */
+  public static function getAjaxStatus()
+  {
+    return self::$bAjaxStatus;
+  }
+
+  /**
+   * Return the current list of AJAX functions
+   *
+   * @return array
+   */
+  public static function ajaxList()
+  {
+    return self::$aAjaxFunction;
+  }
+
   /**
    * Constructor
    *
    * It increments the widget counter and generates a unique (but human readable) name.
    *
    * @param string $sName (optional)
-   * @param string $sType (optional)
    * @param \Omniverse\Controller $oController (optional)
    * @throws Omniverse\Exception\Object
-   * @access public
    */
   public function __construct($sName=null, \Omniverse\Controller $oController = null)
   {
-    $this->sType = strtolower(str_replace(__CLASS__.'\\', '', get_class($this)));
+    $this->sType = strtolower(str_replace(__CLASS__ . '\\', '', get_class($this)));
 
     if (empty($this->sType))
     {
@@ -335,7 +407,6 @@ class Widget extends Tag
    * It is final and may not be overridden by a child class.
    *
    * @return integer
-   * @access protected
    */
   final static protected function widgetCount()
   {
@@ -346,7 +417,6 @@ class Widget extends Tag
    * Stub create method that will be overridden by a child class.
    *
    * @return boolean
-   * @access protected
    */
   protected function init()
   {
@@ -359,7 +429,6 @@ class Widget extends Tag
    * It is final and may not be overridden by a child class.
    *
    * @return boolean
-   * @access public
    */
   final public function create()
   {
@@ -409,10 +478,9 @@ class Widget extends Tag
   }
 
   /**
-   * Include a javascript file for later use, while insuring that it hasn't already been included.
+   * Include a JavaScript file for later use, while insuring that it hasn't already been included.
    *
-   * @param string $sScript - Javascript file name.
-   * @access public
+   * @param string $sScript - JavaScript file name.
    */
   public static function includeScript($sScript)
   {
@@ -424,11 +492,10 @@ class Widget extends Tag
   }
 
   /**
-   * Write a chunk of javascript to HTML page if the widget has already been created
+   * Write a chunk of JavaScript to HTML page if the widget has already been created
    * otherwise save it for writing when that happens.
    *
-   * @param string $sCommand - Javascript to write.
-   * @access public
+   * @param string $sCommand - JavaScript to write.
    */
   public function writeJavascript($sCommand)
   {
@@ -481,50 +548,6 @@ class Widget extends Tag
   }
 
   /**
-   * This "setter" changes the color of HTML warning messages created by this class.
-   *
-   * @param string $sColor - The new warning color.
-   * @access public
-   */
-  public static function warningColor($sColor='orange')
-  {
-    self::$sWarningColor = $sColor;
-  }
-
-  /**
-   * This "setter" changes the color of HTML error messages created by this class.
-   *
-   * @param string $sColor - The new error color.
-   * @access public
-   */
-  public static function errorColor($sColor='red')
-  {
-    self::$sErrorColor = $sColor;
-  }
-
-  /**
-   * Write an HTML error.
-   *
-   * @param string $sText - Text of the error to write.
-   * @access public
-   */
-  public static function errorText($sText)
-  {
-    echo "<br><font color=\"" . self::$sErrorColor . "\">Error: </font>$sText<br>\n";
-  }
-
-  /**
-   * Write an HTML warning.
-   *
-   * @param string $sText - Text of the warning to write.
-   * @access public
-   */
-  public static function warningText($sText)
-  {
-    echo "<br><font color=\"" . self::$sWarningColor . "\">Warning: </font>$sText<br>\n";
-  }
-
-  /**
    * Return this widget's name
    *
    * @return string
@@ -561,13 +584,16 @@ class Widget extends Tag
    * Remove the specified widget from the content
    *
    * @param Widget $oWidget
+   * @return integer The index of the removed widget or false if there is none
    */
   public function removeWidget($oWidget)
   {
     if ($oWidget instanceof Widget)
     {
-      $this->removeContent($oWidget);
+      return $this->removeContent($oWidget);
     }
+
+    return false;
   }
 
   //AJAX functionality
@@ -613,55 +639,5 @@ class Widget extends Tag
         $this->addAjaxFunction($aMatch[1], $bReportStatus);
       }
     }
-  }
-
-  /**
-   * Set the Ajax Debug to the specified value
-   *
-   * @param boolean $bDebug
-   */
-  public static function setAjaxDebug($bDebug = true)
-  {
-    self::$bAjaxDebug = (boolean)$bDebug;
-  }
-
-  /**
-   * Return the Ajax Debug value
-   *
-   * @return boolean
-   */
-  public static function getAjaxDebug()
-  {
-    return self::$bAjaxDebug;
-  }
-
-  /**
-   * Set the Ajax Status to the specified value
-   *
-   * @param type $bReportStatus
-   */
-  public static function setAjaxStatus($bReportStatus = true)
-  {
-    self::$bAjaxStatus = (boolean)$bReportStatus;
-  }
-
-  /**
-   * Return the Ajax Status value
-   *
-   * @return boolean
-   */
-  public static function getAjaxStatus()
-  {
-    return self::$bAjaxStatus;
-  }
-
-  /**
-   * Return the current list of AJAX functions
-   *
-   * @return array
-   */
-  public static function ajaxList()
-  {
-    return self::$aAjaxFunction;
   }
 }

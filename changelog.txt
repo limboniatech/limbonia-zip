@@ -1,0 +1,11 @@
+2017-08-16 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.0.0
+Initial check-in
+
+2017-08-27 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.0.1
+Minor Bug #7: - Some Ticket List columns display IDs (Lonnie Blansett)
+Minor Bug #8: - Ticket View has problems (Lonnie Blansett)
+Minor Bug #9: - Updating tickets leads to module error (Lonnie Blansett)
+Minor Bug #11: - Sotware Roadmap not displaying user names (Lonnie Blansett)
+Change #13: Update code to standards (Lonnie Blansett)

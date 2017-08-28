@@ -1,22 +1,44 @@
 <?php
 namespace Omniverse\Widget;
 
+/**
+ * Omniverse Select Widget
+ *
+ * A wrapper around an HTML select tag
+ *
+ * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @version $Revision: 1.1 $
+ * @package Omniverse
+ */
 class Select extends \Omniverse\Widget
 {
   protected $bMultiple = false;
 
   /**
-  * @var string $aSelected -
-  * @access protected
-  */
+   * @var string $aSelected -
+   */
   protected $aSelected = [];
 
+  /**
+   * Constructor
+   *
+   * It increments the widget counter and generates a unique (but human readable) name.
+   *
+   * @param string $sName (optional)
+   * @param \Omniverse\Controller $oController (optional)
+   * @throws Omniverse\Exception\Object
+   */
   public function __construct($sName = null, \Omniverse\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->aScript = [$this->sWebShareDir . "/select.js"];
   }
 
+  /**
+   * Stub create method that will be overridden by a child class.
+   *
+   * @return boolean
+   */
   protected function init()
   {
     if (count($this->aSelected) > 0)
@@ -24,6 +46,7 @@ class Select extends \Omniverse\Widget
       foreach ($this->aContent as $iKey => $xData)
       {
         $sValue = $xData->getRawParam('value');
+
         if (self::IsOption($xData) && in_array($sValue, $this->aSelected))
         {
           $this->aContent[$iKey]->setParam('selected', 'selected');
@@ -34,11 +57,16 @@ class Select extends \Omniverse\Widget
     return parent::init();
   }
 
-  public function setSelected($xSelected=NULL)
+  /**
+   * Set the selected field of this select tag
+   *
+   * @param mixed $xSelected
+   */
+  public function setSelected($xSelected = null)
   {
     if (is_null($xSelected))
     {
-      $this->aSelected = array();
+      $this->aSelected = [];
     }
     elseif (is_array($xSelected))
     {
@@ -50,14 +78,26 @@ class Select extends \Omniverse\Widget
     }
   }
 
+  /**
+   * Is the specified data is an option object
+   *
+   * @param \Omniverse\Widget\Option $xData
+   * @return boolean
+   */
   protected function isOption($xData)
   {
     return ($xData instanceof \Omniverse\Widget\Option);
   }
 
-  public function addOption($sTitle, $sValue=NULL)
+  /**
+   * Add a new option to this select object
+   *
+   * @param string $sTitle
+   * @param string $sValue (optional)
+   */
+  public function addOption($sTitle, $sValue = '')
   {
-    if (is_null($sValue))
+    if (empty($sValue))
     {
       $sValue = $sTitle;
     }
@@ -74,29 +114,46 @@ class Select extends \Omniverse\Widget
     }
   }
 
+  /**
+   * Remove the specified option from this select
+   *
+   * @param string $sTitle
+   * @return boolean
+   */
   public function removeOption($sTitle)
   {
-    foreach ($this->aRegisteredData as $iKey => $xData)
+    foreach (array_values($this->aRegisteredData) as $xData)
     {
-      if ($xData instanceof \Omniverse\Widget\Option)
+      if ($this->isOption($xData))
       {
-        if ($xData->getTagContent() == $sTitle)
-        {
-          $this->removeWidget($xData);
-
-          if ($this->bInit)
-          {
-            $this->writeJavascript("Omnisys_removeOption('$this->sName', $iIndex);");
-          }
-
-          return TRUE;
-        }
+        continue;
       }
+
+      if ($xData->getTagContent() !== $sTitle)
+      {
+        continue;
+      }
+
+      $iIndex = $this->removeWidget($xData);
+
+      if ($this->bInit && $iIndex !== false)
+      {
+        $this->writeJavascript("Omnisys_removeOption('$this->sName', $iIndex);");
+      }
+
+      return true;
     }
-    return FALSE;
+
+    return false;
   }
 
-  public function addArray($hData, $bHash=TRUE)
+  /**
+   * Add an entire array of options all at once
+   *
+   * @param array $hData
+   * @param boolean $bHash
+   */
+  public function addArray($hData, $bHash = true)
   {
     if (!is_bool($bHash))
     {
@@ -113,22 +170,21 @@ class Select extends \Omniverse\Widget
     }
   }
 
-  public function isMultiple($bNew=NULL)
+  /**
+   * Either return the current multiple setting, or change it if one is specified
+   *
+   * @param boolean $bMultiple (optional)
+   * @return boolean
+   */
+  public function isMultiple($bMultiple = null)
   {
-    if (func_num_args() == 0)
+    if (!is_null($bMultiple))
     {
-      return $this->bMultiple;
+      $this->bMultiple = (boolean)$bMultiple;
+      $this->setParam('multiple', ($this->bMultiple ? "multiple" : ''));
+      $this->setParam('name', ($this->bMultiple ? $this->sName . '[]' : $this->sName));
     }
 
-    if (!is_bool($bNew))
-    {
-      trigger_error("The passed parameter was *not* boolean and therefore will be typecast before use.");
-      $bNew = (boolean)$bNew;
-    }
-
-    $this->bMultiple = $bNew;
-
-    $this->setParam('multiple', ($this->bMultiple ? "multiple" : ''));
-    $this->setParam('name', ($this->bMultiple ? $this->sName . '[]' : $this->sName));
+    return $this->bMultiple;
   }
 }

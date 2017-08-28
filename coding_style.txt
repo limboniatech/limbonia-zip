@@ -1,0 +1,107 @@
+When writing code for Omniverse, you must keep in mind its coding standards. The
+best way to do this is: Imitate the existing Omniverse code. Currently Omniverse
+uses PHP 7.0 for its code but this my change in the future as needs change. The
+primary reason for a standard is that code looks and feels similar, this in
+turn, makes it easier to maintain and extend. To maximize its compatability with
+other projects Omniverse adheres the standards defined in the PSR-1 and
+PSR-4 documents.  Currently the PSR-2 standard is under consideration...
+
+In addition, the Omniverse code base follows the following standards:
+
+1) Each function, constant, class, property, and method is required to have a
+DocBlock header.  This header includes:
+
+2) Use of the following modified Hungarian notation is strongly suggested but not
+mandatory.  All official Omniverse code will use this convention.
+
+Prefix    Type
+a         array
+b         boolean
+f         float
+h         hash (keyed array)
+i         integer
+n         number (either integer or float)
+o         object (any type)
+r         resource (open file, database, etc...)
+s         string
+x         mixed / unknown
+
+Here is a short example displaying most features described above:
+<?php
+namespace Omniverse;
+
+/**
+ * Omniverse Example Class
+ *
+ * The base Omniverse example class
+ *
+ * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @version $Revision: 1.1 $
+ * @package Omniverse
+ */
+class Test
+{
+  /**
+   * The answer to "Life, the Universe and Everything"...
+   */
+  const THE_ANSWER = 42;
+
+  /**
+   * A test boolean
+   *
+   * @var boolean
+   */
+  private $bTested = false;
+
+  /**
+   * The example type
+   *
+   * @var string
+   */
+  protected $sType = '';
+
+  /**
+   * A test number
+   *
+   * @var integer
+   */
+  public $iAnAnswer = 54;
+
+  /**
+   * Generate and return a valid, configured example
+   *
+   * @param string $sType
+   * @return \Omniverse\Example
+   * @throws \Exception
+   */
+  public static function factory($sType)
+  {
+    $sTypeClass = __NAMESPACE__ . '\\Example\\' . $sType;
+
+    if (!\class_exists($sTypeClass, true))
+    {
+        throw new \Exception("Example type '$sType' not found");
+    }
+
+    return new $sTypeClass();
+  }
+
+  /**
+   * The controller constructor
+   *
+   */
+  public function __construct()
+  {
+    $this->sType = preg_replace("#.*Example\\\#", '', get_class($this));
+  }
+
+  /**
+   * The return an answer
+   *
+   * @return integer
+   */
+  public function getAnswer()
+  {
+    return $this->iAnAnswer;
+  }
+}

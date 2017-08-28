@@ -1,4 +1,6 @@
 <?php
+namespace Omniverse\Tag;
+
 /**
  * Omniverse Table Row Class
  *
@@ -8,15 +10,23 @@
  * @version $Revision: 1.1 $
  * @package Omniverse
  */
-namespace Omniverse\Tag;
-
 class TableRow extends \Omniverse\Tag
 {
+  /**
+   * Constructor
+   *
+   * Construct a "tr" tag
+   */
   public function __construct()
   {
     parent::__construct('tr');
   }
 
+  /**
+   * Return the HTML representation of this tag
+   *
+   * @return string
+   */
   protected function toString()
   {
     $sParamList = $this->getParam();

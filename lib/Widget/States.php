@@ -1,18 +1,44 @@
 <?php
 namespace Omniverse\Widget;
 
+/**
+ * Omniverse States Widget
+ *
+ * The methods needed to load cities and states
+ *
+ * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @version $Revision: 1.1 $
+ * @package Omniverse
+ */
 class States extends Select
 {
   protected $hExtra = array('Cities' => 'City');
 
+  /**
+   * Constructor
+   *
+   * It increments the widget counter and generates a unique (but human readable) name.
+   *
+   * @param string $sName (optional)
+   * @param \Omniverse\Controller $oController (optional)
+   * @throws Omniverse\Exception\Object
+   */
   public function __construct($sName = null, \Omniverse\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->sType = 'select';
-    $hState = array_merge(array('0' => 'Select a State') , \Omniverse\Item\States::getStateList());
+    $hState = array_merge(['0' => 'Select a State'] , \Omniverse\Item\States::getStateList());
     $this->addArray($hState);
   }
 
+  /**
+   * Generate and return the cities located in the specified state
+   *
+   * @param string $sState
+   * @param string $sWidget
+   * @param string $sSelectedCity
+   * @return string
+   */
   public function ajax_getCitiesByState($sState, $sWidget, $sSelectedCity='')
   {
     $sCities = '';
@@ -39,6 +65,15 @@ class States extends Select
     return $sCities;
   }
 
+  /**
+   * Generate and return the zips located in the specified city
+   *
+   * @param string $sCity
+   * @param string $sState
+   * @param string $sWidget
+   * @param string $sSelectedZip
+   * @return string
+   */
   public function ajax_getZipsByCity($sCity, $sState, $sWidget, $sSelectedZip)
   {
     $sZips = '';

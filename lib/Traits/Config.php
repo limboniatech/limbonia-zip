@@ -20,11 +20,22 @@ trait Config
    */
   protected $hConfig = [];
 
+  /**
+   * Magic method used to determine if the specified property is set
+   *
+   * @param string $sName
+   * @return boolean
+   */
   public function __isset($sName)
   {
     return array_key_exists(strtolower($sName), $this->hConfig);
   }
 
+  /**
+   * Magic method used to remove the specified property
+   *
+   * @param string $sName
+   */
   public function __unset($sName)
   {
     $sLowerName = strtolower($sName);
@@ -35,11 +46,23 @@ trait Config
     }
   }
 
+  /**
+   * Magic method used to set the specified property to the specified value
+   *
+   * @param string $sName
+   * @param mixed $xValue
+   */
   public function __set($sName, $xValue)
   {
     $this->hConfig[strtolower($sName)] = $xValue;
   }
 
+  /**
+   * Magic method used to generate and return the specified property
+   *
+   * @param string $sName
+   * @return mixed
+   */
   public function __get($sName)
   {
     return $this->hConfig[strtolower($sName)];

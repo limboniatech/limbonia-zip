@@ -12,14 +12,28 @@ namespace Omniverse\Module;
  */
 class Software extends \Omniverse\Module
 {
-  protected $aSubMenuItems = array('View', 'Edit', 'Elements', 'Releases', 'ChangeLog', 'RoadMap');
-  protected $aAllowedMethods = array('Search', 'Create', 'EditDialog', 'EditColumn', 'Edit', 'List', 'View', 'Elements', 'Releases', 'ChangeLog', 'RoadMap');
+  /**
+   * List of sub-menu options
+   *
+   * @var array
+   */
+  protected $aSubMenuItems = ['View', 'Edit', 'Elements', 'Releases', 'ChangeLog', 'RoadMap'];
 
+  /**
+   * List of methods that are allowed to run
+   *
+   * @var array
+   */
+  protected $aAllowedMethods = ['Search', 'Create', 'EditDialog', 'EditColumn', 'Edit', 'List', 'View', 'Elements', 'Releases', 'ChangeLog', 'RoadMap'];
+
+  /**
+   * Prepare the template for display based on the current action and current method
+   */
   public function prepareTemplate()
   {
     if ($this->sCurrentMethod == 'Elements')
     {
-      $oSearch = $this->getController()->itemSearch('User', array('Type' => 'internal', 'Active' => 1), array('LastName', 'FirstName'));
+      $oSearch = $this->getController()->itemSearch('User', ['Type' => 'internal', 'Active' => 1], ['LastName', 'FirstName']);
       $this->getController()->templateData('internalUserList', $oSearch);
 
       if ($this->sCurrentAction == 'Display')
@@ -71,7 +85,7 @@ class Software extends \Omniverse\Module
           try
           {
             $oElement = $this->getController()->itemFromId('SoftwareElement', $_GET['ElementID']);
-            $oElement->setAll($this->edit_getData());
+            $oElement->setAll($this->editGetData());
             $oElement->save();
             $this->getController()->templateData('success', "Software element successfully updated");
           }
@@ -148,7 +162,7 @@ class Software extends \Omniverse\Module
           try
           {
             $oRelease = $this->getController()->itemFromId('SoftwareRelease', $_GET['ReleaseID']);
-            $oRelease->setAll($this->edit_getData());
+            $oRelease->setAll($this->editGetData());
             $oRelease->save();
             $this->getController()->templateData('success', "Software release successfully updated");
           }
@@ -177,5 +191,4 @@ class Software extends \Omniverse\Module
 
     return parent::prepareTemplate();
   }
-
 }
