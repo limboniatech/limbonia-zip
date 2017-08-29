@@ -270,12 +270,17 @@ class Ticket extends \Omniverse\Module
   {
     if ($sColumn == 'ReleaseID')
     {
-      return $oItem->release->id == 0 ? 'None' : $oItem->release->version;
+      return $oItem->releaseId == 0 ? 'None' : '<a target="_blank" href="?Admin=Display&Module=Software&Display=RoadMap&SoftwareID=' . $oItem->softwareId . '#' . $oItem->release->version . '">' . $oItem->release->version . '</a>';
     }
 
     if ($sColumn == 'CreatorID')
     {
-      return $oItem->creator->id == 0 ? 'None' : $oItem->creator->name;
+      return $oItem->creatorId == 0 ? 'None' : '<a target="_blank" href="?Admin=Process&Module=User&Process=View&UserID=' . $oItem->creatorId . '">' . $oItem->creator->name . '</a>';
+    }
+
+    if ($sColumn == 'OwnerID')
+    {
+      return $oItem->ownerId == 0 ? 'None' : '<a target="_blank" href="?Admin=Process&Module=User&Process=View&UserID=' . $oItem->ownerId . '">' . $oItem->owner->name . '</a>';
     }
 
     if (in_array($sColumn, ['Type', 'Status', 'Priority', 'Severity', 'Projection', 'DevStatus', 'QualityStatus']))

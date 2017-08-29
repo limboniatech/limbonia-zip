@@ -15,3 +15,7 @@ Omniverse 1.0.2
 Minor Bug #10: Ticket System - Successful ticket creation doesn't display the "Subject" of the ticket (Lonnie Blansett)
 Minor Bug #25: Admin - Items are not being deleted (Lonnie Blansett)
 Minor Bug #19: Ticket System - Subjects with quotes get mangled on edit (Lonnie Blansett)
+
+2017-08-29 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.1.0
+Feature #21: Ticket System - Link ticket fields with thier respective representations in the admin (Lonnie Blansett)
