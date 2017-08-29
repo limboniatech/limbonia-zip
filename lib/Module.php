@@ -1525,9 +1525,6 @@ class Module
       return $this->editFinish($sType, "No IDs were checked, $sUse has failed.  Please check some items and try again!<br />\n", false);
     }
 
-    $hOrder = isset($_SESSION['EditData']['All']) ? [] : [$sFullIDColumn => array_keys($_SESSION['EditData'][$sIDColumn])];
-    $_SESSION['EditData']['AdList'] = Item::search($this->getType(), $hOrder);
-
     if (isset($_SESSION['EditData']['Delete']))
     {
       if (!isset($_POST['Check']))
@@ -1537,9 +1534,12 @@ class Module
 
       $bSuccess = false;
 
-      if (isset($_SESSION['EditData']['AdList']))
+      $hWhere = isset($_SESSION['EditData']['All']) ? [] : [$sFullIDColumn => array_keys($_SESSION['EditData'][$sIDColumn])];
+      $oItemList = \Omniverse\Item::search($this->getType(), $hWhere);
+
+      if (isset($oItemList))
       {
-        foreach ($_SESSION['EditData']['AdList'] as $oItem)
+        foreach ($oItemList as $oItem)
         {
           $oItem->delete();
         }

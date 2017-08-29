@@ -12,4 +12,5 @@ Change #13: Update code to standards (Lonnie Blansett)
 
 2017-08-27 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.0.2
-Minor Bug #10: - Successful ticket creation doesn't display the "Subject" of the ticket (Lonnie Blansett)
+Minor Bug #10: Ticket System - Successful ticket creation doesn't display the "Subject" of the ticket (Lonnie Blansett)
+Minor Bug #25: Admin - Items are not being deleted (Lonnie Blansett)
