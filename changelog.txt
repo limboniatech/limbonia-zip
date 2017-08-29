@@ -14,3 +14,4 @@ Change #13: Update code to standards (Lonnie Blansett)
 Omniverse 1.0.2
 Minor Bug #10: Ticket System - Successful ticket creation doesn't display the "Subject" of the ticket (Lonnie Blansett)
 Minor Bug #25: Admin - Items are not being deleted (Lonnie Blansett)
+Minor Bug #19: Ticket System - Subjects with quotes get mangled on edit (Lonnie Blansett)

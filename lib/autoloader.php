@@ -23,4 +23,4 @@ spl_autoload_register(function ($sClassName)
 });
 
 //Twig autoloader
-require_once '../private_html/lib/Twig/Autoloader.php';
+require_once 'Twig/Autoloader.php';

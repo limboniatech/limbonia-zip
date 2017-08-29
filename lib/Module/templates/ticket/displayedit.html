@@ -2,25 +2,25 @@
 <table>
 <tr>
   <td>
-    <form name="Edit" action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post">
+    <form name="Edit" action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.idColumn}}={{currentItem.id}}" method="post">
     <table>
-    {{module.getFormField('Status', currentItem.Status, editColumns['Status'], true)}}
-    {{module.getFormField('Priority', currentItem.Priority, editColumns['Priority'], true)}}
-    {{module.getFormField('OwnerID', currentItem.OwnerID, editColumns['OwnerID'], true)}}
-    {{module.getFormField('Subject', currentItem.Subject, editColumns['Subject'], true)}}
-    {{module.getFormField('CategoryID', currentItem.CategoryID, editColumns['CategoryID'], true)}}
-    {{module.getFormField('StartDate', currentItem.StartDate, editColumns['StartDate'], true)}}
-    {{module.getFormField('DueDate', currentItem.DueDate, editColumns['DueDate'], true)}}
+    {{module.getFormField('Status', currentItem.status, editColumns['Status'], true)}}
+    {{module.getFormField('Priority', currentItem.priority, editColumns['Priority'], true)}}
+    {{module.getFormField('OwnerID', currentItem.ownerID, editColumns['OwnerID'], true)}}
+    {{module.getFormField('Subject', currentItem.subject, editColumns['Subject'], true)}}
+    {{module.getFormField('CategoryID', currentItem.categoryID, editColumns['CategoryID'], true)}}
+    {{module.getFormField('StartDate', currentItem.startDate, editColumns['StartDate'], true)}}
+    {{module.getFormField('DueDate', currentItem.dueDate, editColumns['DueDate'], true)}}
 {% if currentItem.Type == 'software' %}
-    {{module.getFormField('SoftwareID', currentItem.SoftwareID, editColumns['SoftwareID'], true)}}
-    {{module.getFormField('ReleaseID', currentItem.ReleaseID, editColumns['ReleaseID'], true)}}
-    {{module.getFormField('ElementID', currentItem.ElementID, editColumns['ElementID'], true)}}
-    {{module.getFormField('Severity', currentItem.Severity, editColumns['Severity'], true)}}
-    {{module.getFormField('Projection', currentItem.Projection, editColumns['Projection'], true)}}
-    {{module.getFormField('DevStatus', currentItem.DevStatus, editColumns['DevStatus'], true)}}
+    {{module.getFormField('SoftwareID', currentItem.softwareID, editColumns['SoftwareID'], true)}}
+    {{module.getFormField('ReleaseID', currentItem.releaseID, editColumns['ReleaseID'], true)}}
+    {{module.getFormField('ElementID', currentItem.elementID, editColumns['ElementID'], true)}}
+    {{module.getFormField('Severity', currentItem.severity, editColumns['Severity'], true)}}
+    {{module.getFormField('Projection', currentItem.projection, editColumns['Projection'], true)}}
+    {{module.getFormField('DevStatus', currentItem.devStatus, editColumns['DevStatus'], true)}}
     {{module.getFormField('QualityStatus', currentItem.QualityStatus, editColumns['QualityStatus'], true)}}
-    {{module.getFormField('Description', currentItem.Description, editColumns['Description'], true)}}
-    {{module.getFormField('StepsToReproduce', currentItem.StepsToReproduce, editColumns['StepsToReproduce'], true)}}
+    {{module.getFormField('Description', currentItem.description, editColumns['Description'], true)}}
+    {{module.getFormField('StepsToReproduce', currentItem.stepsToReproduce, editColumns['StepsToReproduce'], true)}}
 {% endif %}
     {{module.getFormField('UpdateText', '', [], true)}}
     {{module.getFormField('UpdateType', '', [], true)}}
