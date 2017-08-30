@@ -18,4 +18,6 @@ Minor Bug #19: Ticket System - Subjects with quotes get mangled on edit (Lonnie 
 
 2017-08-29 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.1.0
+Feature #20: Software System - Add ability to add tickets from the roadmap (Lonnie Blansett)
 Feature #21: Ticket System - Link ticket fields with thier respective representations in the admin (Lonnie Blansett)
+Feature #23: Software System - Display List of Unversioned Tickets on Roadmap (Lonnie Blansett)

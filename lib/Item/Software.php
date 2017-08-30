@@ -124,4 +124,14 @@ class Software extends \Omniverse\Item
     $oElement = parent::fromId('SoftwareElement', $iElement, $this->getDB());
     return $oElement->delete();
   }
+
+  /**
+   * Generate and return a list of ticket related to this software but is not associated with any releases
+   *
+   * @return \Omniverse\ItemList
+   */
+  public function getUnversionedTikets()
+  {
+    return parent::getList('Ticket', "SELECT * FROM Ticket WHERE SoftwareID = $this->softwareId AND (ReleaseID IS NULL OR ReleaseID = 0) ORDER BY Priority, CreateTime", $this->getDB());
+  }
 }

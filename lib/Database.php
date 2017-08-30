@@ -636,7 +636,7 @@ class Database extends \PDO
 
   public function makeSearchQuery($sTable, $hWhere = [], $xOrder = null)
   {
-    $sOrder = Database::makeOrder($xOrder);
+    $sOrder = self::makeOrder($xOrder);
     $sWhere = '';
 
     if (is_array($hWhere) && count($hWhere) > 0)

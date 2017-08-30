@@ -1,3 +1,11 @@
+{% set unversionedList = currentItem.getUnversionedTikets() %}
+{% if unversionedList.count() > 0 %}
+  <h5 id="OmnisysProgress">Unversioned {{currentItem.name}} (<a target="_blank" href="?Admin=Display&Module=Ticket&Display=Create&Type=software&SoftwareID={{currentItem.id}}">New Ticket</a>)</h5>
+  {% for unversionedBug in unversionedList %}
+      <div class="OmnisysIncomplete">- [{{unversionedBug.qualityStatus | title}}] {{unversionedBug.severity | title}} <a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{unversionedBug.id}}" title="[{{unversionedBug.devStatus}}] {{unversionedBug.subject | escape}}">#{{unversionedBug.id}}</a>: {{unversionedBug.element.name}} - {{unversionedBug.subject | escape}} ({{unversionedBug.owner.name}}) - {{unversionedBug.devStatus}}</div>
+  {% endfor %}
+  <hr>
+{% endif %}
 {% for release in currentItem.releaseList('roadmap') %}
   {% set completedList = release.ticketList('complete') %}
   {% set incompleteList = release.ticketList('incomplete') %}
@@ -9,7 +17,7 @@
   {% set bugCount = completedCount + incompleteCount %}
   {% if bugCount > 0 %}
     {% set finishedPercent = ('%01.0f' | format((100 * completedCount / bugCount))) %}
-      <h5 id="{{release.version}}}"><a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{release.ticketID}}">{{currentItem.name}} - {{release.version}}</a> {% if release.ticket.dueDate %}({{release.ticket.dueDate}}){% else %}(No Due Date){% endif %}</h5>
+    <h5 id="{{release.version}}"><a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{release.ticketID}}">{{currentItem.name}} - {{release.version}}</a> {% if release.ticket.dueDate %}({{release.ticket.dueDate}}){% else %}(No Due Date){% endif %} (<a target="_blank" href="?Admin=Display&Module=Ticket&Display=Create&Type=software&SoftwareID={{currentItem.id}}&ReleaseID={{release.id}}">New Ticket</a>)</h5>
       <div class="OmnisysProgress"><span class="OmnisysProgressBar" style="width: {{finishedPercent}}%;">{{finishedPercent}}%</span></div>
       <hr />
     {% for priority, ticketList in incompleteList %}
