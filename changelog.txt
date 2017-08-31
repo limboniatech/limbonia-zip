@@ -1,6 +1,15 @@
-2017-08-16 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.0.0
-Initial check-in
+2017-08-31 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.1.0
+Feature #20: Software System - Add ability to add tickets from the roadmap (Lonnie Blansett)
+Feature #21: Ticket System - Link ticket fields with thier respective representations in the admin (Lonnie Blansett)
+Feature #23: Software System - Display List of Unversioned Tickets on Roadmap (Lonnie Blansett)
+Feature #22: User - Add a User tab for tickets (Lonnie Blansett)
+
+2017-08-27 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.0.2
+Minor Bug #10: Ticket System - Successful ticket creation doesn't display the "Subject" of the ticket (Lonnie Blansett)
+Minor Bug #25: Admin - Items are not being deleted (Lonnie Blansett)
+Minor Bug #19: Ticket System - Subjects with quotes get mangled on edit (Lonnie Blansett)
 
 2017-08-27 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.0.1
@@ -10,15 +19,6 @@ Minor Bug #9: - Updating tickets leads to module error (Lonnie Blansett)
 Minor Bug #11: - Sotware Roadmap not displaying user names (Lonnie Blansett)
 Change #13: Update code to standards (Lonnie Blansett)
 
-2017-08-27 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.0.2
-Minor Bug #10: Ticket System - Successful ticket creation doesn't display the "Subject" of the ticket (Lonnie Blansett)
-Minor Bug #25: Admin - Items are not being deleted (Lonnie Blansett)
-Minor Bug #19: Ticket System - Subjects with quotes get mangled on edit (Lonnie Blansett)
-
-2017-08-29 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.1.0
-Feature #20: Software System - Add ability to add tickets from the roadmap (Lonnie Blansett)
-Feature #21: Ticket System - Link ticket fields with thier respective representations in the admin (Lonnie Blansett)
-Feature #23: Software System - Display List of Unversioned Tickets on Roadmap (Lonnie Blansett)
-Feature #22: User - Add a User tab for tickets (Lonnie Blansett)
+2017-08-16 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.0.0
+Initial check-in
