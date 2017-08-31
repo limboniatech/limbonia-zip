@@ -34,14 +34,15 @@ div.OmnisysSortGridDiv { vertical-align: top; }
 .OmnisysSortGrid { border-color: #ffffff;  min-width: 50%; border-width: 1px; border-style: solid; }
 .OmnisysSortGrid thead tr { background-color: #ffffff; }
 .OmnisysSortGrid th { padding: 5px; }
-.OmnisysSortGrid tr.even { background-color: #ccccff; border-style: hidden;  border-width: 0px; }
-.OmnisysSortGrid tr.even td  { border-style: hidden;  border-width: 0px;  padding: 5px;}
-.OmnisysSortGrid tr.even:hover { background-color: #5555ff; color: #ffffff; }
-.OmnisysSortGrid tr.even:hover a { background-color: #5555ff; color: #ffffff; }
-.OmnisysSortGrid tr.odd { background-color: #ffffff; border-style: hidden; border-width: 0px; }
-.OmnisysSortGrid tr.odd  td { border-style: hidden;  border-width: 0px;  padding: 5px;}
-.OmnisysSortGrid tr.odd:hover { background-color: #5555ff; color: #ffffff; }
-.OmnisysSortGrid tr.odd:hover a { background-color: #5555ff; color: #ffffff; }
+
+.OmnisysSortGrid tbody tr { background-color: #ffffff; border-style: hidden; border-width: 0px; }
+.OmnisysSortGrid tbody tr td { border-style: hidden;  border-width: 0px;  padding: 5px;}
+.OmnisysSortGrid tbody tr:hover { background-color: #5555ff; color: #ffffff; }
+.OmnisysSortGrid tbody tr:hover a { background-color: #5555ff; color: #ffffff; }
+
+.OmnisysSortGrid tbody tr:nth-child(odd) { background-color: #ccccff; }
+.OmnisysSortGrid tbody tr:nth-child(odd):hover { background-color: #5555ff; color: #ffffff; }
+.OmnisysSortGrid tbody tr:nth-child(odd):hover a { background-color: #5555ff; color: #ffffff; }
 
 .OmnisysAdminContent { background-color: #ddddff; border-color: #5555ff; min-width: 400px; border-width: 1px 1px 1px 1px; padding: 20px 10px 20px 25px; border-style: none solid solid solid; font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; vertical-align: top;}
 
@@ -56,6 +57,11 @@ div.OmnisysSortGridDiv { vertical-align: top; }
 .OmnisysCurrentSubTab a { border-width: 1px 1px 1px 1px; border-style: solid; border-color: #BBBB99 #BBBB99 #FFFFFC #BBBB99; padding: 3px 6px 3px 6px; background-color: #FFFFFC; font-weight: bold; margin: 0px 8px 0px 0px; color: #000000; }
 .OmnisysSubTab a { border-width: 1px 1px 1px 1px; border-style: solid; border-color: #BBBB99; padding: 3px 6px 3px 6px; background-color: #eeeeff; font-weight: normal; margin: 0px 8px 0px 0px; color: #000000; }
 .OmnisysSubTabPage { border-style: solid; border-color: #BBBB99; border-width: 0px 1px 1px 1px; background-color: #fefeff; margin: 0px; padding: 20px 10px 10px 10px; }
+
+.OmnisysSubTabPage .OmnisysSortGrid
+{
+  background-color: #ddddff;
+}
 
 .OmnisysMethodSuccess { font-weight: bold; padding: 5px 5px 5px 5px; background-color: lightgreen; border: 1px dashed green; }
 .OmnisysMethodFailure { font-weight: bold; padding: 5px 5px 5px 5px; background-color: pink; border: 1px dashed red; }

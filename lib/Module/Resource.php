@@ -17,7 +17,7 @@ class Resource extends \Omniverse\Module
    *
    * @var array
    */
-  protected $aMenuItems = array('List', 'Create');
+  protected $aMenuItems = ['List', 'Create'];
 
     /**
    * Instantiate the resource module

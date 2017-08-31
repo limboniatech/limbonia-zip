@@ -8,9 +8,6 @@ Try a{% if method != 'List' %} different{% endif %} <a href="?Admin=Display&Modu
 {% set bEven = true %}
 {% for item in data %}
   {% set oRow = table.startRow %}
-  {% set sEvenOdd = bEven ? 'even' : 'odd' %}
-  {% set bEven = not bEven %}
-  {{ oRow.setParam('class', sEvenOdd) }}
   {% set x = table.addCell(module.processSearchGridRowControl(idColumn, item.ID)) %}
   {% for column in dataColumns %}
     {% set x = table.addCell(module.getColumnValue(item, column)) %}

@@ -47,7 +47,7 @@ class Profile extends \Omniverse\Module
    */
   protected $aIgnore =
   [
-    'Edit' =>
+    'edit' =>
     [
       'UserID',
       'Password',
@@ -57,15 +57,15 @@ class Profile extends \Omniverse\Module
       'Active',
       'Visible'
     ],
-    'Create' => [],
-    'Search' =>
+    'create' => [],
+    'search' =>
     [
       'Password',
       'ShippingAddress',
       'StreetAddress',
       'Notes'
     ],
-    'View' =>
+    'view' =>
     [
       'Password',
       'Type',
@@ -73,7 +73,7 @@ class Profile extends \Omniverse\Module
       'Active',
       'Visible'
     ],
-    'Boolean' =>
+    'boolean' =>
     [
       'Active',
       'Visible'

@@ -20,7 +20,7 @@ class Widget extends Tag
   /**
    * @var array $aIncludedScript - the list of already included scripts.
    */
-  private static $aIncludedScript = array();
+  private static $aIncludedScript = [];
 
   /**
    * @var string $sName - unique object name for use in submitting form data.

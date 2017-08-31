@@ -470,7 +470,7 @@ class Ticket extends \Omniverse\Item
     {
       //don't send an email to the watcher if they are making the changes
       //also, don't send them 'private' updates unless the watcher is an 'internal' or 'system' type user
-      if (\strtolower($oWatcher->email) != $sOriginatorEmail && ($oContent->updateType != 'private' || in_array($oWatcher->type, array('internal', 'system'))))
+      if (\strtolower($oWatcher->email) != $sOriginatorEmail && ($oContent->updateType != 'private' || in_array($oWatcher->type, ['internal', 'system'])))
       {
         $oEmail->addTo($oWatcher->email);
       }

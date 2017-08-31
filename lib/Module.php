@@ -75,15 +75,15 @@ class Module
    */
   protected $aIgnore =
   [
-    'Edit' => [],
-    'Create' => [],
-    'Search' => [],
-    'View' => [],
-    'Boolean' => []
+    'edit' => [],
+    'create' => [],
+    'search' => [],
+    'view' => [],
+    'boolean' => []
   ];
 
   /**
-   * List of column names in nthe order required
+   * List of column names in the order required
    *
    * @var array
    */
@@ -414,11 +414,11 @@ class Module
           unset($hTemp[$sIDColumn]);
         }
 
-        $hColumn = array();
+        $hColumn = [];
 
         foreach ($hTemp as $sKey => $hValue)
         {
-          if ((in_array($sKey, $this->aIgnore['Create'])) || (isset($hValue['Key']) && preg_match("/Primary/", $hValue['Key'])))
+          if ((in_array($sKey, $this->aIgnore['create'])) || (isset($hValue['Key']) && preg_match("/Primary/", $hValue['Key'])))
           {
             continue;
           }
@@ -438,7 +438,7 @@ class Module
 
         $hTemp = $this->oItem->getColumns();
         $aColumn = $this->getColumns('Edit');
-        $hColumn = array();
+        $hColumn = [];
 
         foreach ($aColumn as $sColumnName)
         {
@@ -800,9 +800,9 @@ class Module
    * @param string $sType (optional)
    * @return array
    */
-  public function getColumns($sType=null)
+  public function getColumns($sType = null)
   {
-    $sType = ucfirst(strtolower(trim($sType)));
+    $sLowerType = strtolower($sType);
     $hColumn = $this->oItem->getColumns();
     $sIDColumn = $this->oItem->getIDColumn();
 
@@ -812,15 +812,13 @@ class Module
       unset($hColumn[$sIDColumn]);
     }
 
-    $aColumn = array_keys($hColumn);
-
-    if (empty($sType) || !isset($this->aIgnore[$sType]))
+    if (empty($sLowerType) || !isset($this->aIgnore[$sLowerType]))
     {
-      return $aColumn;
+      return array_keys($hColumn);
     }
 
     //get the column names and remove the ignored columns
-    $aColumn = array_diff(array_keys($hColumn), $this->aIgnore[$sType]);
+    $aColumn = array_diff(array_keys($hColumn), $this->aIgnore[$sLowerType]);
 
     //reorder the columns
     return array_unique(array_merge($this->aColumnOrder, $aColumn));
@@ -1122,7 +1120,7 @@ class Module
 
     if ($sName == 'UserID')
     {
-      $oUsers = Item::search('User', array('Visible' => true, 'Active' => true));
+      $oUsers = Item::search('User', ['Visible' => true, 'Active' => true]);
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[UserID]");
       $oSelect->addOption('Select a user', '');
 
@@ -1559,7 +1557,7 @@ class Module
     if (!isset($_POST['Update']))
     {
       $hColumn = $this->oItem->getColumn($sFullColumn);
-      return $this->editDialog($sType, $this->getFormFields(array($_SESSION['EditData']['Column'] => $hColumn)), 'Update');
+      return $this->editDialog($sType, $this->getFormFields([$_SESSION['EditData']['Column'] => $hColumn]), 'Update');
     }
 
     //the first item in the _POST array will be our data
@@ -1584,7 +1582,7 @@ class Module
     $hFullPost = filter_input_array(INPUT_POST);
     $hPost = isset($hFullPost[$this->sModuleName]) ? $hFullPost[$this->sModuleName] : $hFullPost;
     $hTemp = $this->oItem->getColumns();
-    $aIgnore = isset($this->aIgnore['Boolean']) ? $this->aIgnore['Boolean'] : [];
+    $aIgnore = isset($this->aIgnore['boolean']) ? $this->aIgnore['boolean'] : [];
 
     foreach ($hTemp as $sName => $hColumnData)
     {

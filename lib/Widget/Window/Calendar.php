@@ -70,7 +70,7 @@ class Calendar extends \Omniverse\Widget\Window
   {
     $xDate = trim($xDate);
 
-    if (empty($xDate) || in_array($xDate, array('0000-00-00 00:00:00', '0000-00-00')))
+    if (empty($xDate) || in_array($xDate, ['0000-00-00 00:00:00', '0000-00-00']))
     {
       $this->sStartDate = '';
       return true;

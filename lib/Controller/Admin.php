@@ -154,7 +154,7 @@ class Admin extends \Omniverse\Controller
 
     \Twig_autoloader::register();
     $oLoader = new \Twig_Loader_Filesystem($_SESSION['ModuleDirs']);
-    self::$oTemplateGenerator = new \Twig_Environment($oLoader, array('trim_blocks' => true, 'cache' => $this->CacheDir, 'auto_reload' => true, 'autoescape' => false));
+    self::$oTemplateGenerator = new \Twig_Environment($oLoader, ['trim_blocks' => true, 'cache' => $this->cacheDir, 'auto_reload' => true, 'autoescape' => false]);
     $this->templateData('api', $this);
     self::$oTemplateGenerator->addFilter('replace', new \Twig_Filter_Function('\Omniverse\Controller\Admin::replace'));
     self::$oTemplateGenerator->addFilter('match', new \Twig_Filter_Function('\Omniverse\Controller\Admin::match'));
@@ -350,7 +350,7 @@ class Admin extends \Omniverse\Controller
           //A Email stored in the session data shouldn't ever be NULL so we use === for the comparison...
           if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $_SESSION['Email'] === $this->hConfig['master']['User'])
           {
-            $oUserList = $this->itemSearch('User', array('Email' => 'MasterAdmin'));
+            $oUserList = $this->itemSearch('User', ['Email' => 'MasterAdmin']);
             $this->oUser = count($oUserList) == 0 ? false : $oUserList[0];
           }
           else
@@ -371,7 +371,7 @@ class Admin extends \Omniverse\Controller
         //A Email and password submitted through post or get shouldn't ever be NULL so we use === for the comparison...
         if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $sEmail === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && $sPassword === $this->hConfig['master']['Password'])
         {
-          $oUserList = $this->itemSearch('User', array('Email' => 'MasterAdmin'));
+          $oUserList = $this->itemSearch('User', ['Email' => 'MasterAdmin']);
           $_SESSION['Email'] = $sEmail;
           $this->oUser = count($oUserList) == 0 ? false : $oUserList[0];
         }

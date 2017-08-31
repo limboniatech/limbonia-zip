@@ -9,9 +9,6 @@ Try a different <a href="?Admin=Display&Module={{module.name}}&Display=Search">s
 {% set bEven = true %}
 {% for item in data %}
   {% set oRow = table.startRow %}
-  {% set sEvenOdd = bEven ? 'even' : 'odd' %}
-  {% set bEven = not bEven %}
-  {{ oRow.setParam('class', sEvenOdd) }}
   {% set x = table.addCell(module.processSearchGridRowControl(idColumn, item.ID)) %}
   {% set x = table.addCell(item.Name) %}
   {% if item.AssignmentMethod == 'direct' %}

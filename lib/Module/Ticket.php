@@ -19,14 +19,14 @@ class Ticket extends \Omniverse\Module
    */
   protected $aIgnore =
   [
-    'Edit' =>
+    'edit' =>
     [
       'LastUpdate',
       'CreateTime',
       'CompletionTime',
       'CreatorID'
     ],
-    'Create' =>
+    'create' =>
     [
       'CreatorID',
   		'TimeSpent',
@@ -34,7 +34,7 @@ class Ticket extends \Omniverse\Module
       'CompletionTime',
       'LastUpdate'
     ],
-    'Search' =>
+    'search' =>
     [
       'TimeSpent',
       'ParentID',
@@ -50,11 +50,28 @@ class Ticket extends \Omniverse\Module
       'Description',
       'StepsToReproduce'
     ],
-    'View' => []
+    'view' => [],
+    'usertickets' =>
+    [
+      'TimeSpent',
+      'OwnerID',
+      'ParentID',
+      'CompletionTime',
+      'CreateTime',
+      'SoftwareID',
+      'ElementID',
+      'ReleaseID',
+      'Severity',
+      'Projection',
+      'DevStatus',
+      'QualityStatus',
+      'Description',
+      'StepsToReproduce'
+    ],
   ];
 
   /**
-   * List of column names in nthe order required
+   * List of column names in the order required
    *
    * @var array
    */
@@ -294,7 +311,7 @@ class Ticket extends \Omniverse\Module
       return $sValue == '0000-00-00 00:00:00' || empty($sValue) ? '' : $sValue;
     }
 
-    if (in_array($sColumn, array('DueDate')))
+    if (in_array($sColumn, ['DueDate']))
     {
       $sValue = parent::getColumnValue($oItem, $sColumn);
       return $sValue == '0000-00-00' || empty($sValue) ? '' : $sValue;
@@ -340,7 +357,7 @@ class Ticket extends \Omniverse\Module
 
     if ($sName == 'OwnerID')
     {
-      $oUsers = \Omniverse\Item::search('User', array('Visible' => true, 'Active' => true));
+      $oUsers = \Omniverse\Item::search('User', ['Visible' => true, 'Active' => true]);
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
       $oSelect->addOption('Select an owner', '');
 
@@ -380,7 +397,7 @@ class Ticket extends \Omniverse\Module
 
     if ($sName == 'UpdateType')
     {
-      if (in_array($this->oItem->Type, array('internal', 'system')))
+      if (in_array($this->oItem->Type, ['internal', 'system']))
       {
         if ($bInTable)
         {

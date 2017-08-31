@@ -298,4 +298,9 @@ class User extends \Omniverse\Item
 
     return parent::__isset($sName);
   }
+
+  public function getTickets()
+  {
+    return parent::search('Ticket', ['OwnerID' => $this->id, 'Status' => '!=:closed'], ['Priority', 'DueDate DESC'], $this->getDB());
+  }
 }

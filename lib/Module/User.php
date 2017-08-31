@@ -19,12 +19,12 @@ class User extends \Omniverse\Module
    */
   protected $aIgnore =
   [
-    'Edit' =>
+    'edit' =>
     [
       'Password'
     ],
-    'Create' => [],
-    'Search' =>
+    'create' => [],
+    'search' =>
     [
       'Password',
       'ShippingAddress',
@@ -39,7 +39,7 @@ class User extends \Omniverse\Module
       'Active',
       'Visible'
     ],
-    'View' =>
+    'view' =>
     [
       'Password'
     ]
@@ -57,6 +57,8 @@ class User extends \Omniverse\Module
     $this->aSubMenuItems[] = 'Resources';
     $this->aAllowedMethods[] = 'ResetPassword';
     $this->aSubMenuItems[] = 'ResetPassword';
+    $this->aAllowedMethods[] = 'Tickets';
+   $this->aSubMenuItems[] = 'Tickets';
     parent::__construct($sType, $oController);
   }
 

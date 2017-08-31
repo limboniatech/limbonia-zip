@@ -38,7 +38,7 @@ class Ajax extends \Omniverse\Controller
       die("alert('Class \"$sClass\" does *not* contain the method \"$sFunction\"!');");
     }
 
-    $sReslult = call_user_func_array(array(&$oRequest, $sFunction), $_POST);
+    $sReslult = call_user_func_array([&$oRequest, $sFunction], $_POST);
 
     if (ob_get_length() > 10)
     {

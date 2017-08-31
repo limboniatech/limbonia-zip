@@ -1,0 +1,21 @@
+{% set ticketList = currentItem.getTickets() %}
+{% if ticketList.count == 0  %}
+Sorry!  This user has no tickets at this time!<br />
+{% else %}
+{% set table = api.widgetFactory('Table') %}
+{% set ticketModule = api.moduleFactory('Ticket') %}
+{% set columnList = ticketModule.getColumns('userTickets') %}
+{{table.makeSortable}}{{table.addClass('OmnisysSortGrid')}}{% set x = table.startHeader %}{% set x = table.addCell('&nbsp;', false) %}
+{% for column in columnList %}{{ ticketModule.processSearchGridHeader(table, column) }}{% endfor %}
+{{ table.endRow }}
+{% set bEven = true %}
+{% for item in ticketList %}
+  {% set oRow = table.startRow %}
+  {% set x = table.addCell('<a href="?Admin=Process&Module=Ticket&Process=View&TicketID=' ~ item.id ~'">View</a>') %}
+  {% for column in columnList %}
+    {% set x = table.addCell(ticketModule.getColumnValue(item, column)) %}
+  {% endfor %}
+  {{ table.endRow }}
+{% endfor %}
+{{ table.toString }}
+{% endif %}

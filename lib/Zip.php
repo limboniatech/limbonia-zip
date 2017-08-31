@@ -64,7 +64,7 @@ class Zip
    *
    * @var array
    */
-  private $aAddedDirs = array('./');
+  private $aAddedDirs = ['./'];
 
   /**
    * List of files that have already been added to the archive

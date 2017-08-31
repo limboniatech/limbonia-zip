@@ -12,7 +12,7 @@ namespace Omniverse\Widget;
  */
 class States extends Select
 {
-  protected $hExtra = array('Cities' => 'City');
+  protected $hExtra = ['Cities' => 'City'];
 
   /**
    * Constructor

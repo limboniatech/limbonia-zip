@@ -151,7 +151,7 @@ class Area extends \Omniverse\Module
     {
       if (!isset($_POST['Zip']))
       {
-        $_POST['Zip'] = array();
+        $_POST['Zip'] = [];
       }
 
       try

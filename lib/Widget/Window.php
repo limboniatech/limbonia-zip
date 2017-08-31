@@ -92,7 +92,7 @@ class Window extends \Omniverse\Widget
   {
     parent::__construct($sName, $oController);
     $this->sOnClick = " onClick=\"show{$this->sID}()\"";
-    $this->aScript = array($this->sWebShareDir . "/window.js");
+    $this->aScript = [$this->sWebShareDir . '/window.js'];
   }
 
   /**

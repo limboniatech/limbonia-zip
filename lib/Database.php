@@ -661,7 +661,7 @@ class Database extends \PDO
           }
 
           $sList = implode(', ', $xValue);
-          $aWhere[] = "$sColumn IN ($sList)";
+          $aWhere[] = "$sRealColumn IN ($sList)";
         }
         else
         {
@@ -678,7 +678,7 @@ class Database extends \PDO
             $xValue = null;
           }
 
-          $aWhere[] = "$sColumn $sOperator " . self::prepareValue($hColumns[$sRealColumn], $xValue);
+          $aWhere[] = "$sRealColumn $sOperator " . self::prepareValue($hColumns[$sRealColumn], $xValue);
         }
       }
 
