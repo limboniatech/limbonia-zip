@@ -21,3 +21,4 @@ Omniverse 1.1.0
 Feature #20: Software System - Add ability to add tickets from the roadmap (Lonnie Blansett)
 Feature #21: Ticket System - Link ticket fields with thier respective representations in the admin (Lonnie Blansett)
 Feature #23: Software System - Display List of Unversioned Tickets on Roadmap (Lonnie Blansett)
+Feature #22: User - Add a User tab for tickets (Lonnie Blansett)
