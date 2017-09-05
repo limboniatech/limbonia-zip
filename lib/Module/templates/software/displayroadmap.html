@@ -1,5 +1,5 @@
 {% set unversionedList = currentItem.getUnversionedTikets() %}
-  <h5 id="OmnisysProgress">Unversioned Tickets (<a target="_blank" href="?Admin=Display&Module=Ticket&Display=Create&Type=software&SoftwareID={{currentItem.id}}">New Ticket</a>)</h5>
+  <h5 id="OmnisysProgress">Unversioned Tickets (<a target="_blank" href="?Admin=Display&Module=Ticket&Display=Create&Type=software&SoftwareID={{currentItem.id}}">New Ticket</a>) (<a target="_blank" href="?Admin=Display&Module=Software&Display=Releases&SoftwareID={{currentItem.id}}">New Version</a>)</h5>
 {% if unversionedList.count() > 0 %}
   {% for unversionedBug in unversionedList %}
       <div class="OmnisysIncomplete">- [{{unversionedBug.qualityStatus | title}}] {{unversionedBug.severity | title}} <a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{unversionedBug.id}}" title="[{{unversionedBug.devStatus}}] {{unversionedBug.subject | escape}}">#{{unversionedBug.id}}</a>: {{unversionedBug.element.name}} - {{unversionedBug.subject | escape}} ({{unversionedBug.owner.name}}) - {{unversionedBug.devStatus}}</div>
