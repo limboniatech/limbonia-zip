@@ -33,7 +33,8 @@ class ResourceLock extends \Omniverse\Module
     if ($sName == 'Resource')
     {
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[Resource]");
-      $oSelect->addOption('Select a resource', '');
+      $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select a resource';
+      $oSelect->addOption($sEmptyItemLabel, '');
 
       foreach ($_SESSION['ResourceList'] as $sResource => $hComponent)
       {
@@ -56,7 +57,8 @@ class ResourceLock extends \Omniverse\Module
     if ($sName == 'Component')
     {
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[Component]");
-      $oSelect->addOption('Select a component', '');
+      $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select a component';
+      $oSelect->addOption($sEmptyItemLabel, '');
 
       //since I'm setting the name for the Resource and Component objects above, I can depend on their ids below
       $sScript = "var resource = document.getElementById('{$this->sModuleName}Resource');\n";

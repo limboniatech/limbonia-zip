@@ -306,6 +306,16 @@ class Module
   }
 
   /**
+   * Is this module currently performing a search?
+   *
+   * @return boolean
+   */
+  public function isSearch()
+  {
+    return in_array(strtolower($this->sCurrentMethod), ['search', 'list']);
+  }
+
+  /**
    * Return the parent admin object
    *
    * @return \Omniverse\Controller
@@ -457,7 +467,7 @@ class Module
       elseif ($this->sCurrentMethod == 'Search')
       {
         $hTemp = $this->oItem->getColumns();
-        $aColumn = $this->getColumns('Search');
+        $aColumn = $this->getColumns('search');
         $hColumn = [];
 
         foreach ($aColumn as $sColumnName)
@@ -962,9 +972,9 @@ class Module
    */
   public function getFormField($sName, $sValue = null, $hData = [], $bInTable = false)
   {
-    $sLabel = preg_replace("/([A-Z])/", " $1", $sName);
+    $sLabel = preg_replace("/([A-Z])/", "$1", $sName);
 
-    if (is_null($sValue) && isset($hData['Default']))
+    if (is_null($sValue) && isset($hData['Default']) && !$this->isSearch())
     {
       $sValue = $hData['Default'];
     }
@@ -1122,7 +1132,8 @@ class Module
     {
       $oUsers = Item::search('User', ['Visible' => true, 'Active' => true]);
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[UserID]");
-      $oSelect->addOption('Select a user', '');
+      $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select a user';
+      $oSelect->addOption($sEmptyItemLabel, '');
 
       foreach ($oUsers as $hUser)
       {
@@ -1142,7 +1153,8 @@ class Module
     if ($sName == 'KeyID')
     {
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[KeyID]");
-      $oSelect->addOption('Select a resource name', '');
+      $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select a resource name';
+      $oSelect->addOption($sEmptyItemLabel, '');
       $oKeys = Item::search('ResourceKey', null, 'Name');
 
       foreach ($oKeys as $hKey)
@@ -1174,7 +1186,8 @@ class Module
           $oList = Item::search($aMatch[1]);
 
           $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
-          $oSelect->addOption("Select {$aMatch[1]}", '');
+          $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select {$aMatch[1]}";
+          $oSelect->addOption($sEmptyItemLabel, '');
 
           foreach ($oList as $oTempItem)
           {
@@ -1234,7 +1247,9 @@ class Module
         $aTitle = array_map('ucwords', $aElements);
         $hElements = array_combine($aElements, $aTitle);
         $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
-        $oSelect->addOption("Select $sLabel", '');
+
+        $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select $sLabel";
+        $oSelect->addOption($sEmptyItemLabel, '');
         $oSelect->addArray($hElements);
 
         if (!empty($sValue))

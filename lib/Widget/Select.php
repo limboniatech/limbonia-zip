@@ -95,9 +95,9 @@ class Select extends \Omniverse\Widget
    * @param string $sTitle
    * @param string $sValue (optional)
    */
-  public function addOption($sTitle, $sValue = '')
+  public function addOption($sTitle, $sValue = null)
   {
-    if (empty($sValue))
+    if (is_null($sValue))
     {
       $sValue = $sTitle;
     }

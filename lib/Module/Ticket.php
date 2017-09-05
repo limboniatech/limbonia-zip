@@ -335,7 +335,8 @@ class Ticket extends \Omniverse\Module
     {
       $oList = \Omniverse\Item::search('TicketCategory');
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
-      $oSelect->addOption("Select Category", '');
+      $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select Category';
+      $oSelect->addOption($sEmptyItemLabel, '');
 
       foreach ($oList as $oTempItem)
       {
@@ -355,15 +356,17 @@ class Ticket extends \Omniverse\Module
       return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Category:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
     }
 
-    if ($sName == 'OwnerID')
+    if (in_array($sName, ['OwnerID', 'CreatorID']))
     {
+      $sType = strtolower(preg_replace('/id$/i', '', $sName));
       $oUsers = \Omniverse\Item::search('User', ['Visible' => true, 'Active' => true]);
       $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
-      $oSelect->addOption('Select an owner', '');
+      $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select an $sType";
+      $oSelect->addOption($sEmptyItemLabel, '');
 
-      foreach ($oUsers as $hUser)
+      foreach ($oUsers as $oUser)
       {
-        $oSelect->addOption($hUser['Name'], $hUser['ID']);
+        $oSelect->addOption($oUser->name, $oUser->id);
       }
 
       $oSelect->setSelected($sValue);
