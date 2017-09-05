@@ -1,6 +1,7 @@
 2017-09-05 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.2.0
 Change #40: Software System - Display all open releases on the change log (Lonnie Blansett)
+Change #33: Ticket System - When editing a software ticket only display valid releases in the list (Lonnie Blansett)
 
 2017-09-05 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.1.1

@@ -51,7 +51,7 @@ class Software extends \Omniverse\Widget\Select
     if ($iSoftware != '0' && !empty($iSoftware))
     {
       $oSoftware = \Omniverse\Item::fromId('software', $iSoftware);
-      $oReleaseList = $oSoftware->getReleaseList();
+      $oReleaseList = $oSoftware->getReleaseList('active');
 
       foreach ($oReleaseList as $iKey => $oRelease)
       {
