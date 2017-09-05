@@ -37,5 +37,8 @@
       <br />
       {{completedCount}} of {{bugCount}} issue(s) resolved. Progress ({{finishedPercent}}%).
       <br />
+  {% else %}
+      <h5 id="{{release.version}}"><a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{release.ticketID}}">{{currentItem.name}} - {{release.version}}</a> {% if release.ticket.dueDate %}({{release.ticket.dueDate}}){% else %}(No Due Date){% endif %} (<a target="_blank" href="?Admin=Display&Module=Ticket&Display=Create&Type=software&SoftwareID={{currentItem.id}}&ReleaseID={{release.id}}">New Ticket</a>)</h5>
+      <hr />
   {% endif %}
 {% endfor %}

@@ -1,4 +1,8 @@
-2017-08-31 Lonnie Blansett <lonnie@omniverserpg.com>
+2017-09-05 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.2.0
+Change #40: Software System - Display all open releases on the change log (Lonnie Blansett)
+
+2017-09-05 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.1.1
 Change #29: Software System - Always display "Unversioned Tickets" section on Road Map (Lonnie Blansett)
 Major Bug #37: Admin - "Search" tabs not working for any module (Lonnie Blansett)
