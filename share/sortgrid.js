@@ -142,7 +142,7 @@ function Omniverse_Widget_SortGrid(sTarget)
 
     if (oTarget == null)
     {
-      document.write('\n<div name="' + sTarget + '" id="' + sTarget + '" class="OmnisysSortGridDiv"></div>');
+      document.write('\n<div name="' + sTarget + '" id="' + sTarget + '" class="sortGridContainor"></div>');
       oTarget = document.getElementById(sTarget);
     }
 

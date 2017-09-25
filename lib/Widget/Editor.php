@@ -139,7 +139,7 @@ class Editor extends \Omniverse\Widget
    */
   function isCompatible()
   {
-    $sUserAgent = filter_input(INPUT_SERVER, 'HTTP_USER_AGENT');
+    $sUserAgent = $this->getController->server['HTTP_USER_AGENT'];
     $iIEPos = strpos($sUserAgent, 'MSIE');
 
     if ($iIEPos !== false && strpos($sUserAgent, 'mac') === FALSE && strpos($sUserAgent, 'Opera') === FALSE)

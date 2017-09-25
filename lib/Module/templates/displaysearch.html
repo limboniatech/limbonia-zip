@@ -1,8 +1,2 @@
 {% import 'macros.html' as macros %}
-<table>
-<tr>
-  <td>
-    {{macros.getForm(module, 'Search', searchColumns, post)}}
-  </td>
-</tr>
-</table>
+{{macros.getForm(module, 'search', searchColumns, controller.post)}}

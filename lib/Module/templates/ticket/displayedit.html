@@ -1,33 +1,25 @@
 {% import 'macros.html' as macros %}
-<table>
-<tr>
-  <td>
-    <form name="Edit" action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.idColumn}}={{currentItem.id}}" method="post">
-    <table>
-    {{module.getFormField('Status', currentItem.status, editColumns['Status'], true)}}
-    {{module.getFormField('Priority', currentItem.priority, editColumns['Priority'], true)}}
-    {{module.getFormField('OwnerID', currentItem.ownerID, editColumns['OwnerID'], true)}}
-    {{module.getFormField('Subject', currentItem.subject, editColumns['Subject'], true)}}
-    {{module.getFormField('CategoryID', currentItem.categoryID, editColumns['CategoryID'], true)}}
-    {{module.getFormField('StartDate', currentItem.startDate, editColumns['StartDate'], true)}}
-    {{module.getFormField('DueDate', currentItem.dueDate, editColumns['DueDate'], true)}}
+    <form name="Edit" action="{{module.generateUri(currentItem.id, method)}}" method="post">
+    {{module.getFormField('Status', currentItem.status, editColumns['Status'], false)}}
+    {{module.getFormField('Priority', currentItem.priority, editColumns['Priority'], false)}}
+    {{module.getFormField('OwnerID', currentItem.ownerID, editColumns['OwnerID'], false)}}
+    {{module.getFormField('Subject', currentItem.subject, editColumns['Subject'], false)}}
+    {{module.getFormField('CategoryID', currentItem.categoryID, editColumns['CategoryID'], false)}}
+    {{module.getFormField('StartDate', currentItem.startDate, editColumns['StartDate'], false)}}
+    {{module.getFormField('DueDate', currentItem.dueDate, editColumns['DueDate'], false)}}
 {% if currentItem.Type == 'software' %}
-    {{module.getFormField('SoftwareID', currentItem.softwareID, editColumns['SoftwareID'], true)}}
-    {{module.getFormField('ReleaseID', currentItem.releaseID, editColumns['ReleaseID'], true)}}
-    {{module.getFormField('ElementID', currentItem.elementID, editColumns['ElementID'], true)}}
-    {{module.getFormField('Severity', currentItem.severity, editColumns['Severity'], true)}}
-    {{module.getFormField('Projection', currentItem.projection, editColumns['Projection'], true)}}
-    {{module.getFormField('DevStatus', currentItem.devStatus, editColumns['DevStatus'], true)}}
-    {{module.getFormField('QualityStatus', currentItem.QualityStatus, editColumns['QualityStatus'], true)}}
-    {{module.getFormField('Description', currentItem.description, editColumns['Description'], true)}}
-    {{module.getFormField('StepsToReproduce', currentItem.stepsToReproduce, editColumns['StepsToReproduce'], true)}}
+    {{module.getFormField('SoftwareID', currentItem.softwareID, editColumns['SoftwareID'], false)}}
+    {{module.getFormField('ReleaseID', currentItem.releaseID, editColumns['ReleaseID'], false)}}
+    {{module.getFormField('ElementID', currentItem.elementID, editColumns['ElementID'], false)}}
+    {{module.getFormField('Severity', currentItem.severity, editColumns['Severity'], false)}}
+    {{module.getFormField('Projection', currentItem.projection, editColumns['Projection'], false)}}
+    {{module.getFormField('DevStatus', currentItem.devStatus, editColumns['DevStatus'], false)}}
+    {{module.getFormField('QualityStatus', currentItem.QualityStatus, editColumns['QualityStatus'], false)}}
+    {{module.getFormField('Description', currentItem.description, editColumns['Description'], false)}}
+    {{module.getFormField('StepsToReproduce', currentItem.stepsToReproduce, editColumns['StepsToReproduce'], false)}}
 {% endif %}
-    {{module.getFormField('UpdateText', '', [], true)}}
-    {{module.getFormField('UpdateType', '', [], true)}}
-    {{module.getFormField('TimeWorked', '', [], true)}}
-    <tr><td align="center" colspan="2"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display=View&{{currentItem.IDColumn}}={{currentItem.ID}}'"></td></tr>
-    </table>
+    {{module.getFormField('UpdateText', '', [], false)}}
+    {{module.getFormField('UpdateType', '', [], false)}}
+    {{module.getFormField('TimeWorked', '', [], false)}}
+    <div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id)}}'"></span></div>
     </form>
-  </td>
-</tr>
-</table>

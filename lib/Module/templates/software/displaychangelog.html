@@ -1,11 +1,11 @@
 {% for release in currentItem.releaseList('changelog') %}
     <div>
-      <h5><a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{release.TicketID}}">{{currentItem.Name}} - {{release.Version}}</a> ({% if release.Ticket.Status == 'closed' %}{{release.Ticket.CompletionTime}}{% else %}None{% endif %})</h5>
+      <h5><a href="{{controller.generateUri('ticket', release.ticketID)}}">{{currentItem.Name}} - {{release.Version}}</a> ({% if release.Ticket.Status == 'closed' %}{{release.Ticket.CompletionTime}}{% else %}None{% endif %})</h5>
       <hr />
   {% set bugList = release.ticketList('complete') %}
   {% if bugList.count > 0 %}
     {% for bug in bugList %}
-      <div>{{bug.Severity | title}} <a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{bug.ID}}" title="[{{bug.DevStatus}}] {{bug.Subject | escape}}">#{{bug.ID}}</a>: {{bug.Element.Name}} - {{bug.Subject | escape}} ({{bug.Owner.Name}})</div>
+      <div>{{bug.Severity | title}} <a href="{{controller.generateUri('ticket', bug.id)}}" title="[{{bug.DevStatus}}] {{bug.Subject | escape}}">#{{bug.ID}}</a>: {{bug.Element.Name}} - {{bug.Subject | escape}} ({{bug.Owner.Name}})</div>
     {% endfor %}
   {% else %}
       <h5>Sorry no software tickets are assigned to this release.</h5>

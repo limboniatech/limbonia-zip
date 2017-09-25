@@ -1,58 +1,54 @@
-{% import 'macros.html' as macros %}{% if success %}<div class="OmnisysMethodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="OmnisysMethodFailure">{{failure}}</div>{% endif %}
-<table>
+{% import 'macros.html' as macros %}{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{failure}}</div>{% endif %}
 {% if currentItem.CreatorID > 0 %}
-{{macros.tableRow('Created By', module.getColumnValue(currentItem, 'CreatorID') ~ ' on ' ~ currentItem.CreateTime)}}
+{{macros.dataField('Created By', module.getColumnValue(currentItem, 'CreatorID') ~ ' on ' ~ currentItem.CreateTime)}}
 {% endif %}
-{{macros.tableRow('Status', module.getColumnValue(currentItem, 'Status'))}}
-{{macros.tableRow('Priority', module.getColumnValue(currentItem, 'Priority'))}}
-{{macros.tableRow('Owner', module.getColumnValue(currentItem, 'OwnerID'))}}
-{{module.getFormField('Watchers', '', [], true)}}
-{{macros.tableRow('Subject', module.getColumnValue(currentItem, 'Subject'))}}
-{{macros.tableRow('Category', module.getColumnValue(currentItem, 'CategoryID'))}}
-{{macros.tableRow('Type', module.getColumnValue(currentItem, 'Type'))}}
+{{macros.dataField('Status', module.getColumnValue(currentItem, 'Status'))}}
+{{macros.dataField('Priority', module.getColumnValue(currentItem, 'Priority'))}}
+{{macros.dataField('Owner', module.getColumnValue(currentItem, 'OwnerID'))}}
+{{module.getFormField('Watchers', '', [], false)}}
+{{macros.dataField('Subject', module.getColumnValue(currentItem, 'Subject'))}}
+{{macros.dataField('Category', module.getColumnValue(currentItem, 'CategoryID'))}}
+{{macros.dataField('Type', module.getColumnValue(currentItem, 'Type'))}}
 {% if currentItem.TimeSpent > 0 %}
-{{macros.tableRow('Time Spent', module.getColumnValue(currentItem, 'TimeSpent'))}}
+{{macros.dataField('Time Spent', module.getColumnValue(currentItem, 'TimeSpent'))}}
 {% endif %}
-{{macros.tableRow('Last Update', module.getColumnValue(currentItem, 'LastUpdate'))}}
+{{macros.dataField('Last Update', module.getColumnValue(currentItem, 'LastUpdate'))}}
 {% if currentItem.DueDate %}
-{{macros.tableRow('Due Date', module.getColumnValue(currentItem, 'DueDate'))}}
+{{macros.dataField('Due Date', module.getColumnValue(currentItem, 'DueDate'))}}
 {% endif %}
 {% if currentItem.CompletionTime %}
-{{macros.tableRow('Completion Time', module.getColumnValue(currentItem, 'CompletionTime'))}}
+{{macros.dataField('Completion Time', module.getColumnValue(currentItem, 'CompletionTime'))}}
 {% endif %}
 {% if currentItem.TotalTime %}
-{{macros.tableRow('Total Time Worked', currentItem.TotalTime ~ ' minutes')}}
+{{macros.dataField('Total Time Worked', currentItem.TotalTime ~ ' minutes')}}
 {% endif %}
 {% if currentItem.Type == 'software' %}
-{{macros.tableRow('Software', module.getColumnValue(currentItem, 'SoftwareID'))}}
-{{macros.tableRow('Software Element', module.getColumnValue(currentItem, 'ElementID'))}}
-{{macros.tableRow('Software Version', module.getColumnValue(currentItem, 'ReleaseID'))}}
-{{macros.tableRow('Severity', module.getColumnValue(currentItem, 'Severity'))}}
-{{macros.tableRow('Projection', module.getColumnValue(currentItem, 'Projection'))}}
-{{macros.tableRow('Devopment Status', module.getColumnValue(currentItem, 'DevStatus'))}}
-{{macros.tableRow('Quality Status', module.getColumnValue(currentItem, 'QualityStatus'))}}
-{{macros.tableRow('Description', module.getColumnValue(currentItem, 'Description'))}}
-{{macros.tableRow('Steps To Reproduce', module.getColumnValue(currentItem, 'StepsToReproduce'))}}
+{{macros.dataField('Software', module.getColumnValue(currentItem, 'SoftwareID'))}}
+{{macros.dataField('Software Element', module.getColumnValue(currentItem, 'ElementID'))}}
+{{macros.dataField('Software Version', module.getColumnValue(currentItem, 'ReleaseID'))}}
+{{macros.dataField('Severity', module.getColumnValue(currentItem, 'Severity'))}}
+{{macros.dataField('Projection', module.getColumnValue(currentItem, 'Projection'))}}
+{{macros.dataField('Devopment Status', module.getColumnValue(currentItem, 'DevStatus'))}}
+{{macros.dataField('Quality Status', module.getColumnValue(currentItem, 'QualityStatus'))}}
+{{macros.dataField('Description', module.getColumnValue(currentItem, 'Description'))}}
+{{macros.dataField('Steps To Reproduce', module.getColumnValue(currentItem, 'StepsToReproduce'))}}
 {% endif %}
-</table>
 
-<table>
-{% for content in currentItem.ContentList %}
-<tr class="OmnisysTicketContent">
-  <th class="OmnisysTicketContent">
-  {% if content.UserID > 0 %}{% set contentUser = currentItem.getByID('user', content.UserID) %}
-    <a href="?Admin=Display&Module=User&Display=View&UserID={{content.UserID}}">{{contentUser.Name}}</a>
+{% for content in currentItem.contentList %}
+<div class="field ticketContent">
+  <span class="label">
+  {% if content.userID > 0 %}
+    <a href="{{controller.generateUri('user', currentItem.id, content.userID)}}">{{content.user.name}}</a>
   {% else %}
     Auto Created
-  {% endif %} [{{content.UpdateType | title}}]
-    <br />
-    {{content.UpdateTime}}
-    {% if content.TimeWorked %}<br />{{content.TimeWorked}} minutes{% endif %}
-  </th>
-  <td class="OmnisysTicketContent Omnisys{{content.UpdateType | title}}Content">
-    {{content.UpdateText}}
-    {% if content.History %}<div class="OmnisysTicketHistory">{% for history in content.History %}{% if history.Note %}<div class="OmnisysTicketHistoryNote">{{history.Note}}</div>{% endif %}{% endfor %}</div>{% endif %}
-  </td>
-</tr>
+  {% endif %} [{{content.updateType | title}}]
+    <br>
+    {{content.updateTime}}
+    {% if content.timeWorked %}<br>{{content.timeWorked}} minutes{% endif %}
+  </span>
+  <span class="{{content.updateType}} data">
+    {{content.updateText}}
+    {% if content.history %}<div class="history">{% for history in content.history %}{% if history.note %}<div class="note">{{history.note}}</div>{% endif %}{% endfor %}</div>{% endif %}
+  </span>
+</div>
 {% endfor %}
-</table>

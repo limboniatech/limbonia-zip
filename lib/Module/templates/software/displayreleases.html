@@ -1,43 +1,35 @@
-{% if success %}<div class="OmnisysMethodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="OmnisysMethodFailure">{{failure}}</div>{% endif %}
-{% if get.Edit %}
+{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{error}}</div>{% endif %}
+{% if controller.get.edit %}
 {% import 'macros.html' as macros %}
 <h2>Edit Software Release</h2>
- <form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{release.IDColumn}}={{release.ID}}&Edit=1" method="post">
- <table>
- {{module.getFormField('Version', release.Version, {'Type': 'varchar'}, true)}}
- {{module.getFormField('Note', release.Note, {'Type': 'varchar'}, true)}}
- <tr><td align="center" colspan="2"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display=View&{{currentItem.IDColumn}}={{currentItem.ID}}'"></td></tr>
- </table>
- </form>
-{% elseif get.Delete %}
+<form action="{{module.generateUri(currentItem.id, method, release.id, 'edit')}}" method="post">
+{{module.getFormField('Version', release.Version, {'Type': 'varchar'})}}
+{{module.getFormField('Note', release.Note, {'Type': 'varchar'})}}
+<div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id)}}'"></span></div>
+</form>
+{% elseif controller.get.delete %}
 <h2>Delete Software Release</h2>
- <form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{release.IDColumn}}={{release.ID}}&Delete=1" method="post">
+<form action="{{module.generateUri(currentItem.id, method, release.id, 'delete')}}" method="post">
 Are you sure you want to delete {{currentItem.Name}}'s release number "{{release.Version}}"?
-<input type="submit" name="Yes" value="Yes">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}'"></form>
+<input type="submit" name="Yes" value="Yes">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id, method)}}'"></form>
 {% else %}
-<form action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post">
-<table>
-<thead>
-  <tr>
-    <th>Version</th>
-    <th>Note</th>
-    <th></th>
-  </tr>
-</thead>
-<tfoot>
-  <tr>
-    <td><input type="text" name="Version" /></td>
-    <td><input type="text" name="Note" /></td>
-    <td><input type="submit" value="Create Release" /></td>
-  </tr>
-</tfoot>
-<tbody>{% for release in currentItem.releaseList %}
-  <tr>
-    <td>{{release.Version}} [<a href="?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{release.IDColumn}}={{release.ID}}&Edit=1">Edit</a> | <a href="?Admin=Display&Module=Ticket&Display=View&TicketID={{release.TicketID}}">View Ticket</a> | <a href="?Admin=Display&Module={{module.name}}&Display={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}&{{release.IDColumn}}={{release.ID}}&Delete=1">Delete</a>]</td>
-    <td>{{release.Note}}</td>
-    <td></td>
-  </tr>{% endfor %}
-</tbody>
-</table>
+<form action="{{module.generateUri(currentItem.id, method)}}" method="post">
+<div class="display">
+  <header>
+    <span>Version</span>
+    <span>Note</span>
+  </header>
+{% for release in currentItem.releaseList %}  <div>
+    <span>{{release.version}} [<a href="{{module.generateUri(currentItem.id, method, release.id, 'edit')}}">Edit</a> | <a href="{{controller.generateUri('ticket', release.ticketID)}}">View Ticket</a> | <a href="{{module.generateUri(currentItem.id, method, release.id, 'delete')}}">Delete</a>]</span>
+    <span>{{release.note}}</span>
+  </div>{% endfor %}
+  <footer>
+    <span>
+      <input type="text" name="Version" placeholder="Version Number (#.#.#)">
+      <input type="text" name="Note" placeholder="Version Note">
+      <button type="submit">Create Release</button>
+    </span>
+  </footer>
+</div>
 </form>
 {% endif %}

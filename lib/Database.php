@@ -55,6 +55,13 @@ class Database extends \PDO
   protected $hColumnAlias = [];
 
   /**
+   * The owner of this database object
+   *
+   * @var \Omniverse\Controller
+   */
+  protected $oController = null;
+
+  /**
    * Return the existing column type from the data passed in
    *
    * @param string|array $xData - Either and array of column data or the actual column type
@@ -337,10 +344,11 @@ class Database extends \PDO
    * Generate an instance of the Omniverse Database object based on the specified configuration
    *
    * @param array $hConfig
+   * @param \Omniverse\Controller $oController (optional)
    * @throws \Omniverse\Exception\Database
    * @return \Omniverse\Database
    */
-  static public function factory(array $hConfig = [])
+  static public function factory(array $hConfig, \Omniverse\Controller $oController = null)
   {
     $hLowercaseConfig = array_change_key_case($hConfig, CASE_LOWER);
 
@@ -359,6 +367,12 @@ class Database extends \PDO
 
     $hDSN = self::arrayToDSN($hLowercaseConfig);
     self::$hDatabaseObjects[$sConfigHash] = new self($hDSN['dsn'], $hDSN['username'], $hDSN['password'], $hDSN['options']);
+
+    if (isset($oController))
+    {
+      self::$hDatabaseObjects[$sConfigHash]->setController($oController);
+    }
+
     return self::$hDatabaseObjects[$sConfigHash];
   }
 
@@ -375,6 +389,21 @@ class Database extends \PDO
     parent::__construct($sDSN, $sUsername, $sPassword, $hOptions);
     $this->setAttribute(\PDO::ATTR_STATEMENT_CLASS, ['\Omniverse\DBResult', [$this]]);
     $this->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+  }
+
+  protected function setController(\Omniverse\Controller $oController)
+  {
+    $this->oController = $oController;
+  }
+
+  public function getController()
+  {
+    if (is_null($this->oController))
+    {
+      return \Omniverse\Controller::getDefault();
+    }
+
+    return $this->oController;
   }
 
   /**
@@ -534,7 +563,7 @@ class Database extends \PDO
         break;
 
       default:
-        throw new Exception\Database(__METHOD__ . ": Can not list columns from this type, yet.", $this->getType());
+        throw new Exception\Database(__METHOD__ . ": Can not list columns from this database type, yet.", $this->getType());
     }
 
     try

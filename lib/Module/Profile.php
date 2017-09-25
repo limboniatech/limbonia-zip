@@ -27,13 +27,6 @@ class Profile extends \Omniverse\Module
   protected $bVisibleInMenu = false;
 
   /**
-   * The name of the module
-   *
-   * @var string
-   */
-  protected $sModuleName = 'Profile';
-
-  /**
    * The type of module this is
    *
    * @var string
@@ -81,7 +74,7 @@ class Profile extends \Omniverse\Module
   ];
 
   /**
-   * List of column names in nthe order required
+   * List of column names in the order required
    *
    * @var array
    */
@@ -92,104 +85,92 @@ class Profile extends \Omniverse\Module
    *
    * @var string
    */
-  protected $sDefaultMethod = 'View';
+  protected $sDefaultAction = 'view';
 
   /**
    * The current method being used by this module
    *
    * @var string
    */
-  protected $sCurrentMethod = 'View';
+  protected $sCurrentAction = 'view';
 
   /**
-   * List of menu items that this module shoud display
+   * List of menu items that this module should display
    *
    * @var array
    */
-  protected $aMenuItems = ['View', 'Edit', 'ChangePassword'];
+  protected $hMenuItems =
+  [
+    'view' => 'View',
+    'edit' => 'Edit',
+    'changepassword' => 'Change Password'
+  ];
 
   /**
    * List of sub-menu options
    *
    * @var array
    */
-  protected $aSubMenuItems = [];
+  protected $hSubMenuItems = [];
 
   /**
-   * List of methods that are allowed to run
+   * List of actions that are allowed to run
    *
    * @var array
    */
-  protected $aAllowedMethods = ['EditDialog', 'Edit', 'View', 'ChangePassword'];
+  protected $aAllowedActions = ['editdialog', 'edit', 'view', 'changepassword'];
 
   /**
    * Instantiate the profile module
    *
-   * @param string $sType (optional) - The type of module this should become
    * @param \Omniverse\Controller $oController
    */
-  public function __construct($sType=null, \Omniverse\Controller $oController = null)
+  public function __construct(\Omniverse\Controller $oController)
   {
-    if (!empty($oController))
-    {
-      $this->oController = $oController;
-    }
-
-    $this->oItem = $this->getController()->user();
-    $sAdmin = isset($_GET['Admin']) ? $_GET['Admin'] : '';
-    $sAdminSub = isset($_GET[$sAdmin]) ? $_GET[$sAdmin] : '';
-
-    $this->sCurrentAction = empty($sAdmin) || $sAdmin == 'Menu' || !in_array($sAdminSub, $this->aAllowedMethods) ? $this->sDefaultAction : $sAdmin;
-    $this->sCurrentMethod = empty($sAdminSub) || $sAdmin == 'Menu' || !in_array($sAdminSub, $this->aAllowedMethods) ? $this->sDefaultMethod : $sAdminSub;
+    $this->oController = $oController;
+    $this->oItem = $this->oController->user();
+    $this->sCurrentAction = in_array($oController->api->action, $this->aAllowedActions) ? $oController->api->action : $this->sDefaultAction;
   }
 
-  /**
-   * Prepare the template for display based on the current action and current method
-   */
-  public function prepareTemplate()
+  protected function prepareTemplatePostChangepassword()
   {
-    if ($this->sCurrentAction == 'Process' && $this->sCurrentMethod == 'ChangePassword')
+    $hData = $this->editGetData();
+
+    if ($hData['Password'] != $hData['Password2'])
     {
-      $hData = $this->editGetData();
-
-      if ($hData['Password'] != $hData['Password2'])
-      {
-        $this->getController()->templateData('failure', "The passwords did not match. Please try again.");
-        $this->sCurrentAction = 'Display';
-        return parent::prepareTemplate();
-      }
-
-      try
-      {
-        \Omniverse\Item\User::validatePassword($hData['Password']);
-      }
-      catch (\Exception $e)
-      {
-        $this->getController()->templateData('failure', $e->getMessage() . ' Please try again');
-        $this->sCurrentAction = 'Display';
-        return parent::prepareTemplate();
-      }
-
-      $this->oItem->Password = $hData['Password'];
-
-      if ($this->oItem->save())
-      {
-        $this->getController()->templateData('success', "The password change has been successful.");
-      }
-      else
-      {
-        $this->getController()->templateData('failure', "The password change has failed.");
-      }
-
-      if (isset($_SESSION['EditData']))
-      {
-        unset($_SESSION['EditData']);
-      }
-
-      $this->sCurrentAction = 'Display';
-      $this->sCurrentMethod = 'View';
+      $this->oController->templateData('failure', "The passwords did not match. Please try again.");
+      $this->oController->server['request_method'] = 'GET';
+      return parent::prepareTemplate();
     }
 
-    return parent::prepareTemplate();
+    try
+    {
+      \Omniverse\Item\User::validatePassword($hData['Password']);
+    }
+    catch (\Exception $e)
+    {
+      $this->oController->templateData('failure', $e->getMessage() . ' Please try again');
+      $this->oController->server['request_method'] = 'GET';
+      return parent::prepareTemplate();
+    }
+
+    $this->oItem->password = $hData['Password'];
+
+    if ($this->oItem->save())
+    {
+      $this->oController->templateData('success', "The password change has been successful.");
+    }
+    else
+    {
+      $this->oController->templateData('failure', "The password change has failed.");
+    }
+
+    if (isset($_SESSION['EditData']))
+    {
+      unset($_SESSION['EditData']);
+    }
+
+    $this->oController->server['request_method'] = 'GET';
+    $this->sCurrentAction = 'view';
   }
 }

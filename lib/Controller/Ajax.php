@@ -19,16 +19,17 @@ class Ajax extends \Omniverse\Controller
   public function run()
   {
     ob_start();
-    $sGetClass = filter_input(INPUT_GET, 'class');
-    $sClass = empty($sGetClass) ? null : 'Omniverse\\' . $sGetClass;
-    $sGetFunction = filter_input(INPUT_GET, 'function');
-    $sFunction = empty($sGetFunction) ? null : 'ajax_' . $sGetFunction;
+    $sApiPath = trim(preg_replace("#\?.*#", '', str_replace($this->baseUrl, '', $this->server['request_uri'])), '/');
+    $aApiCall = explode('/', $sApiPath);
+    $sFunction = 'ajax_' . urldecode(array_pop($aApiCall));
+    array_unshift($aApiCall, 'Omniverse');
+    $sClass = implode('\\', $aApiCall);
 
     try
     {
       $oRequest = new $sClass();
     }
-    catch (Omnisys_Exception_Object $oException)
+    catch (\Omniverse\Exception\Object $oException)
     {
       die("alert('Could not create an object from \"$sClass\":  " . $oException->getMessage() . "');");
     }
@@ -38,7 +39,7 @@ class Ajax extends \Omniverse\Controller
       die("alert('Class \"$sClass\" does *not* contain the method \"$sFunction\"!');");
     }
 
-    $sReslult = call_user_func_array([&$oRequest, $sFunction], $_POST);
+    $sReslult = call_user_func_array([&$oRequest, $sFunction], $this->post->getRaw());
 
     if (ob_get_length() > 10)
     {

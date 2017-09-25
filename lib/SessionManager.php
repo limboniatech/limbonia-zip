@@ -134,9 +134,11 @@ class SessionManager
    */
   public static function userAgent()
   {
-    if (isset($_SERVER['HTTP_USER_AGENT']))
+    $sUserAgent = filter_input(INPUT_SERVER, 'HTTP_USER_AGENT');
+
+    if (!empty($sUserAgent))
     {
-      return $_SERVER['HTTP_USER_AGENT'];
+      return $sUserAgent;
     }
 
     if (Controller::isCLI())

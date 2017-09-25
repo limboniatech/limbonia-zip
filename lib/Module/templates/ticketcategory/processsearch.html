@@ -1,8 +1,8 @@
 {% if (data | length) == 0  %}
 Sorry!  Your {{module.name | lower}} search has no results at this time!<br />
-Try a different <a href="?Admin=Display&Module={{module.name}}&Display=Search">search</a>?
+Try a different <a href="{{module.generateUri('search')}}">search</a>?
 {% else %}
-{{table.makeSortable}}{{table.addClass('OmnisysSortGrid')}}{% set x = table.startHeader %}{% set sPopup = module.owner.usePopups ? 'showOmnisys_Popup();' : '' %}{% set sDelete = module.allow('Delete') ? '<span class="OmnisysSortGridDelete" onClick="' ~ sPopup ~ "document.getElementById('Omnisys_SortGrid_Edit').name='Delete';document.getElementById('EditColumn').submit(); \">Delete</span>" : '' %}{% set x = table.addCell(sDelete, false) %}
+{{table.makeSortable}}{{table.addClass('sortGrid')}}{% set x = table.startHeader %}{% set sPopup = module.owner.usePopups ? 'showOmnisys_Popup();' : '' %}{% set sDelete = module.allow('Delete') ? '<span class="OmnisysSortGridDelete" onClick="' ~ sPopup ~ "document.getElementById('Omnisys_SortGrid_Edit').name='Delete';document.getElementById('EditColumn').submit(); \">Delete</span>" : '' %}{% set x = table.addCell(sDelete, false) %}
 {{ module.processSearchGridHeader(table, 'Name')}}
 {{ module.processSearchGridHeader(table, 'Assignment Method')}}
 {{ table.EndRow }}
@@ -11,31 +11,30 @@ Try a different <a href="?Admin=Display&Module={{module.name}}&Display=Search">s
   {% set oRow = table.startRow %}
   {% set x = table.addCell(module.processSearchGridRowControl(idColumn, item.ID)) %}
   {% set x = table.addCell(item.Name) %}
-  {% if item.AssignmentMethod == 'direct' %}
-    {% set user = item.getById('user', item.UserID) %}
-    {% set x = table.addCell('Direct to ' ~ user.Name) %}
-  {% elseif item.AssignmentMethod == 'unassigned' %}
+  {% if item.assignmentMethod == 'direct' %}
+    {% set x = table.addCell('Direct to ' ~ item.user.name) %}
+  {% elseif item.assignmentMethod == 'unassigned' %}
     {% set x = table.addCell('Leave Unassigned') %}
-  {% elseif item.AssignmentMethod == 'roundrobin' %}
+  {% elseif item.assignmentMethod == 'roundrobin' %}
     {% if item.KeyID == 0 %}
       {% set x = table.addCell('Round Robin between all internal users') %}
     {% else %}
-      {% set resourceKey = item.getById('ResourceKey', item.KeyID) %}
-      {% set x = table.addCell('Round Robin between internal users with ' ~ resourceKey.Name ~ ' access ' ~ (item.Level > 0 ? ' at level ' ~ item.Level ~ ' or above' : '')) %}
+      {% set resourceKey = item.getById('ResourceKey', item.keyID) %}
+      {% set x = table.addCell('Round Robin between internal users with ' ~ resourceKey.name ~ ' access ' ~ (item.level > 0 ? ' at level ' ~ item.level ~ ' or above' : '')) %}
     {% endif %}
-  {% elseif item.AssignmentMethod == 'leasttickets' %}
+  {% elseif item.assignmentMethod == 'leasttickets' %}
     {% if item.KeyID == 0 %}
       {% set x = table.addCell('Least Tickets between all internal users') %}
     {% else %}
       {% set resourceKey = item.getById('ResourceKey', item.KeyID) %}
-      {% set x = table.addCell('Least Tickets between internal users with ' ~ resourceKey.Name ~ ' access ' ~ (item.Level > 0 ? ' at level ' ~ item.Level ~ ' or above' : '')) %}
+      {% set x = table.addCell('Least Tickets between internal users with ' ~ resourceKey.name ~ ' access ' ~ (item.level > 0 ? ' at level ' ~ item.level ~ ' or above' : '')) %}
     {% endif %}
   {% endif %}
   {{ table.endRow }}
 {% endfor %}
-{% if module.allow('Edit') %}{% set sTarget = module.owner.usePopups ? ' target="Omnisys_Popup"' : '' %}{% set sType = module.owner.usePopups ? 'Popup' : 'Process' %}
-<form name="Edit" id="Edit"{{sTarget}} action="?Admin={{sType}}&Module={{module.name}}&{{sType}}=EditColumn" method="post">
+{% if module.allow('edit') %}
+<form name="Edit" id="Edit" action="?{{module.generateUri('editcolumn')}}" method="post">
 <input type="hidden" name="Column" id="Omnisys_SortGrid_Edit" value="">
 {% endif %}
-{{ table.toString }}{% if module.allow('Edit') %}</form>{% endif %}
+{{ table.toString }}{% if module.allow('edit') %}</form>{% endif %}
 {% endif %}

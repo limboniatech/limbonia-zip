@@ -1,0 +1,14 @@
+{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{failure}}</div>{% endif %}
+{% if currentItem.parentID > 0 %}
+<div>PARENT:<br><a href="{{module.generateUri(currentItem.parentID)}}">{{currentItem.parent.subject}}</a> [updated {{currentItem.parent.lastUpdate}}, priority: {{currentItem.parent.priority}}, status: {{currentItem.parent.status}}] <a href="{{module.generateUri(currentItem.id, method, 'removeparent')}}">delete</a></div>
+{% else %}
+<form action="{{module.generateUri(currentItem.id, method, 'setparent')}}" method="post">Set Parent Ticket: <input type="text" name="SetParent" /><input type="submit" value="Set Parent" /></form>
+{% endif %}
+<br />
+{% if (currentItem.children | length) > 0 %}
+CHILDREN:<br>
+{% for child in currentItem.children %}
+<div><a href="{{module.generateUri(child.id)}}">{{child.subject}}</a> [updated {{child.lastUpdate}}, priority: {{child.priority}}, status: {{child.status}}] <a href="{{module.generateUri(currentItem.id, method, child.id, 'removechild')}}">delete</a></div>
+{% endfor %}
+{% endif %}
+<form action="{{module.generateUri(currentItem.id, method, 'addchild')}}" method="post">Add Child Ticket: <input type="text" name="AddChild" /><input type="submit" value="Add Child" /></form>

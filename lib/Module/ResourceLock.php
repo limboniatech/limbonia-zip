@@ -25,14 +25,13 @@ class ResourceLock extends \Omniverse\Module
    * @param string $sName
    * @param string $sValue
    * @param array $hData
-   * @param boolean $bInTable - Should the returned HTML use a table to contain the data
    * @return string
    */
-  public function getFormField($sName, $sValue = null, $hData = [], $bInTable = false)
+  public function getFormField($sName, $sValue = null, $hData = [])
   {
     if ($sName == 'Resource')
     {
-      $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[Resource]");
+      $oSelect = $this->oController->widgetFactory('Select', "$this->sType[Resource]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select a resource';
       $oSelect->addOption($sEmptyItemLabel, '');
 
@@ -46,23 +45,18 @@ class ResourceLock extends \Omniverse\Module
         $oSelect->addOption($sResource);
       }
 
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Resource:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Resource:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+      return "<div class=\"field\"><span class=\"label\">Resource</span><span class=\"data\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'Component')
     {
-      $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[Component]");
+      $oSelect = $this->oController->widgetFactory('Select', "$this->sType[Component]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select a component';
       $oSelect->addOption($sEmptyItemLabel, '');
 
       //since I'm setting the name for the Resource and Component objects above, I can depend on their ids below
-      $sScript = "var resource = document.getElementById('{$this->sModuleName}Resource');\n";
-      $sScript .= "var component = document.getElementById('{$this->sModuleName}Component');\n";
+      $sScript = "var resource = document.getElementById('{$this->sType}Resource');\n";
+      $sScript .= "var component = document.getElementById('{$this->sType}Component');\n";
       $sScript .= "\nfunction updateComponent()\n";
       $sScript .= "{\n";
       $sScript .= "  currentResource = resource.options[resource.selectedIndex].value\n";
@@ -103,16 +97,10 @@ class ResourceLock extends \Omniverse\Module
       $sScript .= "}\n";
 
       $oSelect->writeJavascript($sScript);
-
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Component:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Component:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+      return "<div class=\"field\"><span class=\"label\">Component</span><span class=\"data\">" . $oSelect . "</span></div>";
     }
 
-    return parent::getFormField($sName, $sValue, $hData, $bInTable);
+    return parent::getFormField($sName, $sValue, $hData);
   }
 
   /**
@@ -135,6 +123,6 @@ class ResourceLock extends \Omniverse\Module
    */
   public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
   {
-    return $sColumn == 'KeyID' ? $this->getController()->itemFromId('ResourceKey', $oItem->keyId)->name : parent::getColumnValue($oItem, $sColumn);
+    return $sColumn == 'KeyID' ? $this->oController->itemFromId('ResourceKey', $oItem->keyId)->name : parent::getColumnValue($oItem, $sColumn);
   }
 }

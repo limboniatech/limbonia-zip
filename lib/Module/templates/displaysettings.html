@@ -1,8 +1,2 @@
 {% import 'macros.html' as macros %}
-<table>
-<tr>
-  <td>
-    {{macros.getForm(module, 'Settings', module.getSettingsFields, module.GetSetting)}}
-  </td>
-</tr>
-</table>
+{{macros.getForm(module, 'Settings', module.getSettingsFields, module.GetSetting)}}

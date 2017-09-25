@@ -4,7 +4,7 @@ namespace Omniverse\Traits;
 /**
  * Omniverse Config Trait
  *
- * This trait allows an inhritting class to read, access and save configuration
+ * This trait allows an inheriting class to read, access and save configuration
  * data to and from an INI file
  *
  * @author Lonnie Blansett <lonnie@omniverserpg.com>

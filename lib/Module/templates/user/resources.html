@@ -1,8 +1,6 @@
-<form name="Edit" action="?Admin=Process&Module={{module.name}}&Process={{method}}&{{currentItem.IDColumn}}={{currentItem.ID}}" method="post">
-<table>
-{% for key in currentItem.ResourceList %}
-<tr><th align="right">{{key.Name}}:</th><td><input name="{{module.type}}[ResourceKey][{{key.ID}}]" value="{{currentItem.ResourceKeys[key.ID]}}"></td></tr>
+<form name="Edit" action="{{module.generateUri(currentItem.id, method)}}" method="post">
+{% for key in currentItem.resourceList %}
+<div class="field"><span class="label">{{key.name}}</span><span class="data"><input name="{{module.type}}[ResourceKey][{{key.id}}]" value="{{currentItem.resourceKeys[key.id]}}"></span></div>
 {% endfor %}
-<tr><td colspan="2"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='?Admin=Display&Module={{module.name}}&Display=View&{{currentItem.IDColumn}}={{currentItem.ID}}'"></td></tr>
-</table>
+<div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id)}}'"></span></div>
 </form>

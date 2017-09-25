@@ -132,7 +132,7 @@ class Admin extends \Omniverse\Controller
           }
 
           $_SESSION['ModuleDirs'][] = "$sLibDir/Module/templates";
-          $_SESSION['ModuleList'][] = $sModuleName;
+          $_SESSION['ModuleList'][strtolower($oModule->getType())] = $oModule->getType();
           $hComponent = $oModule->getComponents();
           ksort($hComponent);
           reset($hComponent);
@@ -143,7 +143,7 @@ class Admin extends \Omniverse\Controller
 
         if (isset($_SESSION['ModuleList']) && is_array($_SESSION['ModuleList']))
         {
-          sort($_SESSION['ModuleList']);
+          ksort($_SESSION['ModuleList']);
           reset($_SESSION['ModuleList']);
         }
 
@@ -155,7 +155,7 @@ class Admin extends \Omniverse\Controller
     \Twig_autoloader::register();
     $oLoader = new \Twig_Loader_Filesystem($_SESSION['ModuleDirs']);
     self::$oTemplateGenerator = new \Twig_Environment($oLoader, ['trim_blocks' => true, 'cache' => $this->cacheDir, 'auto_reload' => true, 'autoescape' => false]);
-    $this->templateData('api', $this);
+    $this->templateData('controller', $this);
     self::$oTemplateGenerator->addFilter('replace', new \Twig_Filter_Function('\Omniverse\Controller\Admin::replace'));
     self::$oTemplateGenerator->addFilter('match', new \Twig_Filter_Function('\Omniverse\Controller\Admin::match'));
   }
@@ -168,16 +168,6 @@ class Admin extends \Omniverse\Controller
   public function user()
   {
     return $this->oUser;
-  }
-
-  /**
-   * Should popups be used? (Instead of replacing each page)
-   *
-   * @return boolean
-   */
-  public function usePopups()
-  {
-    return $this->bUsePopups;
   }
 
   /**
@@ -213,10 +203,8 @@ class Admin extends \Omniverse\Controller
   public function run()
   {
     $this->login();
-    $this->templateData('get', filter_input_array(INPUT_GET));
-    $sModule = filter_input(INPUT_GET, 'Module');
 
-    if (empty($sModule))
+    if (empty($_SESSION['ModuleList'][$this->oApi->module]))
     {
       $sMessage = '';
     }
@@ -224,91 +212,66 @@ class Admin extends \Omniverse\Controller
     {
       try
       {
-        $oCurrentModule = $this->moduleFactory($sModule);
+        $oCurrentModule = $this->moduleFactory($_SESSION['ModuleList'][$this->oApi->module]);
         $oCurrentModule->prepareTemplate();
       }
       catch (\Exception $e)
       {
-        $sMessage = "The module {$sModule} could not be instaniated!!!<br />";
+        $sMessage = "The module {$this->oApi->module} could not be instaniated!!!<br />";
         error_log($e->getMessage());
       }
     }
 
-    $sAdmin = filter_input(INPUT_GET, 'Admin');
-
-    if ($sAdmin == 'Popup')
+    if (!isset($_SESSION['ModuleGroups']))
     {
-      if ($this->bUsePopups)
+      $_SESSION['ModuleGroups'] = [];
+
+      if (count($_SESSION['ModuleList']) > 0)
       {
-        $_SESSION['Popup']['AdminMethod'] = 'Popup' . filter_input(INPUT_GET, 'Popup');
-        $this->templateDisplay('admin_popup-top.html');
-
-        if (isset($sMessage))
+        foreach (array_keys($_SESSION['ModuleList']) as $sModuleLabel)
         {
-          echo $sMessage;
-        }
-        else
-        {
-          $oCurrentModule->showTemplate();
-        }
+          $sModuleName = $_SESSION['ModuleList'][$sModuleLabel];
 
-        $this->templateDisplay('admin_popup-bottom.html');
-        die();
-      }
-
-      //convert the popup to a process
-      $_GET['Admin'] = 'Process';
-      $_GET['Process'] = filter_input(INPUT_GET, 'Popup');
-      unset($_GET['Popup']);
-    }
-
-    if ($this->bUsePopups)
-    {
-      $oPopup = $this->widgetFactory('Window', 'Omniverse_Popup');
-      $oPopup->hasScrollBars();
-      $oPopup->allowResize();
-      $this->templateData('admin_popup', $oPopup->__toString());
-    }
-
-    if (count($_SESSION['ModuleList']) > 0)
-    {
-      $hGroup = [];
-
-      foreach ($_SESSION['ModuleList'] as $sModuleName)
-      {
-        if (isset($oCurrentModule) && $sModule === $sModuleName)
-        {
-          $oModule = $oCurrentModule;
-        }
-        else
-        {
-          try
+          if (isset($oCurrentModule) && $sModule === $sModuleName)
           {
-            $oModule = $this->moduleFactory($sModuleName);
+            $oModule = $oCurrentModule;
           }
-          catch (\Exception $e)
+          else
           {
-            echo "Failed to get group for: $sModuleName" . $e->getMessage() . "<br>\n";
-            continue;
+            try
+            {
+              $oModule = $this->moduleFactory($sModuleName);
+            }
+            catch (\Exception $e)
+            {
+              echo "Failed to get group for: $sModuleName" . $e->getMessage() . "<br>\n";
+              continue;
+            }
+          }
+
+          $bHasResource= $this->oUser->hasResource($oModule->getType());
+
+          if ($bHasResource && $oModule->visibleInMenu())
+          {
+            $_SESSION['ModuleGroups'][$oModule->getGroup()][$sModuleLabel] = $oModule->getType();
+          }
+
+          if (!$bHasResource)
+          {
+            unset($_SESSION['ModuleList'][$sModuleLabel]);
           }
         }
 
-        if ($this->oUser->hasResource($oModule->getType()) && $oModule->visibleInMenu())
+        ksort($_SESSION['ModuleGroups']);
+
+        foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
         {
-          $hGroup[$oModule->getGroup()][$sModuleName] = $oModule;
+          ksort($_SESSION['ModuleGroups'][$sKey]);
         }
       }
-
-      ksort($hGroup);
-
-      foreach (array_keys($hGroup) as $sKey)
-      {
-        ksort($hGroup[$sKey]);
-      }
-
-      $this->templateData('moduleGroups', $hGroup);
     }
 
+    $this->templateData('moduleGroups', $_SESSION['ModuleGroups']);
     $this->templateDisplay('admin-top.html');
 
     if (isset($sMessage))
@@ -331,15 +294,15 @@ class Admin extends \Omniverse\Controller
    */
   protected function login()
   {
-    if (filter_input(INPUT_GET, 'Admin') == 'Logout')
+    if ($this->oApi->module == 'logout')
     {
       $_SESSION = [];
       session_destroy();
-      header('Location: ' . filter_input(INPUT_SERVER, 'PHP_SELF') . '?Admin');
+      header('Location: ' . $this->baseUrl);
     }
 
-    $sEmail = filter_input(INPUT_POST, 'Email');
-    $sPassword = trim(filter_input(INPUT_POST, 'Password'));
+    $sEmail = $this->post['email'];
+    $sPassword = trim($this->post['password']);
 
     try
     {
@@ -408,7 +371,7 @@ class Admin extends \Omniverse\Controller
    */
   protected function printPasswordForm($sError = '')
   {
-    $sAction = empty($_SERVER['QUERY_STRING']) ? $_SERVER['PHP_SELF'] : $_SERVER['PHP_SELF'] . '?' . $_SERVER['QUERY_STRING'];
+    $sAction = empty($this->server['QUERY_STRING']) ? $this->baseUrl : $this->baseUrl . '?' . $this->server['QUERY_STRING'];
     $this->templateData('action', $sAction);
     $this->templateData('error', $sError);
     $this->templateDisplay('admin_login.html');
@@ -429,23 +392,21 @@ class Admin extends \Omniverse\Controller
 
     if (!empty($sContent))
     {
-      $sMenu .= "<table class=\"OmnisysAdminModuleMenu\">\n";
+      $sMenu .= "<section class=\"moduleMenu\">\n";
 
       if (!empty($sHeader))
       {
-        $sMenu .= "<tr><td class=\"OmnisysAdminModuleMenuHeader\">$sHeader</td></tr>\n";
-        $sMenu .= "<tr class=\"OmnisysAdminModuleMenuDivider\"><td></td></tr>\n";
+        $sMenu .= "<header>$sHeader</header>\n";
       }
 
-      $sMenu .= "<tr><td class=\"OmnisysAdminModuleMenuContent\">$sContent</td></tr>\n";
+      $sMenu .= "<main class=\"content\">$sContent</main>\n";
 
       if (!empty($Footer))
       {
-        $sMenu .= "<tr class=\"OmnisysAdminModuleMenuDivider\"><td></td></tr>\n";
-        $sMenu .= "<tr><td class=\"OmnisysAdminModuleMenuFooter\">$sFooter</td></tr>\n";
+        $sMenu .= "<footer>$sFooter</footer>\n";
       }
 
-      $sMenu .= "</table>\n<br />\n";
+      $sMenu .= "</section>\n";
     }
 
     return $sMenu;

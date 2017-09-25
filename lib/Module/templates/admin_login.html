@@ -1,16 +1,22 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-<title>OmniSys Password Check</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Omniverse Password Check</title>
+  <link rel="stylesheet" type="text/css" href="{{controller.getDir('WebShare')}}/login.css" />
+  <script type="text/javascript" src="{{controller.getDir('WebShare')}}/modernizr-custom.js"></script>
+  <script type="text/javascript">
+  document.cookie = '{{controller.allowGridCookieName}}=' + (Modernizr.cssgrid ? '1' : '0');
+  document.cookie = '{{controller.datePickerCookieName}}=' + (Modernizr.inputtypes.date ? '1' : '0');
+  </script>
 </head>
-<body onLoad="document.PassCheck.Email.focus();">
-<center>
-{% if error %}<h1>{{ error }}</h1>{% endif %}
-<form action="{{action}}" method="post" name="PassCheck">
-  Email: <input type="Text" Name="Email"><br />
-  Password:&nbsp; <input type="Password" Name="Password"><br />
-  <input type="submit" name="Submit" value="Authorization">
-</form>
-</center>
-<body>
+<body onLoad="document.passCheck.email.focus();">
+{% if error %}  <h1>{{ error }}</h1>{% endif %}
+  <form action="{{action}}" method="post" name="passCheck">
+    <div class="field"><span class="name">Email:</span><span class="value"><input type="text" name="email"></span></div>
+    <div class="field"><span class="name">Password:</span><span class="value"><input type="password" name="password"></span></div>
+    <div class="field"><span class="name"></span><span class="value"><input type="submit" name="submit" value="Authorization"></span></div>
+  </form>
+</body>
 </html>

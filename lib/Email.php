@@ -365,7 +365,7 @@ class Email
       $sHeader .= "Content-type: text/html; charset=utf8\r\n";
     }
 
-    $sHeader .= "X-Mailer: Omnisys\r\n";
+    $sHeader .= "X-Mailer: Omniverse\r\n";
     return $sHeader;
   }
 

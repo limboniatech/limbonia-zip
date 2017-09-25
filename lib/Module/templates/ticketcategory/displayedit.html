@@ -17,56 +17,52 @@ function toggleMethod(sOption)
   if (sOption == 'leasttickets' || sOption == 'roundrobin')
   {
     userDiv.style.display = 'none';
-    keyDiv.style.display = levelDiv.style.display = 'table-row';
+    keyDiv.style.display = levelDiv.style.display = 'block';
   }
 
   if (sOption == 'direct')
   {
-    userDiv.style.display = 'table-row';
+    userDiv.style.display = 'block';
     keyDiv.style.display = levelDiv.style.display = 'none';
   }
 
   return false;
 }
 </script>
-<form name="Edit" action="?Admin=Process&Module={{module.name}}&Process={{method}}&CategoryID={{currentItem.ID}}" method="post">
-<table>
-<tr>
-  <th align="right">Name:</th><td><input type="text" name="{{module.name}}[Name]" id="{{module.name}}[Name]" value="{{currentItem.Name | title | e}}"></td>
-</tr>
-<tr>
-  <th align="right">Assignment Method:</th>
-  <td>
+<form name="Edit" action="{{module.generateUri(currentItem.id, method)}}" method="post">
+<div class="field"><span class="label">Name</span><span class="data"><input type="text" name="{{module.name}}[Name]" id="{{module.name}}[Name]" value="{{currentItem.Name | title | e}}"></span></div>
+<div class="field">
+  <span class="label">Assignment Method</span>
+  <span class="data">
     <select name="{{module.name}}[AssignmentMethod]" id="{{module.name}}AssignmentMethod" onchange="toggleMethod(this.value);">
 {% for assignmentMethod in currentItem.AssignmentMethodList %}      <option value="{{assignmentMethod}}"{% if assignmentMethod == currentItem.AssignmentMethod %} selected="selected"{% endif %}>{{assignmentMethod | title}}</option>
 {% endfor %}    </select>
-  </td>
-</tr>
-<tr id="user" style="display: none;">
-  <th align="right">User:</th>
-  <td>
+  </span>
+</div>
+<div id="user" class="field" style="display: none;">
+  <span class="label">User</span>
+  <span class="data">
     <select name="{{module.name}}[UserID]" id="{{module.name}}UserID">
       <option value="">Select a user</option>
-{% for User in currentItem.search('User', {'Active': true, 'Visible': true}) %}      <option value="{{User.ID}}"{% if User.ID == currentItem.UserID %} selected="selected"{% endif %}>{{User.Name | title | e}}</option>
+{% for user in currentItem.search('User', {'Active': true, 'Visible': true}) %}      <option value="{{user.id}}"{% if user.id == currentItem.userID %} selected="selected"{% endif %}>{{user.name | title | e}}</option>
 {% endfor %}
     </select>
-  </td>
-</tr>
-<tr id="key" style="display: none;">
-  <th align="right">Required resource:</th>
-  <td>
+  </span>
+</div>
+<div id="key" class="field" style="display: none;">
+  <span class="label">Required resource</span>
+  <span class="data">
     <select name="{{module.name}}[KeyID]" id="{{module.name}}KeyID">
       <option value="">None</option>
-{% for Key in currentItem.search('ResourceKey') %}      <option value="{{Key.ID}}"{% if Key.ID == currentItem.KeyID %} selected="selected"{% endif %}>{{Key.Name | title |e}}</option>
+{% for key in currentItem.search('ResourceKey') %}      <option value="{{key.id}}"{% if key.id == currentItem.keyID %} selected="selected"{% endif %}>{{key.name | title |e}}</option>
 {% endfor %}
     </select>
-  </td>
-</tr>
-<tr id="level" style="display: none;">
-  <th align="right">Level:</th><td><input type="text" name="{{module.name}}[Level]" id="{{module.name}}[Level]" value="{{currentItem.Level}}"></td>
-</tr>
-<tr><td colspan="2" align="center"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="No" value="No" onClick="history.go(-1)"></td></tr>
-</table>
+  </span>
+</div>
+<div id="level" class="field" style="display: none;">
+  <span class="label">Level</span><span class="data"><span class="data>"<input type="text" name="{{module.name}}[Level]" id="{{module.name}}[Level]" value="{{currentItem.level}}"></span>
+</div>
+<div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="No" value="No" onClick="history.go(-1)"></span></div>
 </form>
 <script type="text/javascript">toggleMethod('{{currentItem.AssignmentMethod}}');</script>
 {% endif %}

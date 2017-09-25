@@ -48,16 +48,15 @@ class Template extends \Omniverse\Module
   /**
    * Instantiate the template module
    *
-   * @param string $sType (optional) - The type of module this should become
    * @param \Omniverse\Controller $oController
    */
-  public function __construct($sType = null, \Omniverse\Controller $oController = null)
+  public function __construct(\Omniverse\Controller $oController)
   {
-    parent::__construct($sType, $oController);
+    parent::__construct($oController);
 
-    $this->hSettings['baseuri'] = dirname($_SERVER['PHP_SELF']);
-    $this->hSettings['basedir'] = dirname($_SERVER['SCRIPT_FILENAME']);
-    $this->hSettings['templatedir'] = $this->getController()->getDir('templates');
-    $this->hSettings['defaulttemplate'] = $this->getController()->defaultTemplate;
+    $this->hSettings['baseuri'] = $this->oController->baseUrl;
+    $this->hSettings['basedir'] = dirname($this->oController->server['SCRIPT_FILENAME']);
+    $this->hSettings['templatedir'] = $this->oController->getDir('templates');
+    $this->hSettings['defaulttemplate'] = $this->oController->defaultTemplate;
   }
 }

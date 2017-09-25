@@ -20,74 +20,42 @@ class Cache extends \Omniverse\Module
   protected $sGroup = 'Site';
 
   /**
-   * The default action for this module
-   *
-   * @var string
-   */
-  protected $sDefaultAction = 'Display';
-
-  /**
    * The default method for this module
    *
    * @var string
    */
-  protected $sDefaultMethod = 'Reset';
+  protected $sDefaultAction = 'reset';
 
   /**
-   * List of components that this module contains along with thier descriptions
+   * List of components that this module contains along with their descriptions
    *
    * @var array
    */
   protected $hComponent =
   [
-    'Reset' => "Reset all the cache for this site."
+    'reset' => "Reset all the cache for this site."
   ];
 
   /**
-   * List of menu items that this module shoud display
+   * List of menu items that this module should display
    *
    * @var array
    */
-  protected $aMenuItems = ['Reset'];
+  protected $hMenuItems = ['reset' => 'Reset'];
 
   /**
-   * List of methods that are allowed to run
+   * List of actions that are allowed to run
    *
    * @var array
    */
-  protected $aAllowedMethods = ['Reset'];
+  protected $aAllowedActions = ['reset'];
 
-  /**
-   * The name of the module
-   *
-   * @var string
-   */
-  protected $sModuleName = 'Cache';
-
-  /**
-   * The type of module this is
-   *
-   * @var string
-   */
-  protected $sType = 'Cache';
-
-  /**
-   * Prepare the template for display based on the current action and current method
-   */
-  public function prepareTemplate()
+  protected function prepareTemplatePostReset()
   {
-    if ($this->sCurrentAction == 'Process')
+    if ($this->oController->user()->hasResource('Site', 'Reset'))
     {
-      if ($this->sCurrentMethod == 'Reset')
-      {
-        if (!$this->getController()->user()->hasResource('Site', 'Reset'))
-        {
-          return '';
-        }
-
-        $oCache = \Omniverse\Cache::factory();
-        $this->getController()->templateData('success', $oCache->clear());
-      }
+      $oCache = \Omniverse\Cache::factory();
+      $this->oController->templateData('success', $oCache->clear());
     }
   }
 }

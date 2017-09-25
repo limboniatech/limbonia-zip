@@ -1,0 +1,506 @@
+body
+{
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  width: 98%;
+}
+
+a
+{
+  color: #5555ff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+a:hover
+{
+  text-decoration: underline;
+}
+
+a:focus
+{
+  outline: none;
+}
+
+form
+{
+  margin: 0;
+}
+
+header
+{
+  background-color: #000099;
+  color: #ffffff;
+  font-weight: bold;
+  text-align: left;
+  line-height: 1em;
+  height: 2em;
+}
+
+header > span
+{
+  float: left;
+  padding: 0.5em;
+}
+
+header > .tools
+{
+  text-align: right;
+  float: right;
+}
+
+header a
+{
+  color: #ffffff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+#admin > nav
+{
+  float: left;
+  width: 15%;
+  vertical-align: top;
+  font-weight: normal;
+  text-align: left;
+  margin-left: 0.5em;
+}
+
+#admin > #content
+{
+  float: right;
+  width: 82%;
+  background-color: #ddddff;
+  padding: 1em;
+  vertical-align: top;
+}
+
+#admin > nav > .group
+{
+  font-weight: bold;
+  border-width: 0.1em;
+  border-style: none none solid none;
+  margin: 0.3em 0.3em 0.5em 0;
+}
+
+#admin > nav > a
+{
+  color: #000000;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 1em;
+}
+
+#admin > nav > a:link,
+#admin > nav > a:active,
+#admin > nav > a:visited
+{
+  color: #000000;
+  text-decoration: none;
+}
+
+#admin > nav > a:hover
+{
+  color: #5555ff;
+}
+
+#admin > nav > .module
+{
+  background-color: #ddddff;
+  border-color: #5555ff;
+  border-width: 0.1em;
+  border-style: solid solid solid solid;
+  padding: 0.3em;
+  margin: 0 0 1em 0;
+}
+
+#admin > nav > .module > .title
+{
+  font-weight: bold;
+  font-style: italic;
+  font-variant: small-caps;
+  padding: 0;
+  letter-spacing: 0.1em;
+}
+
+#admin > nav > .module > form
+{
+  margin-top: 0.5em;
+}
+
+#admin > nav > .module > form > input
+{
+  display: block;
+  width: 95%;
+}
+
+#admin > #content .tabSet
+{
+  border-bottom: 0.1em solid;
+  padding: 0 0.18em 0.18em 0.5em;
+  margin: 0 0 1em 0;
+  white-space: nowrap;
+}
+
+#admin > #content .tabSet > .tab
+{
+  margin: 0 0.5em 0 0;
+}
+
+#admin > #content .tabSet > .current.tab
+{
+  border-width: 0.1em;
+  border-style: solid;
+  border-color: #000000 #000000 #ddddff #000000;
+  font-weight: bold;
+  color: #000000;
+}
+
+#admin > #content .tabSet > .current.tab.noLink
+{
+  padding: 0.18em 0.25em;
+}
+
+#admin > #content .tabSet > a.current.tab
+{
+  background-color: inherit;
+}
+
+#admin > #content .tabSet > a.tab
+{
+  border-width: 0.1em;
+  border-style: solid;
+  border-color: #000000;
+  padding: 0.18em 0.36em;
+  background-color: #eeeeff;
+  color: #000000;
+  text-decoration: none;
+}
+
+#admin > #content .tabSet > a.tab:link,
+#admin > #content .tabSet > a.tab:active,
+#admin > #content .tabSet > a.tab:visited
+{
+  color: #000000;
+  text-decoration: none;
+}
+
+#admin > #content .tabSet > a.tab:hover
+{
+  background-color: #5555ff;
+  color: white;
+}
+
+#admin > #content > #item
+{
+  min-width: 70%;
+  max-width: 100%;
+}
+
+#admin > #content > #item > .title
+{
+  font-weight: bold;
+  font-variant: small-caps;
+  margin-left: 0.5em;
+}
+
+#admin > #content > #item > .tabSet
+{
+  border-bottom-color: #bbbb99;
+  margin: 0;
+}
+
+#admin > #content > #item > .tabSet > .current.tab
+{
+  border-color: #bbbb99 #bbbb99 #fffffc #bbbb99;
+  background-color: #fffffc;
+}
+
+#admin > #content > #item > .tabSet > a.current.tab
+{
+}
+
+#admin > #content > #item > .tabSet > a.tab
+{
+  border-color: #bbbb99;
+}
+
+#admin > #content > #item > .tabSet > a.tab:link,
+#admin > #content > #item > .tabSet > a.tab:active,
+#admin > #content > #item > .tabSet > a.tab:visited
+{
+  color: #5555ff;
+}
+
+#admin > #content > #item > .tabSet > a.current.tab:hover,
+#admin > #content > #item > .tabSet > a.tab:hover
+{
+  background-color: #5555ff;
+  color: white;
+}
+
+#admin > #content > #item > #page
+{
+  border-style: solid;
+  border-color: #bbbb99;
+  border-width: 0 0.1em 0.1em 0.1em;
+  background-color: #fefeff;
+  margin: 0;
+  padding: 1em 0.5em 0.5em 0.5em;
+}
+
+#admin > #content > #item > #page .sortGrid
+{
+  background-color: #ddddff;
+}
+
+#admin > #content > #item > #page > .field
+{
+  margin: 0.5em;
+}
+
+.field
+{
+  margin-bottom: 0.5em;
+}
+
+.field > .blankLabel,
+.field > .label
+{
+  display: inline-block;
+  width: 10em;
+  margin-right: 0.125em;
+}
+
+.field > .label
+{
+  text-align: right;
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.field > .label::after
+{
+  content: ':';
+}
+
+.field > .data
+{
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.ticketContent
+{
+  border-top: 0.1em dashed #888888;
+  width: 50em;
+}
+
+.ticketContent > .label
+{
+  font-weight: normal;
+  vertical-align: top;
+  margin-right: 1em;
+}
+
+.ticketContent.field > .label::after
+{
+  content: '';
+}
+
+.ticketContent > .data
+{
+  padding: 0.5em;
+}
+
+.ticketContent > .data  > .history
+{
+  border: 0.1em;
+  border-color: #5555ff;
+  background-color: #eeeeee;
+  padding: 0.5em;
+}
+
+.ticketContent > .system
+{
+  background-color: #ffeeee;
+}
+
+.ticketContent > .public
+{
+}
+
+.ticketContent > .private
+{
+  background-color: #eeeeff;
+}
+
+.moduleMenu
+{
+  max-width: 50em;
+}
+
+.moduleMenu > header
+{
+  background-color: inherit;
+  font-weight: bold;
+  color: #000099;
+  padding: 0.15em;
+  margin: 0.3em 0 0.2em 0;
+  letter-spacing: 0.15em;
+  word-spacing: 0.1em;
+  border-bottom: 0.1em solid #000099;
+}
+
+.moduleMenu > .content
+{
+  padding: 0.5em 0;
+}
+
+.moduleMenu > footer
+{
+  background-color: inherit;
+  font-size: 0.8em;
+  font-weight: bold;
+  color: #000099;
+  padding: 0.15em;
+  margin: 0.2em 0.3em 0;
+  letter-spacing: 0.15em;
+  word-spacing: 0.1em;
+  border-top: 0.1em solid #000099;
+}
+
+.sortGridContainor
+{
+  vertical-align: top;
+}
+
+.sortGrid
+{
+  border-color: #ffffff;
+  min-width: 50%;
+  border-width: 0.1em;
+  border-style: solid;
+}
+
+.sortGrid thead tr
+{
+  background-color: #ffffff;
+}
+
+.sortGrid th
+{
+  padding: 0.3em;
+}
+
+.sortGrid tbody tr
+{
+  background-color: #ffffff;
+  border-style: hidden;
+  border-width: 0
+}
+
+.sortGrid tbody tr td
+{
+  border-style: hidden;
+  border-width: 0;
+  padding: 0.3em;
+}
+
+.sortGrid tbody tr:hover,
+.sortGrid tbody tr:hover a,
+.sortGrid tbody tr:nth-child(odd):hover,
+.sortGrid tbody tr:nth-child(odd):hover a
+{
+  background-color: #5555ff;
+  color: #ffffff;
+}
+
+.sortGrid tbody tr:nth-child(odd)
+{
+  background-color: #ccccff;
+}
+
+.methodSuccess
+{
+  font-weight: bold;
+  padding: 0.3em;
+  background-color: lightgreen;
+  border: 0.1em dashed green;
+}
+
+.methodFailure
+{
+  font-weight: bold;
+  padding: 0.3em;
+  background-color: pink;
+  border: 0.1em dashed red;
+}
+
+.progress
+{
+  position: relative;
+  width: 25em;
+  border: 0.1em solid #d7d7d7;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  padding: 0.1em;
+}
+
+.progress .bar
+{
+  display: block;
+  position: relative;
+  background: #6bba70;
+  text-align: center;
+  font-weight: normal;
+  color: #333;
+  height: 2em;
+  line-height: 2em;
+}
+
+.incomplete
+{
+  font-weight: bold;
+}
+
+.completed
+{
+}
+
+.display
+{
+}
+
+.display > header,
+.display > div,
+.display > footer
+{
+  margin: 0.5em 0;
+}
+
+.display > header > span,
+.display > div > span,
+.display > footer > span
+{
+  display: inline-block;
+  min-width: 33%;
+}
+
+.display > footer > span > *
+{
+  margin-right: 0.25em;
+}
+
+.display > header
+{
+  background-color: inherit;
+  color: inherit;
+  height: auto;
+}
+
+.display > header > span
+{
+  float: none;
+  padding: 0;
+}

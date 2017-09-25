@@ -26,7 +26,7 @@ function $()
 }
 */
 
-function Omnisys_GetRequest()
+function Omniverse_GetRequest()
 {
   //compliant browsers
   if (window.XMLHttpRequest)
@@ -44,12 +44,13 @@ function Omnisys_GetRequest()
   return false;
 }
 
-function Omnisys_HttpRequest(sClass, sFunction, aArg, bReportStatus, bDebug)
+function Omniverse_HttpRequest(sClass, sFunction, aArg, bReportStatus, bDebug, sBaseUri)
 {
   if (arguments.length < 4) { bReportStatus = false; }
   if (arguments.length < 5) { bDebug = false; }
+  if (arguments.length < 6) { sBaseUri = '/ajax/'; }
 
-  var oRequest = Omnisys_GetRequest();
+  var oRequest = Omniverse_GetRequest();
   if (!oRequest)
   {
     return false;
@@ -103,7 +104,7 @@ function Omnisys_HttpRequest(sClass, sFunction, aArg, bReportStatus, bDebug)
         }
     }
   }
-  oRequest.open('post', '?Ajax' + '&class=' + encodeURIComponent(sClass) + '&function=' + encodeURIComponent(sFunction));
+  oRequest.open('post', sBaseUri + '/' + sClass + '/' + encodeURIComponent(sFunction));
   oRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   var sArgs = null;
 

@@ -12,6 +12,8 @@ namespace Omniverse;
  */
 class Widget extends Tag
 {
+  use \Omniverse\Traits\DriverList;
+
   /**
    * @var integer $iCount - number of existing widgets.
    */
@@ -33,27 +35,27 @@ class Widget extends Tag
   protected $sID = 'OmnisysWidget';
 
   /**
-   * @var string $sType -
+   * @var string $sType - The type of widget this object represents
    */
   protected $sType = '';
 
   /**
-   * @var string $sPreScript - HTML to be written out *before* the javascript stuff...
+   * @var string $sPreScript - HTML to be written out *before* the JavaScript stuff...
    */
   protected $sPreScript = '';
 
   /**
-   * @var string $sScript - javascript that forms the main functionality of the object.
+   * @var string $sScript - JavaScript that forms the main functionality of the object.
    */
   protected $sScript = '';
 
   /**
-   * @var string $sPostScript - HTML to be written out *after* the javascript stuff...
+   * @var string $sPostScript - HTML to be written out *after* the JavaScript stuff...
    */
   protected $sPostScript = '';
 
   /**
-   * @var array $aScript - a list of required javascripts to included.
+   * @var array $aScript - a list of required JavaScripts to included.
    */
   protected $aScript = [];
 
@@ -108,11 +110,12 @@ class Widget extends Tag
    *
    * @param string $sType - The type of widget to instantiate
    * @param string $sName (optional) - The name to give the widget when it is instantiated
+   * @param \Omniverse\Controller $oController (optional)
    * @return \Omniverse\Widget - The object requested on success, otherwise false.
    */
   public static function factory($sType, $sName = null, \Omniverse\Controller $oController = null)
   {
-    $sTypeClass = __NAMESPACE__ . '\\Widget\\' . $sType;
+    $sTypeClass = __CLASS__ . '\\' . self::driver($sType);
 
     if (!\class_exists($sTypeClass, true))
     {
@@ -307,17 +310,11 @@ class Widget extends Tag
             break;
 
           case 'POST':
-            if (isset($_POST[$sName]))
-            {
-              $sValue = $_POST[$sName];
-            }
+            $sValue = $this->getController()->post[$sName];
             break;
 
           case 'GET':
-            if (isset($_GET[$sName]))
-            {
-              $sValue = $_GET[$sName];
-            }
+            $sValue = $this->getController()->get[$sName];
             break;
 
           case 'MODULE':
@@ -346,7 +343,7 @@ class Widget extends Tag
    */
   protected function setSessionCache($sName, $xData)
   {
-    $_SESSION[$this->sModuleName][$sName] = $xData;
+    $_SESSION[$this->sType][$sName] = $xData;
   }
 
   /**
@@ -359,7 +356,7 @@ class Widget extends Tag
    */
   protected function getSessionCache($sName)
   {
-    return isset($_SESSION[$this->sModuleName][$sName]) ? $_SESSION[$this->sModuleName][$sName] : null;
+    return isset($_SESSION[$this->sType][$sName]) ? $_SESSION[$this->sType][$sName] : null;
   }
 
   /**
@@ -425,7 +422,7 @@ class Widget extends Tag
   }
 
   /**
-   * Does all redundant bits of creating the actual HTML / javascript widget.
+   * Does all redundant bits of creating the actual HTML / JavaScript widget.
    * It is final and may not be overridden by a child class.
    *
    * @return boolean
@@ -486,7 +483,7 @@ class Widget extends Tag
   {
     if (array_search($sScript, self::$aIncludedScript) === false)
     {
-      echo "\n<script type=\"text/javascript\" language=\"javascript\" src=\"$sScript\"></script>\n";
+      echo "\n<script type=\"text/JavaScript\" language=\"JavaScript\" src=\"$sScript\"></script>\n";
       self::$aIncludedScript[] = $sScript;
     }
   }
@@ -501,7 +498,7 @@ class Widget extends Tag
   {
     if ($this->bInit)
     {
-      echo "\n<script type=\"text/javascript\" language=\"javascript\">$sCommand</script>\n";
+      echo "\n<script type=\"text/JavaScript\" language=\"JavaScript\">$sCommand</script>\n";
     }
     else
     {
@@ -607,16 +604,17 @@ class Widget extends Tag
    */
   public function addAjaxFunction($sFunction, $bReportStatus = false)
   {
-    $sAjaxFunction = "Omnisys_$sFunction";
+    $sAjaxFunction = "Omniverse_$sFunction";
 
     if (!in_array($sAjaxFunction, self::$aAjaxFunction))
     {
-      $sClassName = str_replace('\\', '\\\\', preg_replace("#^Omniverse\\\#", '', get_class($this)));
+      $sClassName = str_replace('\\', '/', preg_replace("#^Omniverse\\\#", '', get_class($this)));
       self::includeScript($this->getController()->getDir('WebShare') . "/ajax.js");
       $sReportStatus = $bReportStatus === true ? 'true' : 'false';
       $sDebug = self::$bAjaxDebug === true ? 'true' : 'false';
+      $sBaseUrl = "'" . dirname($this->getController()->baseUrl) . '/ajax' ."'";
 
-      $sJavascript =  "\n<script type=\"text/javascript\" language=\"javascript\">function $sAjaxFunction(){Omnisys_HttpRequest('$sClassName', '$sFunction', arguments, $sReportStatus, $sDebug);}</script>\n";
+      $sJavascript =  "\n<script type=\"text/JavaScript\" language=\"JavaScript\">function $sAjaxFunction(){Omniverse_HttpRequest('$sClassName', '$sFunction', arguments, $sReportStatus, $sDebug, $sBaseUrl);}</script>\n";
       $this->write($sJavascript);
       self::$aAjaxFunction[] = $sAjaxFunction;
     }

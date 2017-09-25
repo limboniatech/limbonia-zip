@@ -85,18 +85,34 @@ class Ticket extends \Omniverse\Module
   ];
 
   /**
+   * List of quick search items to display
+   *
+   * @var array
+   */
+  protected $hQuickSearch =
+  [
+    'TicketID' => 'Ticket ID'
+  ];
+
+  /**
    * List of sub-menu options
    *
    * @var array
    */
-  protected $aSubMenuItems = ['View', 'Edit', 'Attachments', 'Relationships'];
+  protected $hSubMenuItems =
+  [
+    'view' => 'View',
+    'edit' => 'Edit',
+    'attachments' => 'Attachments',
+    'relationships' => 'Relationships'
+  ];
 
   /**
-   * List of methods that are allowed to run
+   * List of actions that are allowed to run
    *
    * @var array
    */
-  protected $aAllowedMethods = ['Search', 'Create', 'EditDialog', 'EditColumn', 'Edit', 'List', 'View', 'Attachments', 'Relationships', 'Watchers'];
+  protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'attachments', 'relationships', 'watchers'];
 
   /**
    * Return the module criteria
@@ -125,133 +141,76 @@ class Ticket extends \Omniverse\Module
   protected function processCreateGetData()
   {
     $hData = parent::processCreateGetData();
-    $hData['CreatorID'] = $this->getController()->user()->id;
+    $hData['CreatorID'] = $this->oController->user()->id;
     return $hData;
   }
 
-  /**
-   * Prepare the template for display based on the current action and current method
-   */
-  public function prepareTemplate()
+  protected function prepareTemplateAttachmentsAdd()
   {
-    if ($this->sCurrentAction == 'Process')
+    if (isset($_FILES['Attachment']))
     {
-      if ($this->sCurrentMethod == 'Attachments')
-      {
-        if (isset($_FILES['Attachment']))
-        {
-          try
-          {
-            $this->oItem->addAttachment($_FILES['Attachment']['tmp_name'], $_FILES['Attachment']['name']);
-            $this->getController()->templateData('success', "Successfully added attachment.");
-          }
-          catch (\Exception $e)
-          {
-            $this->getController()->templateData('failure', "Failed to add attachment: " . $e->getMessage());
-          }
-        }
-        elseif (isset($_GET['Delete']))
-        {
-          try
-          {
-            $this->oItem->removeAttachment($_GET['Delete']);
-            $this->getController()->templateData('success', "Successfully removed attachment.");
-          }
-          catch (\Exception $e)
-          {
-            $this->getController()->templateData('failure', "Failed to remove attachment: " . $e->getMessage());
-          }
-        }
+      $this->oItem->addAttachment($_FILES['Attachment']['tmp_name'], $_FILES['Attachment']['name']);
+      $this->oController->templateData('success', "Successfully added attachment.");
+    }
+    else
+    {
+      $this->oController->templateData('failure', "Uploade attachment not found.");
+    }
+  }
 
-        $this->sCurrentAction = 'Display';
-      }
-      elseif ($this->sCurrentMethod == 'Relationships')
-      {
-        if (isset($_POST['SetParent']))
-        {
-          try
-          {
-            $oParent = $this->getController()->itemFromId('ticket', $_POST['SetParent']);
-            $this->oItem->parentId = $oParent->id;
-            $this->oItem->save();
-            $this->getController()->templateData('success', "Successfully set parent ticket.");
-          }
-          catch (\Exception $e)
-          {
-            $this->getController()->templateData('failure', "Failed to set parent ticket: " . $e->getMessage());
-          }
-        }
-        elseif (isset($_POST['AddChild']))
-        {
-          try
-          {
-            $oChild = $this->getController()->itemFromId('ticket', $_POST['AddChild']);
-            $this->oItem->addChild($oChild);
-            $this->oItem->save();
-            $this->getController()->templateData('success', "Successfully add child ticket.");
-          }
-          catch (\Exception $e)
-          {
-            $this->getController()->templateData('failure', "Failed to add child ticket: " . $e->getMessage());
-          }
-        }
-        elseif (isset($_GET['RemoveParent']))
-        {
-          try
-          {
-            $oParent = $this->getController()->itemFromId('ticket', $_GET['RemoveParent']);
+  protected function prepareTemplateAttachmentsDelete()
+  {
+    $this->oItem->removeAttachmentById($this->oController->api->subId);
+    $this->oController->templateData('success', "Successfully removed attachment.");
+  }
 
-            if ($this->oItem->parentId != $oParent->id)
-            {
-              throw new Exception("The parent id to be removed does not match the actual parent id.");
-            }
+  protected function prepareTemplateRelationshipsSetparent()
+  {
+    $oParent = $this->oController->itemFromId('ticket', $this->oController->post['SetParent']);
+    $this->oItem->parentId = $oParent->id;
+    $this->oItem->save();
+    $this->oController->templateData('success', "Successfully set parent ticket.");
+  }
 
-            $this->oItem->parentId = 0;
-            $this->oItem->save();
-            $this->getController()->templateData('success', "Successfully removed parent ticket.");
-          }
-          catch (\Exception $e)
-          {
-            $this->getController()->templateData('failure', "Failed to remove parent ticket: " . $e->getMessage());
-          }
-        }
-        elseif (isset($_GET['RemoveChild']))
-        {
-          try
-          {
-            $oChild = $this->getController()->itemFromId('ticket', $_GET['RemoveChild']);
-            $this->oItem->removeChild($oChild);
-            $this->oItem->save();
-            $this->getController()->templateData('success', "Successfully removed child ticket.");
-          }
-          catch (\Exception $e)
-          {
-            $this->getController()->templateData('failure', "Failed to remove child ticket: " . $e->getMessage());
-          }
-        }
+  protected function prepareTemplateRelationshipsRemoveparent()
+  {
+    $this->oItem->parentId = 0;
+    $this->oItem->save();
+    $this->oController->templateData('success', "Successfully removed parent ticket.");
+  }
 
-        $this->sCurrentAction = 'Display';
-      }
-      elseif ($this->sCurrentMethod == 'Watchers')
-      {
-        $hPost = $this->editGetData();
-        $iUser = $this->getController()->user()->id;
+  protected function prepareTemplateRelationshipsAddchild()
+  {
+    $oChild = $this->oController->itemFromId('ticket', $this->oController->post['AddChild']);
+    $this->oItem->addChild($oChild);
+    $this->oItem->save();
+    $this->oController->templateData('success', "Successfully added child ticket.");
+  }
 
-        if (isset($hPost['submit']) && $hPost['submit'] == 'Watch this ticket')
-        {
-          $this->oItem->addWatcher($iUser);
-        }
-        elseif (isset($hPost['submit']) && $hPost['submit'] == 'Stop watching this ticket')
-        {
-          $this->oItem->removeWatcher($iUser);
-        }
+  protected function prepareTemplateRelationshipsRemovechild()
+  {
+    $oChild = $this->oController->itemFromId('ticket', $this->oController->api->subId);
+    $this->oItem->removeChild($oChild);
+    $this->oItem->save();
+    $this->oController->templateData('success', "Successfully removed child ticket.");
+  }
 
-        $this->sCurrentAction = 'Display';
-        $this->sCurrentMethod = 'View';
-      }
+  protected function prepareTemplatePostWatchers()
+  {
+    $hPost = $this->editGetData();
+    $iUser = $this->oController->user()->id;
+
+    if (isset($hPost['submit']) && $hPost['submit'] == 'Watch this ticket')
+    {
+      $this->oItem->addWatcher($iUser);
+    }
+    elseif (isset($hPost['submit']) && $hPost['submit'] == 'Stop watching this ticket')
+    {
+      $this->oItem->removeWatcher($iUser);
     }
 
-    return parent::prepareTemplate();
+    $this->oController->server['request_method'] = 'GET';
+    $this->sCurrentAction = 'view';
   }
 
   /**
@@ -262,7 +221,7 @@ class Ticket extends \Omniverse\Module
   protected function editGetData()
   {
     $hPost = parent::editGetData();
-    $hPost['UserID'] = $this->getController()->user()->id;
+    $hPost['UserID'] = $this->oController->user()->id;
     return $hPost;
   }
 
@@ -287,17 +246,17 @@ class Ticket extends \Omniverse\Module
   {
     if ($sColumn == 'ReleaseID')
     {
-      return $oItem->releaseId == 0 ? 'None' : '<a target="_blank" href="?Admin=Display&Module=Software&Display=RoadMap&SoftwareID=' . $oItem->softwareId . '#' . $oItem->release->version . '">' . $oItem->release->version . '</a>';
+      return $oItem->releaseId == 0 ? 'None' : '<a target="_blank" href="' . $this->oController->generateUri('software', $oItem->softwareId, 'roadmap', '#' . $oItem->release->version) . '">' . $oItem->release->version . '</a>';
     }
 
     if ($sColumn == 'CreatorID')
     {
-      return $oItem->creatorId == 0 ? 'None' : '<a target="_blank" href="?Admin=Process&Module=User&Process=View&UserID=' . $oItem->creatorId . '">' . $oItem->creator->name . '</a>';
+      return $oItem->creatorId == 0 ? 'None' : '<a target="_blank" href="' . $this->oController->generateUri('user', $oItem->creatorId) . '">' . $oItem->creator->name . '</a>';
     }
 
     if ($sColumn == 'OwnerID')
     {
-      return $oItem->ownerId == 0 ? 'None' : '<a target="_blank" href="?Admin=Process&Module=User&Process=View&UserID=' . $oItem->ownerId . '">' . $oItem->owner->name . '</a>';
+      return $oItem->ownerId == 0 ? 'None' : '<a target="_blank" href="' . $this->oController->generateUri('user', $oItem->ownerId) . '">' . $oItem->owner->name . '</a>';
     }
 
     if (in_array($sColumn, ['Type', 'Status', 'Priority', 'Severity', 'Projection', 'DevStatus', 'QualityStatus']))
@@ -334,7 +293,7 @@ class Ticket extends \Omniverse\Module
     if ($sName == 'CategoryID')
     {
       $oList = \Omniverse\Item::search('TicketCategory');
-      $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
+      $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select Category';
       $oSelect->addOption($sEmptyItemLabel, '');
 
@@ -348,19 +307,14 @@ class Ticket extends \Omniverse\Module
         $oSelect->setSelected($sValue);
       }
 
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Category:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Category:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+      return "        <div class=\"field\"><span class=\"label\">Category</span><span class=\"data\">" . $oSelect . "</span></div>";
     }
 
     if (in_array($sName, ['OwnerID', 'CreatorID']))
     {
       $sType = strtolower(preg_replace('/id$/i', '', $sName));
       $oUsers = \Omniverse\Item::search('User', ['Visible' => true, 'Active' => true]);
-      $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
+      $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select an $sType";
       $oSelect->addOption($sEmptyItemLabel, '');
 
@@ -370,13 +324,7 @@ class Ticket extends \Omniverse\Module
       }
 
       $oSelect->setSelected($sValue);
-
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Owner:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Owner:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+      return "        <div class=\"field\"><span class=\"label\">Owner</span><span class=\"data\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'ParentID')
@@ -386,51 +334,29 @@ class Ticket extends \Omniverse\Module
 
     if ($sName == 'UpdateText')
     {
-      $oText = $this->getController()->widgetFactory('Editor', "$this->sModuleName[$sName]");
+      $oText = $this->oController->widgetFactory('Editor', "$this->sType[$sName]");
       $oText->setToolBar('Basic');
       $oText->setText($sValue);
-
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Update:</th><td class=\"OmnisysFieldValue\">" . $oText . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update:</span><span class=\"OmnisysFieldValue\">" . $oText . "</span></div>";
+      return "        <div class=\"field\"><span class=\"label\">Update</span><span class=\"data\">" . $oText . "</span></div>";
     }
 
     if ($sName == 'UpdateType')
     {
       if (in_array($this->oItem->Type, ['internal', 'system']))
       {
-        if ($bInTable)
-        {
-          return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Update Type:</th><td class=\"OmnisysFieldValue\">Private<input type=\"hidden\" name=\"UpdateType\" value=\"private\" /></td></tr>";
-        }
-
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update Type:</span><span class=\"OmnisysFieldValue\">Private<input type=\"hidden\" name=\"UpdateType\" value=\"private\" /></span></div>";
+        return "        <div class=\"field\"><span class=\"label\">Update Type</span><span class=\"data\">Private<input type=\"hidden\" name=\"UpdateType\" value=\"private\" /></span></div>";
       }
 
-      $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
+      $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
       $oSelect->addOption('Public', 'public');
       $oSelect->addOption('Private', 'private');
       $oSelect->setSelected('public');
-
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Update Type:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Update Type:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+      return "        <div class=\"field\"><span class=\"label\">Update Type</span><span class=\"data\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'TimeWorked')
     {
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Time Worked:</th><td class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Time Worked:</span><span class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></span></div>";
+      return "        <div class=\"field\"><span class=\"label\">Time Worked</span><span class=\"data\"><input type=\"text\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\" value=\"$sValue\"></span></div>";
     }
 
     static $bSoftwareDone = false;
@@ -457,13 +383,13 @@ class Ticket extends \Omniverse\Module
         return null;
       }
 
-      $oSoftwareWidget = $this->getController()->widgetFactory('Software', "$this->sModuleName[SoftwareID]");
+      $oSoftwareWidget = $this->oController->widgetFactory('Software', "$this->sType[SoftwareID]");
       $sSoftwareID = $oSoftwareWidget->getID();
 
-      $oReleaseWidget = $this->getController()->widgetFactory('Select', "$this->sModuleName[ReleaseID]");
+      $oReleaseWidget = $this->oController->widgetFactory('Select', "$this->sType[ReleaseID]");
       $sReleaseID = $oReleaseWidget->getID();
 
-      $oElementWidget = $this->getController()->widgetFactory('Select', "$this->sModuleName[ElementID]");
+      $oElementWidget = $this->oController->widgetFactory('Select', "$this->sType[ElementID]");
       $sElementID = $oElementWidget->getID();
 
       $sGetReleases = $oSoftwareWidget->addAjaxFunction('getReleasesBySoftware', TRUE);
@@ -547,37 +473,13 @@ class Ticket extends \Omniverse\Module
       $oElementWidget->writeJavascript($sElementScript);
 
       $oSoftwareWidget->addEvent('change', $sGetReleases . "(this.options[this.selectedIndex].value, '$sReleaseID', releaseID);" . $sGetElements . "(this.options[this.selectedIndex].value, '$sElementID', elementID);");
-
-      if ($bInTable)
-      {
-        $sFormField = "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Software:</th><td class=\"OmnisysFieldValue\">" . $oSoftwareWidget . "</td></tr>";
-      }
-      else
-      {
-        $sFormField = "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Software:</span><span class=\"OmnisysFieldValue\">" . $oSoftwareWidget . "</span></div>";
-      }
+      $sFormField = "        <div class=\"field\"><span class=\"label\">Software</span><span class=\"data\">" . $oSoftwareWidget . "</span></div>";
 
       $oReleaseWidget->addOption('Select a version', '0');
-
-      if ($bInTable)
-      {
-        $sFormField .= "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Version:</th><td class=\"OmnisysFieldValue\">" . $oReleaseWidget . "</td></tr>";
-      }
-      else
-      {
-        $sFormField .= "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Version:</span><span class=\"OmnisysFieldValue\">" . $oReleaseWidget . "</span></div>";
-      }
+      $sFormField .= "        <div class=\"field\"><span class=\"label\">Version</span><span class=\"data\">" . $oReleaseWidget . "</span></div>";
 
       $oElementWidget->addOption('Select an element', '0');
-
-      if ($bInTable)
-      {
-        $sFormField .= "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Element:</th><td class=\"OmnisysFieldValue\">" . $oElementWidget . "</td></tr>";
-      }
-      else
-      {
-        $sFormField .= "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Element:</span><span class=\"OmnisysFieldValue\">" . $oElementWidget . "</span></div>";
-      }
+      $sFormField .= "        <div class=\"field\"><span class=\"label\">Element</span><span class=\"data\">" . $oElementWidget . "</span></div>";
 
       $bSoftwareDone = TRUE;
       return $sFormField;
@@ -591,23 +493,18 @@ class Ticket extends \Omniverse\Module
 
       foreach ($aWatcherList as $oWatcher)
       {
-        if ($oWatcher->id == $this->getController()->user()->id)
+        if ($oWatcher->id == $this->oController->user()->id)
         {
           $bCurrentlyWatching = true;
         }
 
-        $aWatcher[] = "<a href=\"?Admin=Process&Module=User&Process=View&UserID=$oWatcher->id\">$oWatcher->name</a>";
+        $aWatcher[] = "<a href=\"" . $this->oController->generateUri('user', $oWatcher->id) . "\">$oWatcher->name</a>";
       }
 
       $sWatcherList = count($aWatcher) == 0 ? 'None' : implode(', ', $aWatcher);
       $sButtonValue = $bCurrentlyWatching ? 'Stop watching this ticket' : 'Watch this ticket';
 
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Watchers:</th><td class=\"OmnisysFieldValue\">$sWatcherList<br /><form method=\"post\" action=\"?Admin=Process&Module=Ticket&Process=Watchers&TicketID={$this->oItem->id}\"><input type=\"submit\" name=\"$this->sModuleName[submit]\" value=\"$sButtonValue\"></form></td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Watchers:</span><span class=\"OmnisysFieldValue\">$sWatcherList<br /><form method=\"post\" action=\"?Admin=Process&Module=Ticket&Process=Watchers&TicketID={$this->oItem->id}\"><input type=\"submit\" name=\"$this->sModuleName[submit]\" value=\"$sButtonValue\"></form></span></div>";
+      return "        <div class=\"field\"><span class=\"label\">Watchers</span><span class=\"data\">$sWatcherList<br /><form method=\"post\" action=\"" . $this->generateUri($this->oItem->id, 'watchers') . "\"><input type=\"submit\" name=\"$this->sType[submit]\" value=\"$sButtonValue\"></form></span></div>";
     }
 
     return parent::getFormField($sName, $sValue, $hData, $bInTable);

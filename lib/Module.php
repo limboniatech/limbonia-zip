@@ -12,6 +12,8 @@ namespace Omniverse;
  */
 class Module
 {
+  use \Omniverse\Traits\DriverList;
+
   /**
    * The controller for this module
    *
@@ -20,18 +22,11 @@ class Module
   protected $oController = null;
 
   /**
-   * The name of the module
-   *
-   * @var string
-   */
-  protected $sModuleName = '';
-
-  /**
    * The type of module this is
    *
    * @var string
    */
-  protected $sType = '';
+  protected $sType = null;
 
   /**
    * The item object associated with this module
@@ -118,73 +113,68 @@ class Module
   protected $aStaticColumn = ['Name'];
 
   /**
-   * The default action for this module
-   *
-   * @var string
-   */
-  protected $sDefaultAction = 'Process';
-
-  /**
-   * The current action being taken by this module
-   *
-   * @var string
-   */
-  protected $sCurrentAction = 'Process';
-
-  /**
    * The default method for this module
    *
    * @var string
    */
-  protected $sDefaultMethod = 'List';
+  protected $sDefaultAction = 'list';
 
   /**
    * The current method being used by this module
    *
    * @var string
    */
-  protected $sCurrentMethod = 'List';
+  protected $sCurrentAction = 'list';
 
   /**
-   * List of components that this module contains along with thier descriptions
+   * List of components that this module contains along with their descriptions
    *
    * @var array
    */
   protected $hComponent =
   [
-    'Search' => 'This is the ability to search and display data.',
-    'Edit' => '"The ability to edit existing data.',
-    'Create' => 'The ability to create new data.',
-    'Delete' => 'The ability to delete existing data.'
+    'search' => 'This is the ability to search and display data.',
+    'edit' => '"The ability to edit existing data.',
+    'create' => 'The ability to create new data.',
+    'delete' => 'The ability to delete existing data.'
   ];
 
   /**
-   * List of menu items that this module shoud display
+   * List of menu items that this module should display
    *
    * @var array
    */
-  protected $aMenuItems = ['List', 'Search', 'Create'];
+  protected $hMenuItems =
+  [
+    'list' => 'List',
+    'search' => 'Search',
+    'create' => 'Create'
+  ];
+
+  /**
+   * List of quick search items to display
+   *
+   * @var array
+   */
+  protected $hQuickSearch = [];
 
   /**
    * List of sub-menu options
    *
    * @var array
    */
-  protected $aSubMenuItems = ['View', 'Edit'];
+  protected $hSubMenuItems =
+  [
+    'view' => 'View',
+    'edit' => 'Edit'
+  ];
 
   /**
-   * List of methods that are allowed to run
+   * List of actions that are allowed to run
    *
    * @var array
    */
-  protected $aAllowedMethods = ['Search', 'Create', 'EditDialog', 'EditColumn', 'Edit', 'List', 'View'];
-
-  /**
-   * A list of popup window sizes
-   *
-   * @var array
-   */
-  protected $hPopupSize = ['default' => [400, 300]];
+  protected $aAllowedActions = ['search', 'create', 'editcolumn', 'edit', 'list', 'view'];
 
   /**
    * A list of components the current user is allowed to use
@@ -214,87 +204,55 @@ class Module
    * @param \Omniverse\Controller $oController
    * @return \Omniverse\Module
    */
-  public static function factory($sType, Controller $oController = null)
+  public static function factory($sType, Controller $oController)
   {
-    $sTypeClass = __NAMESPACE__ . '\\Module\\' . $sType;
+    $sTypeClass = __CLASS__ . '\\' . self::driver($sType);
 
     if (\class_exists($sTypeClass, true))
     {
-      return new $sTypeClass($sType, $oController);
+      return new $sTypeClass($oController);
     }
 
-    return new self($sType, $oController);
+    return new self($oController);
   }
 
   /**
    * Instantiate a module
    *
-   * @param string $sType (optional) - The type of module this should become
    * @param \Omniverse\Controller $oController
    */
-  public function __construct($sType = null, Controller $oController = null)
+  public function __construct(\Omniverse\Controller $oController)
   {
-    $sAdmin = filter_input(INPUT_GET, 'Admin');
-    $sAdminSub = filter_input(INPUT_GET, $sAdmin);
+    $this->oController = $oController;
+    $this->sType = empty($this->sType) ? preg_replace("#.*Module\\\#", '', get_class($this)) : $this->sType;
 
-    $this->sModuleName = preg_replace("#.*Module\\\#", '', get_class($this));
-    $this->sType = empty($sType) ? $this->sModuleName : $sType;
-    $this->oController = empty($oController) ? Controller::getDefault() : $oController;
+    if (count($this->hSettings) > 0)
+    {
+      $this->hMenuItems['settings'] = 'Settings';
+      $this->aAllowedActions[] = 'settings';
+      $this->hComponent['configure'] = "The ability to alter the module's configuration.";
+    }
 
     try
     {
-      $this->oItem = $this->getController()->itemFactory($this->sType);
-      $sIDColumn = $this->oItem->getIDColumn();
-      $sIDValue = filter_input(INPUT_GET, $sIDColumn);
+      $this->oItem = $this->oController->itemFactory($this->sType);
 
-      if (!empty($sIDValue))
+      if (isset($this->oController->api->id))
       {
-        $this->oItem->load($sIDValue);
+        $this->oItem->load($this->oController->api->id);
+      }
+
+      if ($this->oItem->id > 0)
+      {
+        $this->hMenuItems['item'] = 'Item';
+        $this->aAllowedActions[] = 'item';
       }
     }
     catch (\Exception $e)
     {
     }
 
-    if ($this->oItem && $this->oItem->id > 0)
-    {
-      $iPosition = false;
-
-      if ($iPosition = array_search('Search', $this->aMenuItems))
-      {
-        $iPosition++;
-      }
-      elseif ($iPosition = array_search('List', $this->aMenuItems))
-      {
-        $iPosition++;
-      }
-      else
-      {
-        $iPosition = array_search('Create', $this->aMenuItems);
-      }
-
-      if ($iPosition === false)
-      {
-        $this->aMenuItems[] = 'Item';
-      }
-      else
-      {
-        $aRemaining = array_splice($this->aMenuItems, $iPosition, count($this->aMenuItems), 'Item');
-        $this->aMenuItems = array_merge($this->aMenuItems, $aRemaining);
-      }
-
-      $this->aAllowedMethods[] = 'Item';
-    }
-
-    if (count($this->hSettings) > 0)
-    {
-      $this->aMenuItems[] = 'Settings';
-      $this->aAllowedMethods[] = 'Settings';
-      $this->hComponent['Configure'] = "The ability to alter the module's configuration.";
-    }
-
-    $this->sCurrentAction = empty($sAdmin) || $sAdmin == 'Menu' ? $this->sDefaultAction : $sAdmin;
-    $this->sCurrentMethod = empty($sAdminSub) || $sAdmin == 'Menu' || !in_array($sAdminSub, $this->aAllowedMethods) ? $this->sDefaultMethod : $sAdminSub;
+    $this->sCurrentAction = in_array($oController->api->action, $this->aAllowedActions) ? $oController->api->action : $this->sDefaultAction;
   }
 
   /**
@@ -312,7 +270,7 @@ class Module
    */
   public function isSearch()
   {
-    return in_array(strtolower($this->sCurrentMethod), ['search', 'list']);
+    return in_array($this->oController->api->call[1], ['search', 'list']);
   }
 
   /**
@@ -323,12 +281,7 @@ class Module
    */
   public function getController()
   {
-    if ($this->oController instanceof \Omniverse\Controller)
-    {
-      return $this->oController;
-    }
-
-    throw new \Exception('No valid Controller found!');
+    return $this->oController;
   }
 
   /**
@@ -342,21 +295,11 @@ class Module
   }
 
   /**
-   * Return the name of this module
-   *
-   * @return string
-   */
-  public function getName()
-  {
-    return $this->sModuleName;
-  }
-
-  /**
    * Return the list of fields used by this module's settings
    *
    * @return array
    */
-  public function getsettingsFields()
+  public function getSettingsFields()
   {
     return $this->hFields;
   }
@@ -381,7 +324,7 @@ class Module
   {
     if (!isset($this->hAllow[$sComponent]))
     {
-      $this->hAllow[$sComponent] = $this->getController()->user()->hasResource($this->sType, $this->getComponent($sComponent));
+      $this->hAllow[$sComponent] = $this->oController->user()->hasResource($this->sType, $this->getComponent($sComponent));
     }
 
     return $this->hAllow[$sComponent];
@@ -408,181 +351,222 @@ class Module
   }
 
   /**
+   * Generate and return the URI for the specified parameters
+   *
+   * @param string ...$aParam (optional) - List of parameters to place in the URI
+   * @return string
+   */
+  public function generateUri(string ...$aParam): string
+  {
+    array_unshift($aParam, $this->sType);
+    return $this->oController->generateUri(...$aParam);
+  }
+
+  protected function prepareTemplateList()
+  {
+    $this->prepareTemplatePostSearch();
+  }
+
+  protected function prepareTemplateGetCreate()
+  {
+    $sIDColumn = $this->oItem->getIDColumn();
+    $hTemp = $this->oItem->getColumns();
+
+    if (isset($hTemp[$sIDColumn]))
+    {
+      unset($hTemp[$sIDColumn]);
+    }
+
+    $hColumn = [];
+
+    foreach ($hTemp as $sKey => $hValue)
+    {
+      if ((in_array($sKey, $this->aIgnore['create'])) || (isset($hValue['Key']) && preg_match("/Primary/", $hValue['Key'])))
+      {
+        continue;
+      }
+
+      $hColumn[preg_replace("/^.*?\./", "", $sKey)] = $hValue;
+    }
+
+    $this->oController->templateData('createColumns', $hColumn);
+  }
+
+  protected function prepareTemplateGetEdit()
+  {
+    if (!$this->allow('edit') || isset($this->oController->post['No']))
+    {
+      $this->oController->templateData('close', true);
+      return null;
+    }
+
+    $hTemp = $this->oItem->getColumns();
+    $aColumn = $this->getColumns('Edit');
+    $hColumn = [];
+
+    foreach ($aColumn as $sColumnName)
+    {
+      if (isset($hTemp[$sColumnName]))
+      {
+        $hColumn[$sColumnName] = $hTemp[$sColumnName];
+      }
+    }
+
+    $sIDColumn = preg_replace("/.*?\./", "", $this->oItem->getIDColumn());
+    $this->oController->templateData('idColumn', $sIDColumn);
+    $this->oController->templateData('noID', $this->oItem->id == 0);
+    $this->oController->templateData('editColumns', $hColumn);
+  }
+
+  protected function prepareTemplateGetSearch()
+  {
+    $hTemp = $this->oItem->getColumns();
+    $aColumn = $this->getColumns('search');
+    $hColumn = [];
+
+    foreach ($aColumn as $sColumnName)
+    {
+      if (isset($hTemp[$sColumnName]) && $hTemp[$sColumnName] != 'password')
+      {
+        $hColumn[$sColumnName] = $hTemp[$sColumnName];
+
+        if ($hColumn[$sColumnName]['Type'] == 'text')
+        {
+          $hColumn[$sColumnName]['Type'] = 'varchar';
+        }
+
+        if ($hColumn[$sColumnName]['Type'] == 'date')
+        {
+          $hColumn[$sColumnName]['Type'] = 'searchdate';
+        }
+      }
+    }
+
+    $this->oController->templateData('searchColumns', $hColumn);
+  }
+
+  protected function prepareTemplatePostCreate()
+  {
+    $this->oItem->setAll($this->processCreateGetData());
+    $this->oItem->save();
+  }
+
+  protected function prepareTemplatePostEdit()
+  {
+    $this->oItem->setAll($this->editGetData());
+
+    if ($this->oItem->save())
+    {
+      $this->oController->templateData('success', "This " . $this->getType() . " update has been successful.");
+    }
+    else
+    {
+      $this->oController->templateData('failure', "This " . $this->getType() . " update has failed.");
+    }
+
+    if (isset($_SESSION['EditData']))
+    {
+      unset($_SESSION['EditData']);
+    }
+
+    $this->oController->api->method = 'get';
+    $this->sCurrentAction = 'view';
+  }
+
+  /**
+   * Run the specified search and set
+   */
+  protected function prepareTemplatePostSearch()
+  {
+    $xSearch = $this->processSearchGetCriteria();
+
+    if (is_array($xSearch))
+    {
+      foreach (array_keys($xSearch) as $sKey)
+      {
+        $this->processSearchTerm($xSearch, $sKey);
+      }
+    }
+
+    $oData = $this->processSearchGetData($xSearch);
+
+    if (isset($this->oController->api->call[2]) && $this->oController->api->call[2] == 'quick' && $oData->count() == 1)
+    {
+      $oItem = $oData[0];
+      header('Location: '. $this->generateUri($oItem->id));
+    }
+
+    $this->oController->templateData('data', $oData);
+    $this->oController->templateData('idColumn', preg_replace("/.*?\./", '', $this->oItem->getIDColumn()));
+    $hColumns = $this->getColumns('Search');
+
+    foreach (array_keys($hColumns) as $sKey)
+    {
+      $this->processSearchColumnHeader($hColumns, $sKey);
+    }
+
+    $this->oController->templateData('dataColumns', $hColumns);
+    $this->oController->templateData('table', $this->oController->widgetFactory('Table'));
+  }
+
+  protected function prepareTemplatePostSettings()
+  {
+    if (!isset($this->oController->post[$this->sType]))
+    {
+      throw new Exception('Nothing to save!');
+    }
+
+    foreach ($this->oController->post[$this->sType] as $sKey => $sData)
+    {
+      $this->setSetting($sKey, $sData);
+    }
+
+    $this->saveSettings();
+  }
+
+  /**
    * Prepare the template for display based on the current action and current method
    */
   public function prepareTemplate()
   {
-    if ($this->sCurrentAction == 'Display')
+    $sPrepareMethod = '';
+    $sActionSubMethod = 'prepareTemplate' . ucfirst($this->sCurrentAction) . ucfirst($this->oController->api->subAction);
+    $sActionMethod = 'prepareTemplate' . ucfirst($this->sCurrentAction);
+    $sMethodActionSubMethod = 'prepareTemplate' . ucfirst($this->oController->api->method) . ucfirst($this->sCurrentAction) . ucfirst($this->oController->api->subAction);
+    $sMethodActionMethod = 'prepareTemplate' . ucfirst($this->oController->api->method) . ucfirst($this->sCurrentAction);
+
+    if (method_exists($this, $sActionSubMethod))
     {
-      if ($this->sCurrentMethod == 'Create')
-      {
-        $sIDColumn = $this->oItem->getIDColumn();
-        $hTemp = $this->oItem->getColumns();
-
-        if (isset($hTemp[$sIDColumn]))
-        {
-          unset($hTemp[$sIDColumn]);
-        }
-
-        $hColumn = [];
-
-        foreach ($hTemp as $sKey => $hValue)
-        {
-          if ((in_array($sKey, $this->aIgnore['create'])) || (isset($hValue['Key']) && preg_match("/Primary/", $hValue['Key'])))
-          {
-            continue;
-          }
-
-          $hColumn[preg_replace("/^.*?\./", "", $sKey)] = $hValue;
-        }
-
-        $this->getController()->templateData('createColumns', $hColumn);
-      }
-      elseif ($this->sCurrentMethod == 'Edit')
-      {
-        if (!$this->allow('Edit') || isset($_POST['No']))
-        {
-          $this->getController()->templateData('close', true);
-          return null;
-        }
-
-        $hTemp = $this->oItem->getColumns();
-        $aColumn = $this->getColumns('Edit');
-        $hColumn = [];
-
-        foreach ($aColumn as $sColumnName)
-        {
-          if (isset($hTemp[$sColumnName]))
-          {
-            $hColumn[$sColumnName] = $hTemp[$sColumnName];
-          }
-        }
-
-        $sIDColumn = preg_replace("/.*?\./", "", $this->oItem->getIDColumn());
-        $this->getController()->templateData('idColumn', $sIDColumn);
-        $this->getController()->templateData('post', $_POST);
-        $this->getController()->templateData('noID', !isset($_GET[$sIDColumn]));
-        $this->getController()->templateData('editColumns', $hColumn);
-      }
-      elseif ($this->sCurrentMethod == 'Search')
-      {
-        $hTemp = $this->oItem->getColumns();
-        $aColumn = $this->getColumns('search');
-        $hColumn = [];
-
-        foreach ($aColumn as $sColumnName)
-        {
-          if (isset($hTemp[$sColumnName]) && $hTemp[$sColumnName] != 'password')
-          {
-            $hColumn[$sColumnName] = $hTemp[$sColumnName];
-
-            if ($hColumn[$sColumnName]['Type'] == 'text')
-            {
-              $hColumn[$sColumnName]['Type'] = 'varchar';
-            }
-
-            if ($hColumn[$sColumnName]['Type'] == 'date')
-            {
-              $hColumn[$sColumnName]['Type'] = 'searchdate';
-            }
-          }
-        }
-
-        $this->getController()->templateData('searchColumns', $hColumn);
-        $this->getController()->templateData('post', $_POST);
-      }
+      $sPrepareMethod = $sActionSubMethod;
     }
-    elseif ($this->sCurrentAction == 'Process')
+    elseif (method_exists($this, $sActionMethod))
     {
-      if ($this->sCurrentMethod == 'Create')
-      {
-        $this->getController()->templateData('post', $_POST);
+      $sPrepareMethod = $sActionMethod;
+    }
+    elseif (method_exists($this, $sMethodActionSubMethod))
+    {
+      $sPrepareMethod = $sMethodActionSubMethod;
+    }
+    elseif (method_exists($this, $sMethodActionMethod))
+    {
+      $sPrepareMethod = $sMethodActionMethod;
+    }
 
-        try
-        {
-          $this->oItem->setAll($this->processCreateGetData());
-          $iModule = $this->oItem->save();
-          $this->getController()->templateData('currentItem', $this->oItem);
-        }
-        catch (\Exception $e)
-        {
-          $this->getController()->templateData('error', $e->getMessage());
-        }
+    if (!empty($sPrepareMethod))
+    {
+      try
+      {
+        $this->$sPrepareMethod();
       }
-      elseif ($this->sCurrentMethod == 'Edit')
+      catch (\Exception $e)
       {
-        $this->oItem->setAll($this->editGetData());
-
-        if ($this->oItem->save())
-        {
-          $this->getController()->templateData('success', "This " . $this->getType() . " update has been successful.");
-        }
-        else
-        {
-          $this->getController()->templateData('failure', "This " . $this->getType() . " update has failed.");
-        }
-
-        if (isset($_SESSION['EditData']))
-        {
-          unset($_SESSION['EditData']);
-        }
-
-        $this->sCurrentAction = 'Display';
-        $this->sCurrentMethod = 'View';
-      }
-      elseif ($this->sCurrentMethod == 'Search' || $this->sCurrentMethod == 'List')
-      {
-        $xSearch = $this->processSearchGetCriteria();
-
-        if (is_array($xSearch))
-        {
-          foreach ($xSearch as $sKey => $sValue)
-          {
-            $this->processSearchTerm($xSearch, $sKey);
-          }
-        }
-
-        $this->getController()->templateData('data', $this->processSearchGetData($xSearch));
-        $this->getController()->templateData('idColumn', preg_replace("/.*?\./", '', $this->oItem->getIDColumn()));
-        $aColumns = $this->getColumns('Search');
-
-        foreach ($aColumns as $sKey => $sColumn)
-        {
-          $this->processSearchColumnHeader($aColumns, $sKey);
-        }
-
-        $this->getController()->templateData('dataColumns', $aColumns);
-        $this->getController()->templateData('table', $this->getController()->widgetFactory('Table'));
-      }
-      elseif ($this->sCurrentMethod == 'Settings')
-      {
-        if (!isset($_POST[$this->sModuleName]))
-        {
-          $this->getController()->templateData('error', "Nothing to save!");
-        }
-        else
-        {
-          try
-          {
-            foreach ($_POST[$this->sModuleName] as $sKey => $sData)
-            {
-              $this->setSetting($sKey, $sData);
-            }
-
-            $this->saveSettings();
-          }
-          catch (\Exception $e)
-          {
-            $this->getController()->templateData('error', $e->getMessage());
-          }
-        }
+        $this->oController->templateData('error', $e->getMessage());
       }
     }
 
-    $this->getController()->templateData('method', $this->sCurrentMethod);
-    $this->getController()->templateData('action', $this->sCurrentAction);
-    $this->getController()->templateData('module', $this);
-    $this->getController()->templateData('currentItem', $this->oItem);
+    $this->oController->templateData('method', $this->sCurrentAction);
+    $this->oController->templateData('module', $this);
+    $this->oController->templateData('currentItem', $this->oItem);
   }
 
   /**
@@ -590,16 +574,17 @@ class Module
    */
   public function showTemplate()
   {
-    if (!$this->allow($this->sCurrentMethod))
+    if (!$this->allow($this->sCurrentAction))
     {
       echo '';
       return;
     }
 
     $sTemplate = null;
-    $sModuleDir = strtolower($_GET['Module']);
-    $sMethodTemplate = $this->sCurrentMethod == 'List' ? 'search.html' : strtolower("{$this->sCurrentMethod}.html");
-    $sActionTemplate = strtolower($this->sCurrentAction) . $sMethodTemplate;
+    $sModuleDir = strtolower($this->getType());
+    $sActionTemplate = $this->sCurrentAction == 'list' ? 'search.html' : strtolower("{$this->sCurrentAction}.html");
+    $sMethod = $this->oController->api->isPost()|| $this->sCurrentAction == 'list' ? 'process' : 'display';
+    $sMethodTemplate = $sMethod . $sActionTemplate;
 
     foreach ($_SESSION['ModuleDirs'] as $sDir)
     {
@@ -628,10 +613,10 @@ class Module
     if (empty($sTemplate))
     {
       $sTemplate = 'error.html';
-      $this->getController()->templateData('error', "The {$this->sCurrentAction} method ({$this->sCurrentMethod}) does *not* exist in {$this->sModuleName}!!!");
+      $this->oController->templateData('error', "The action \"{$this->sCurrentAction}\" does *not* exist in {$this->sType}!!!");
     }
 
-    $this->getController()->templateDisplay($sTemplate);
+    $this->oController->templateDisplay($sTemplate);
   }
 
   /**
@@ -649,7 +634,7 @@ class Module
    */
   protected function loadSettings()
   {
-    $oStatement = $this->getController()->getDB()->prepare('SELECT Data FROM Settings WHERE Type = :Type LIMIT 1');
+    $oStatement = $this->oController->getDB()->prepare('SELECT Data FROM Settings WHERE Type = :Type LIMIT 1');
     $oStatement->bindColumn(':Type', $this->sType, \PDO::PARAM_STR);
     $sSettings = $oStatement->fetchOne();
 
@@ -659,7 +644,7 @@ class Module
     }
     elseif (count($this->hSettings) > 0)
     {
-      $oStatement = $this->getController()->getDB()->prepare('INSERT INTO Settings (Type, Data) values (:Type, :Data)');
+      $oStatement = $this->oController->getDB()->prepare('INSERT INTO Settings (Type, Data) values (:Type, :Data)');
       $oStatement->bindColumn(':Type', $this->sType, \PDO::PARAM_STR);
       $oStatement->bindColumn(':Data', addslashes(serialize($this->hSettings)), \PDO::PARAM_STR);
       $oStatement->execute();
@@ -678,7 +663,7 @@ class Module
       return true;
     }
 
-    $oStatement = $this->getController()->getDB()->prepare('UPDATE Settings SET Data = :Data WHERE Type = :Type');
+    $oStatement = $this->oController->getDB()->prepare('UPDATE Settings SET Data = :Data WHERE Type = :Type');
     $oStatement->bindColumn(':Type', $this->sType, \PDO::PARAM_STR);
     $oStatement->bindColumn(':Data', addslashes(serialize($this->hSettings)), \PDO::PARAM_STR);
     $oStatement->execute();
@@ -751,14 +736,14 @@ class Module
    */
   protected function getComponent($sMenuItem)
   {
-    if (strpos($sMenuItem, 'QuickSearch_') === 0 || $sMenuItem == 'List')
+    if (strpos($sMenuItem, 'quicksearch_') === 0 || $sMenuItem == 'list')
     {
-      return "Search";
+      return "search";
     }
 
-    if ($sMenuItem == 'EditColumn')
+    if ($sMenuItem == 'editcolumn')
     {
-      return 'Edit';
+      return 'edit';
     }
 
     return $sMenuItem;
@@ -771,7 +756,17 @@ class Module
    */
   public function getMenuItems()
   {
-    return $this->aMenuItems;
+    return $this->hMenuItems;
+  }
+
+  /**
+   * Return this module's list of quick search items
+   *
+   * @return array
+   */
+  public function getQuickSearch()
+  {
+    return $this->hQuickSearch;
   }
 
   /**
@@ -781,7 +776,7 @@ class Module
    */
   public function getSubMenuItems()
   {
-    return $this->aSubMenuItems;
+    return $this->hSubMenuItems;
   }
 
   /**
@@ -799,9 +794,9 @@ class Module
    *
    * @return string
    */
-  public static function getTitle()
+  public function getTitle()
   {
-    return ucwords(trim(preg_replace("/([A-Z])/", " $1", str_replace("_", " ", $_GET['Module']))));
+    return ucwords(trim(preg_replace("/([A-Z])/", " $1", str_replace("_", " ", $this->sType))));
   }
 
   /**
@@ -841,8 +836,7 @@ class Module
    */
   protected function processCreateGetData()
   {
-    $hPost = filter_input_array(INPUT_POST);
-    $hData = isset($hPost[$this->sModuleName]) ? $hPost[$this->sModuleName] : [];
+    $hData = isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : [];
 
     foreach (array_keys($hData) as $sKey)
     {
@@ -925,7 +919,7 @@ class Module
    */
   public function processSearchGridRowControl($sIDColumn, $iID)
   {
-    $sURL = "?Admin=Process&Module=$this->sModuleName&Process=View&$sIDColumn=$iID";
+    $sURL = $this->oController->baseUrl . '/' . strtolower($this->sType) . "/$iID";
     return "<input type=\"checkbox\" class=\"OmnisysSortGridCellCheckbox\" name=\"{$sIDColumn}[$iID]\" id=\"{$sIDColumn}[$iID]\" value=\"1\"> [<a href=\"$sURL\">View</a>]";
   }
 
@@ -937,7 +931,7 @@ class Module
   protected function processSearchGetCriteria()
   {
     //unless overridden by a descendant form data will allways take precendence over URL data
-    return isset($_POST[$this->sModuleName]) ? $_POST[$this->sModuleName] : (isset($_GET[$this->sModuleName]) ? $_GET[$this->sModuleName] : null);
+    return isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : (isset($this->oController->get[$this->sType]) ? $this->oController->get[$this->sType] : null);
   }
 
   /**
@@ -958,7 +952,7 @@ class Module
    */
   protected function processSearchGetData($xSearch)
   {
-    return $this->getController()->itemSearch($this->oItem->getTable(), $xSearch, $this->processSearchGetSortColumn());
+    return $this->oController->itemSearch($this->oItem->getTable(), $xSearch, $this->processSearchGetSortColumn());
   }
 
   /**
@@ -967,10 +961,9 @@ class Module
    * @param string $sName
    * @param string $sValue
    * @param array $hData
-   * @param boolean $bInTable - Should the returned HTML use a table to contain the data
    * @return string
    */
-  public function getFormField($sName, $sValue = null, $hData = [], $bInTable = false)
+  public function getFormField($sName, $sValue = null, $hData = [])
   {
     $sLabel = preg_replace("/([A-Z])/", "$1", $sName);
 
@@ -1001,13 +994,13 @@ class Module
         return null;
       }
 
-      $oStates = $this->getController()->widgetFactory('States', "$this->sModuleName[State]");
+      $oStates = $this->oController->widgetFactory('States', "$this->sType[State]");
       $sStatesID = $oStates->getID();
 
-      $oCities = $this->getController()->widgetFactory('Select', "$this->sModuleName[City]");
+      $oCities = $this->oController->widgetFactory('Select', "$this->sType[City]");
       $sCitiesID = $oCities->getID();
 
-      $oZips = $this->getController()->widgetFactory('Select', "$this->sModuleName[Zip]");
+      $oZips = $this->oController->widgetFactory('Select', "$this->sType[Zip]");
       $sZipID = $oZips->getID();
 
       $sGetCities = $oStates->addAjaxFunction('getCitiesByState', true);
@@ -1092,37 +1085,16 @@ class Module
 
       $oStates->addEvent('change', $sGetCities."(this.options[this.selectedIndex].value, '$sCitiesID', cityName)");
 
-      if ($bInTable)
-      {
-        $sFormField = "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">State:</th><td class=\"OmnisysFieldValue\">" . $oStates . "</td></tr>";
-      }
-      else
-      {
-        $sFormField = "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">State:</span><span class=\"OmnisysFieldValue\">" . $oStates . "</span></div>";
-      }
+      $sFormField = "<div class=\"field\"><span class=\"label\">State</span><span class=\"data\">" . $oStates . "</span></div>";
 
       $oCities->addOption('Select a city', '0');
       $oCities->addEvent('change', $sGetZips."(this.options[this.selectedIndex].value, stateSelect.options[stateSelect.selectedIndex].value, '$sZipID', zipNum)");
 
-      if ($bInTable)
-      {
-        $sFormField .= "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">City:</th><td class=\"OmnisysFieldValue\">" . $oCities . "</td></tr>";
-      }
-      else
-      {
-        $sFormField .= "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">City:</span><span class=\"OmnisysFieldValue\">" . $oCities . "</span></div>";
-      }
+      $sFormField .= "<div class=\"field\"><span class=\"label\">City</span><span class=\"data\">" . $oCities . "</span></div>";
 
       $oZips->addOption('Select a zip', '0');
 
-      if ($bInTable)
-      {
-        $sFormField .= "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Zip:</th><td class=\"OmnisysFieldValue\">" . $oZips . "</td></tr>";
-      }
-      else
-      {
-        $sFormField .= "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Zip:</span><span class=\"OmnisysFieldValue\">" . $oZips . "</span></div>";
-      }
+      $sFormField .= "<div class=\"field\"><span class=\"label\">Zip</span><span class=\"data\">" . $oZips . "</span></div>";
 
       $this->bCityStateZipDone = true;
       return $sFormField;
@@ -1131,7 +1103,7 @@ class Module
     if ($sName == 'UserID')
     {
       $oUsers = Item::search('User', ['Visible' => true, 'Active' => true]);
-      $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[UserID]");
+      $oSelect = $this->oController->widgetFactory('Select', "$this->sType[UserID]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select a user';
       $oSelect->addOption($sEmptyItemLabel, '');
 
@@ -1141,18 +1113,12 @@ class Module
       }
 
       $oSelect->setSelected($sValue);
-
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">User:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">User:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+      return "<div class=\"field\"><span class=\"label\">User</span><span class=\"data\">" . $oSelect . "</span></div>";
     }
 
     if ($sName == 'KeyID')
     {
-      $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[KeyID]");
+      $oSelect = $this->oController->widgetFactory('Select', "$this->sType[KeyID]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select a resource name';
       $oSelect->addOption($sEmptyItemLabel, '');
       $oKeys = Item::search('ResourceKey', null, 'Name');
@@ -1167,12 +1133,7 @@ class Module
         $oSelect->addOption($hKey['Name'], $hKey['KeyID']);
       }
 
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Required resource:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Required resource:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+      return "<div class=\"field\"><span class=\"label\">Required resource</span><span class=\"data\">" . $oSelect . "</span></div>";
     }
 
     if (preg_match('/(.+?)id$/i', $sName, $aMatch))
@@ -1185,7 +1146,7 @@ class Module
         {
           $oList = Item::search($aMatch[1]);
 
-          $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
+          $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
           $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select {$aMatch[1]}";
           $oSelect->addOption($sEmptyItemLabel, '');
 
@@ -1201,12 +1162,7 @@ class Module
             $oSelect->setSelected($sValue);
           }
 
-          if ($bInTable)
-          {
-            return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">{$aMatch[1]}:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-          }
-
-          return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">{$aMatch[1]}:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+          return "<div class=\"field\"><span class=\"label\">{$aMatch[1]}</span><span class=\"data\">" . $oSelect . "</span></div>";
         }
       }
       catch (\Exception $e)
@@ -1216,15 +1172,9 @@ class Module
 
     if ($sName == 'FileName')
     {
-      $oFile = $this->getController()->widgetFactory('Input', "$this->sModuleName[FileName]");
+      $oFile = $this->oController->widgetFactory('Input', "$this->sType[FileName]");
       $oFile->setParam('type', 'file');
-
-      if ($bInTable)
-      {
-        return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">File Name:</th><td class=\"OmnisysFieldValue\">" . $oFile . "</td></tr>";
-      }
-
-      return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">File Name:</span><span class=\"OmnisysFieldValue\">" . $oFile . "</span></div>";
+      return "<div class=\"field\"><span class=\"label\">File Name</span><span class=\"data\">" . $oFile . "</span></div>";
     }
 
     $sType = strtolower(preg_replace("/( |\().*/", "", $hData['Type']));
@@ -1233,8 +1183,8 @@ class Module
     {
       case 'hidden':
         $oHidden = \Omniverse\Tag::factory('hidden');
-        $oHidden->setParam('name', "$this->sModuleName[$sName]");
-        $oHidden->setParam('id', $this->sModuleName . $sName);
+        $oHidden->setParam('name', "$this->sType[$sName]");
+        $oHidden->setParam('id', $this->sType . $sName);
         $oHidden->setParam('value', $sValue);
         return $oHidden->__toString();
 
@@ -1246,7 +1196,7 @@ class Module
         $aElements = explode(",", $sElements);
         $aTitle = array_map('ucwords', $aElements);
         $hElements = array_combine($aElements, $aTitle);
-        $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
+        $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
 
         $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select $sLabel";
         $oSelect->addOption($sEmptyItemLabel, '');
@@ -1257,27 +1207,16 @@ class Module
           $oSelect->setSelected($sValue);
         }
 
-        if ($bInTable)
-        {
-          return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-        }
-
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">" . $oSelect . "</span></div>";
 
       case 'text':
       case 'mediumtext':
       case 'longtext':
       case 'textarea':
-        $oText = $this->getController()->widgetFactory('Editor', "$this->sModuleName[$sName]");
+        $oText = $this->oController->widgetFactory('Editor', "$this->sType[$sName]");
         $oText->setToolBar('Basic');
         $oText->setText($sValue);
-
-        if ($bInTable)
-        {
-          return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">" . $oText . "</td></tr>";
-        }
-
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">" . $oText . "</span></div>";
+        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">" . $oText . "</span></div>";
 
       case 'radio':
         $sFormField = '';
@@ -1287,33 +1226,23 @@ class Module
           if (preg_match("/^Value/", $sKey))
           {
             $sChecked = ($sButtonValue == $sValue ? ' checked' : null);
-            $sFormField .= "$sButtonValue:  <input type=\"radio\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\"value=\"$sButtonValue\"$sChecked><br />";
+            $sFormField .= "$sButtonValue:  <input type=\"radio\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\"value=\"$sButtonValue\"$sChecked><br />";
           }
         }
 
-        if ($bInTable)
-        {
-          return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">$sFormField</td></tr>";
-        }
-
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">$sFormField</span></div>\n";
+        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">$sFormField</span></div>\n";
 
       case 'float':
       case 'int':
       case 'varchar':
       case 'char':
-        if ($bInTable)
-        {
-          return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"" . htmlentities($sValue) . "\"></td></tr>";
-        }
-
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\"><input type=\"text\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"" . htmlentities($sValue) . "\"></span></div>";
+        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\"><input type=\"text\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\" value=\"" . htmlentities($sValue) . "\"></span></div>";
 
       case 'timestamp':
       case 'date':
       case 'searchdate':
         $sSearchDate = $sType == 'searchdate' ? "<select name=\"{$sName}Operator\"><option> < </option><option selected> = </option><option> > </option></select>\n" : '';
-        $oDate = $this->getController()->widgetFactory('Window\Calendar', "$this->sModuleName[$sName]");
+        $oDate = $this->oController->widgetFactory('Window\Calendar', "$this->sType[$sName]");
         $oDate->button('Change');
 
         if (!empty($sValue))
@@ -1321,47 +1250,21 @@ class Module
           $oDate->setStartDate($sValue);
         }
 
-        if ($bInTable)
-        {
-          return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">$sSearchDate" . $oDate . "</td></tr>";
-        }
-
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">$sSearchDate" . $oDate . "</span></div>";
+        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">$sSearchDate" . $oDate . "</span></div>";
 
       case 'password':
-        if ($bInTable)
-        {
-          $sField  = "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\"><input type=\"password\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></td></tr>\n";
-          $sField .= "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel(double check):</th><td class=\"OmnisysFieldValue\"><input type=\"password\" name=\"$this->sModuleName[{$sName}2]\" id=\"$this->sModuleName[{$sName}2]\" value=\"$sValue\"></td></tr>";
-        }
-        else
-        {
-          $sField  = "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\"><input type=\"password\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"$sValue\"></span></div>\n";
-          $sField .= "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel(double check):</span><span class=\"OmnisysFieldValue\"><input type=\"password\" name=\"$this->sModuleName[{$sName}2]\" id=\"$this->sModuleName[{$sName}2]\" value=\"$sValue\"></span></div>";
-        }
-
-        return $sField;
+        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\"><input type=\"password\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\" value=\"$sValue\"></span></div>
+<div class=\"field\"><span class=\"label\">$sLabel(double check)</span><span class=\"data\"><input type=\"password\" name=\"$this->sType[{$sName}2]\" id=\"$this->sType[{$sName}2]\" value=\"$sValue\"></span></div>";
 
       case 'swing':
         return null;
 
       case 'tinyint':
         $sChecked = $sValue ? ' checked="checked"' : '';
-
-        if ($bInTable)
-        {
-          return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\"><input type=\"checkbox\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"1\"$sChecked></td></tr>";
-        }
-
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\"><input type=\"checkbox\" name=\"$this->sModuleName[$sName]\" id=\"$this->sModuleName[$sName]\" value=\"1\"$sChecked></span></div>";
+        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\"><input type=\"checkbox\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\" value=\"1\"$sChecked></span></div>";
 
       default:
-        if ($bInTable)
-        {
-          return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">Not valid:</th><td class=\"OmnisysFieldValue\">$sName :: $sType</td></tr>";
-        }
-
-        return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">Not valid:</span><span class=\"OmnisysFieldValue\">$sName :: $sType</span></div>";
+        return "<div class=\"field\"><span class=\"label\">Not valid</span><span class=\"data\">$sName :: $sType</span></div>";
     }
 
     return '';
@@ -1461,15 +1364,15 @@ class Module
   protected function editDialog($sType, $sText, $sButtonName)
   {
     $sVerb = isset($_SESSION['EditData']['Delete']) ? 'Delete' : 'Edit Column';
-    $sContent = "<form name=\"EditColumn\" action=\"?Admin=$sType&Module=$this->sModuleName&$sType=EditColumn\" method=\"post\">\n";
+    $sContent = "<form name=\"EditColumn\" action=\"" . $this->generateUri('editcolumn') . "\" method=\"post\">\n";
     $sContent .= $sText;
     $sContent .= "<input type=\"submit\" name=\"$sButtonName\" value=\"Yes\">&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"submit\" name=\"No\" value=\"No\">";
     $sContent .= "</form>\n";
-    return \Omniverse\Controller\Admin::getMenu($sContent, self::getTitle() . " :: $sVerb");
+    return \Omniverse\Controller\Admin::getMenu($sContent, $this->getTitle() . " :: $sVerb");
   }
 
   /**
-   * Generate and return the HTML displyed after the edit has finished
+   * Generate and return the HTML displayed after the edit has finished
    *
    * @param string $sType
    * @param string $sText
@@ -1484,7 +1387,7 @@ class Module
     }
 
     $sReload = $bReload ? 'javascript:opener.location.reload(); ' : '';
-    $sURL = $sType == 'Popup' ? "javascript:{$sReload}window.close();" : "?Admin=$sType&Module=$this->sModuleName&$sType=Search";
+    $sURL = $sType == 'Popup' ? "javascript:{$sReload}window.close();" : $this->generateUri('search');
     return "<center><h1>$sText</h1> Click <a href=\"$sURL\">here</a> to continue.</center>";
   }
 
@@ -1496,7 +1399,7 @@ class Module
    */
   public function editColumn($sType)
   {
-    if (!$this-> allow('Edit') || isset($_POST['No']))
+    if (!$this->allow('Edit') || isset($this->oController->post['No']))
     {
       if (isset($_SESSION['EditData']))
       {
@@ -1510,24 +1413,24 @@ class Module
     $sFullIDColumn = $this->oItem->getIDColumn();
     $sIDColumn = preg_replace("/.*?\./", "", $sFullIDColumn);
 
-    if (isset($_POST[$sIDColumn]))
+    if (isset($this->oController->post[$sIDColumn]))
     {
-      $_SESSION['EditData'][$sIDColumn] = $_POST[$sIDColumn];
+      $_SESSION['EditData'][$sIDColumn] = $this->oController->post[$sIDColumn];
     }
 
-    if (isset($_POST['Delete']))
+    if (isset($this->oController->post['Delete']))
     {
-      $_SESSION['EditData']['Delete'] = $_POST['Delete'];
+      $_SESSION['EditData']['Delete'] = $this->oController->post['Delete'];
     }
 
-    if (isset($_POST['All']))
+    if (isset($this->oController->post['All']))
     {
-      $_SESSION['EditData']['All'] = $_POST['All'];
+      $_SESSION['EditData']['All'] = $this->oController->post['All'];
     }
 
-    if (isset($_POST['Column']))
+    if (isset($this->oController->post['Column']))
     {
-      $_SESSION['EditData']['Column'] = $_POST['Column'];
+      $_SESSION['EditData']['Column'] = $this->oController->post['Column'];
     }
 
     if (!isset($_SESSION['EditData'][$sIDColumn]) && !isset($_SESSION['EditData']['All']))
@@ -1540,7 +1443,7 @@ class Module
 
     if (isset($_SESSION['EditData']['Delete']))
     {
-      if (!isset($_POST['Check']))
+      if (!isset($this->oController->post['Check']))
       {
         return $this->editDialog($sType, "Once deleted these items can <b>not</b> restored!  Continue anyway?\n", 'Check');
       }
@@ -1569,14 +1472,14 @@ class Module
       return $this->editFinish($sType, "The column \"{$_SESSION['EditData']['Column']}\" does not exist!");
     }
 
-    if (!isset($_POST['Update']))
+    if (!isset($this->oController->post['Update']))
     {
       $hColumn = $this->oItem->getColumn($sFullColumn);
       return $this->editDialog($sType, $this->getFormFields([$_SESSION['EditData']['Column'] => $hColumn]), 'Update');
     }
 
     //the first item in the _POST array will be our data
-    $sData = array_shift($_POST);
+    $sData = array_shift($this->oController->post);
 
     foreach ($_SESSION['EditData']['AdList'] as $oItem)
     {
@@ -1594,8 +1497,8 @@ class Module
    */
   protected function editGetData()
   {
-    $hFullPost = filter_input_array(INPUT_POST);
-    $hPost = isset($hFullPost[$this->sModuleName]) ? $hFullPost[$this->sModuleName] : $hFullPost;
+    $hFullPost = $this->oController->post;
+    $hPost = isset($hFullPost[$this->sType]) ? $hFullPost[$this->sType] : $hFullPost;
     $hTemp = $this->oItem->getColumns();
     $aIgnore = isset($this->aIgnore['boolean']) ? $this->aIgnore['boolean'] : [];
 

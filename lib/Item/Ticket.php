@@ -283,7 +283,7 @@ class Ticket extends \Omniverse\Item
    * @param integer $iItemID
    * @throws Exception
    */
-  public function load($iItemID)
+  public function load(int $iItemID)
   {
     parent::load($iItemID);
     $this->aHistory = [];
@@ -483,7 +483,7 @@ class Ticket extends \Omniverse\Item
       return $iTicket;
     }
 
-    $sDomain = \Omniverse\Controller::getDefault()->getDomain()->name;
+    $sDomain = $this->getDB()->getController()->getDomain()->name;
     $oEmail->setFrom("ticket_system@{$sDomain}");
     $oEmail->setSubject("$this->subject [{$sDomain} Ticket #{$this->id}: $this->status]");
     $sBody = "The ticket has the follwing updates: \n\n";
@@ -501,7 +501,7 @@ class Ticket extends \Omniverse\Item
       $sBody .= "\n{$oContent->updateText}\n\n";
     }
 
-    $sBody .= "To see this ticket click <a href=\"http://{$sDomain}/?Admin=Process&Module=Ticket&Process=View&TicketID={$this->id}\">here</a>.";
+    $sBody .= "To see this ticket click <a href=\"https://{$sDomain}/" . $this->getDB()->getController()->generateUri('ticket', $this->id) . ">here</a>.";
     $oEmail->addBody($sBody);
     $oEmail->send();
     return $iTicket;
@@ -541,7 +541,7 @@ class Ticket extends \Omniverse\Item
   }
 
   /**
-   * Add the specified watcher to this ticet
+   * Add the specified watcher to this ticket
    *
    * @param integer|\Omniverse\Item\User $xUser Either the userID or a User object
    * @return boolean
@@ -576,38 +576,85 @@ class Ticket extends \Omniverse\Item
   {
     $sTicketNumber = $this->id < 10 ? '0' . (string)$this->id : (string)$this->id;
     $sDir = "/.ticket_attachments/{$sTicketNumber[0]}/{$sTicketNumber[1]}/{$this->id}";
-    return $bWeb ? $sDir : \Omniverse\Controller::getDefault()->getDomain()->path . $sDir;
+    return $bWeb ? dirname($this->getDB()->getController()->baseUrl) . $sDir : $this->getDB()->getController()->basePathDir . $sDir;
   }
 
   /**
-   * Return the list of attachments that this ticket has
+   * Return the list of attachments that this ticket has , sorted from oldest to newest
    *
    * @return array
    */
   public function getAttachmentList()
   {
+    if ($this->id == 0)
+    {
+      throw new \Exception("This is not a valid ticket, so attachments are not valid");
+    }
+
     $sAttachmentDir = $this->generateAttachmentDir();
     $sBaseWebDir = $this->generateAttachmentDir(true);
     $aAttachments = [];
 
-    if (!\is_readable($sAttachmentDir))
+    if (!is_readable($sAttachmentDir))
     {
       return [];
     }
 
-    foreach (glob("$sAttachmentDir/*") as $sFile)
+    $aFiles = glob("$sAttachmentDir/*");
+    array_multisort
+    (
+      array_map('filemtime', $aFiles ),
+      SORT_NUMERIC,
+      SORT_ASC,
+      $aFiles
+    );
+
+    foreach ($aFiles as $iKey => $sFile)
     {
-      $sBaseName = \basename($sFile);
-      $aAttachments[] =
+      $iId = $iKey + 1;
+      $sBaseName = basename($sFile);
+      $aAttachments[$iId] =
       [
+        'id' => $iId,
         'name' => $sBaseName,
         'path' => $sFile,
-        'link' => "$sBaseWebDir/" . \rawurlencode($sBaseName),
-        'time' => date("Y-j-n h:i:s p", \filemtime($sFile))
+        'link' => "$sBaseWebDir/" . rawurlencode($sBaseName),
+        'time' => date("Y-j-n h:i:s p", filemtime($sFile))
       ];
     }
 
     return $aAttachments;
+  }
+
+  /**
+   * Return the data for the specified attachment, if it exists
+   *
+   * @param int $iId
+   * @return array
+   * @throws \Exception
+   */
+  public function getAttachmentById(int $iId): array
+  {
+    $aList = $this->getAttachmentList();
+
+    if (!isset($aList[$iId]))
+    {
+      throw new \Exception("The id ($iId) was not found");
+    }
+
+    return $aList[$iId];
+  }
+
+  /**
+   * Delete the specified attachment, if it exists
+   *
+   * @param int $iId
+   * @throws \Exception
+   */
+  public function removeAttachmentById(int $iId)
+  {
+    $hAttachment = $this->getAttachmentById($iId);
+    $this->removeAttachment($hAttachment['name']);
   }
 
   /**
@@ -621,7 +668,7 @@ class Ticket extends \Omniverse\Item
   {
     if ($this->id == 0)
     {
-      throw new \Exception("This is not a valid ticket, so no attachments can be saved.");
+      throw new \Exception("This is not a valid ticket, so attachments are not valid");
     }
 
     if (!\is_file($sFile))
@@ -661,23 +708,24 @@ class Ticket extends \Omniverse\Item
    * Remove the specified file attachment from the this ticket
    *
    * @param string $sFileName
-   * @return boolean
    * @throws \Exception
    */
   public function removeAttachment($sFileName)
   {
     $sFilePath = $this->generateAttachmentDir() . '/' . $sFileName;
 
-    if (\file_exists($sFilePath))
+    if (!file_exists($sFilePath))
     {
-      ob_start();
-      $bSuccess = \unlink($sFilePath);
-      $sError = \ob_get_clean();
+      throw new \Exception("File not found: $sFilePath");
+    }
 
-      if (!$bSuccess)
-      {
-        throw new \Exception($sError);
-      }
+    ob_start();
+    $bSuccess = unlink($sFilePath);
+    $sError = ob_get_clean();
+
+    if (!$bSuccess)
+    {
+      throw new \Exception($sError);
     }
   }
 

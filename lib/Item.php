@@ -13,6 +13,8 @@ namespace Omniverse;
  */
 class Item implements \ArrayAccess, \Countable, \SeekableIterator
 {
+  use \Omniverse\Traits\DriverList;
+
   /**
    * The prepared statements that represent various item queries
    *
@@ -92,14 +94,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public static function factory($sTable, Database $oDatabase = null)
   {
-    $sTypeClass = __NAMESPACE__ . '\\Item\\' . $sTable;
-
-    if (\class_exists($sTypeClass, true))
-    {
-      return new $sTypeClass(null, $oDatabase);
-    }
-
-    $sTypeClass = __NAMESPACE__ . '\\Item\\' . ucfirst(strtolower($sTable));
+    $sTypeClass = __CLASS__ . '\\' . self::driver($sTable);
 
     if (\class_exists($sTypeClass, true))
     {
@@ -632,7 +627,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * @param integer $iItemID
    * @throws Exception
    */
-  public function load($iItemID)
+  public function load(int $iItemID)
   {
     if (!isset(self::$hStatement[$this->sTable]['load']))
     {

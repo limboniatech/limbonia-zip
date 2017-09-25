@@ -132,7 +132,7 @@ class TicketContent extends \Omniverse\Item
       }
       else
       {
-        $aHistory[$iKey] = $hClean;
+        $aHistory[$iKey] = parent::fromArray('TicketHistory', $hClean, $this->getDB());
       }
     }
 

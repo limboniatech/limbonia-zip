@@ -10,7 +10,7 @@ namespace Omniverse;
  * @version $Revision: 1.1 $
  * @package Omniverse
  */
-class Controller
+abstract class Controller
 {
 
   /**
@@ -45,6 +45,13 @@ class Controller
   protected static $aLibList = [__DIR__];
 
   /**
+   * The list of input types that are allowed to be auto generated
+   *
+   * @var array
+   */
+  protected static $aAutoInput = ['get', 'post', 'server'];
+
+  /**
    * @var \Omniverse\Domain - The default domain for this controller instance
    */
   protected $oDomain = null;
@@ -61,7 +68,8 @@ class Controller
    *
    * @var array
    */
-  protected $hDatabaseConfig = [
+  protected $hDatabaseConfig =
+  [
     'default' =>
     [
       'driver' => '',
@@ -76,7 +84,8 @@ class Controller
    *
    * @var array
    */
-  protected $hDirectories = [
+  protected $hDirectories =
+  [
     'root' => '',
     'libs' => []
   ];
@@ -87,6 +96,13 @@ class Controller
    * @var array
    */
   protected $hConfig = [];
+
+  /**
+   * This controller's API
+   *
+   * @var \Omniverse\Api
+   */
+  protected $oApi = null;
 
   /**
    * Generate the build data so it can be used in other places
@@ -215,7 +231,7 @@ class Controller
   /**
    * Flatten the specified variable into a string and return it...
    *
-   * @param mixed $data
+   * @param mixed $xData
    * @return string
    */
   public static function flatten($xData)
@@ -251,30 +267,37 @@ class Controller
   /**
    * Generate and return a valid, configured controller
    *
-   * @param string $sType
    * @param array $hConfig
    * @return \Omniverse\Controller
    * @throws \Exception
    */
-  public static function factory($sType, array $hConfig = [])
+  public static function factory(array $hConfig = [])
   {
-    $sTypeClass = __NAMESPACE__ . '\\Controller\\' . $sType;
-
-    if (!\class_exists($sTypeClass, true))
+    if (self::isCLI())
     {
-      throw new \Exception("Controller type '$sType' not found");
+      return new \Omniverse\Controller\Cli($hConfig);
     }
 
-    return new $sTypeClass($hConfig);
+    $oApi = \Omniverse\Api::singleton();
+    $sControllerClass = __NAMESPACE__ . '\\Controller\\' . $oApi->controllerType;
+    return new $sControllerClass($hConfig);
   }
 
   /**
    * The controller constructor
    *
+   * NOTE: This constructor should only be used by the factory and *never* directly
+   *
    * @param array $hConfig - A hash of configuration data
    */
-  public function __construct(array $hConfig = [])
+  protected function __construct(array $hConfig = [])
   {
+    if (self::isWeb())
+    {
+      $this->oApi = \Omniverse\Api::singleton();
+      $this->hConfig['baseurl'] = $this->oApi->baseUrl;
+    }
+
     $hLowerConfig = \array_change_key_case($hConfig, CASE_LOWER);
 
     if (isset($hLowerConfig['sessionname']))
@@ -286,6 +309,7 @@ class Controller
     SessionManager::start();
 
     $this->hDirectories['root'] = \dirname(__DIR__);
+    $this->hDirectories['basepath'] = dirname($this->server['script_filename']);
 
     if (isset($hLowerConfig['directories']))
     {
@@ -356,14 +380,24 @@ class Controller
   {
     $sLowerName = strtolower($sName);
 
-    if (preg_match("#^(.+?)dir$#", $sLowerName, $aMatch))
+    if (in_array($sLowerName, self::$aAutoInput))
     {
-      return $this->getDir($aMatch[1]);
+      return \Omniverse\Input::singleton($sLowerName);
+    }
+
+    if ($sLowerName == 'api')
+    {
+      return $this->oApi;
     }
 
     if ($sLowerName == 'domain')
     {
       return $this->oDomain;
+    }
+
+    if (preg_match("#^(.+?)dir$#", $sLowerName, $aMatch))
+    {
+      return $this->getDir($aMatch[1]);
     }
 
     if (isset($this->hConfig[$sLowerName]))
@@ -376,14 +410,24 @@ class Controller
   {
     $sLowerName = strtolower($sName);
 
-    if (preg_match("#^(.+?)dir$#", $sLowerName))
+    if (in_array($sLowerName, self::$aAutoInput))
     {
       return true;
     }
 
-    if ($sLowerName == 'domain')
+    if ($sLowerName === 'api')
+    {
+      return !empty($this->oApi);
+    }
+
+    if ($sLowerName === 'domain')
     {
       return !empty($this->oDomain);
+    }
+
+    if (preg_match("#^(.+?)dir$#", $sLowerName))
+    {
+      return true;
     }
 
     return isset($this->hConfig[$sLowerName]);
@@ -414,7 +458,7 @@ class Controller
 
     if (!isset($this->hDatabaseList[$sSection]))
     {
-      $this->hDatabaseList[$sSection] = Database::factory($this->hDatabaseConfig[$sSection]);
+      $this->hDatabaseList[$sSection] = Database::factory($this->hDatabaseConfig[$sSection], $this);
     }
 
     return $this->hDatabaseList[$sSection];
@@ -471,6 +515,18 @@ class Controller
 
     //if all else fails then use the current directory
     return '.';
+  }
+
+  /**
+   * Generate and return the URI for the specified parameters
+   *
+   * @param string ...$aParam (optional)
+   * @return string
+   */
+  public function generateUri(string ...$aParam): string
+  {
+    $aUri = array_merge([$this->baseUrl], $aParam);
+    return strtolower(implode('/', $aUri));
   }
 
   /**
@@ -537,7 +593,7 @@ class Controller
    * Generate and return an empty item object based on the specified table.
    *
    * @param string $sType
-   * @param string $sName (optional) - The name to give the widget when it is instanciated
+   * @param string $sName (optional) - The name to give the widget when it is instantiated
    * @return \Omniverse\Widget - The requested \Omniverse\Widget on success, otherwise FALSE.
    */
   public function widgetFactory($sType, $sName = null)

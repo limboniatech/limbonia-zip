@@ -28,7 +28,7 @@ class Position extends \Omniverse\Module
    * @param boolean $bInTable - Is the returned HTML part a table?
    * @return string
    */
-  public function getFormField($sName, $sValue = null, $hData = [], $bInTable = false)
+  public function getFormField($sName, $sValue = null, $hData = [])
   {
     if ($sName !== 'Module')
     {
@@ -36,7 +36,7 @@ class Position extends \Omniverse\Module
     }
 
     $sLabel = preg_replace("/([A-Z])/", " $1", $sName);
-    $oSelect = $this->getController()->widgetFactory('Select', "$this->sModuleName[$sName]");
+    $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
     $oSelect->addOption("Select $sLabel", '');
     $aModule = $_SESSION['ModuleList'];
 
@@ -61,11 +61,6 @@ class Position extends \Omniverse\Module
       $oSelect->setSelected($sValue);
     }
 
-    if ($bInTable)
-    {
-      return "<tr class=\"OmnisysField\"><th class=\"OmnisysFieldName\">$sLabel:</th><td class=\"OmnisysFieldValue\">" . $oSelect . "</td></tr>";
-    }
-
-    return "<div class=\"OmnisysField\"><span class=\"OmnisysFieldName\">$sLabel:</span><span class=\"OmnisysFieldValue\">" . $oSelect . "</span></div>";
+    return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">" . $oSelect . "</span></div>";
   }
 }

@@ -46,85 +46,76 @@ class User extends \Omniverse\Module
   ];
 
   /**
-   * Instantiate a module
+   * List of sub-menu options
    *
-   * @param string $sType (optional) - The type of module this should become
-   * @param \Omniverse\Controller $oController
+   * @var array
    */
-  public function __construct($sType = null, \Omniverse\Controller $oController = null)
-  {
-    $this->aAllowedMethods[] = 'Resources';
-    $this->aSubMenuItems[] = 'Resources';
-    $this->aAllowedMethods[] = 'ResetPassword';
-    $this->aSubMenuItems[] = 'ResetPassword';
-    $this->aAllowedMethods[] = 'Tickets';
-   $this->aSubMenuItems[] = 'Tickets';
-    parent::__construct($sType, $oController);
-  }
+  protected $hSubMenuItems =
+  [
+    'view' => 'View',
+    'edit' => 'Edit',
+    'resources' => 'Resources',
+    'resetpassword' => 'Reset Password',
+    'tickets' => 'Tickets'
+  ];
 
   /**
-   * Prepare the template for display based on the current action and current method
+   * List of actions that are allowed to run
+   *
+   * @var array
    */
-  public function prepareTemplate()
+  protected $aAllowedActions = ['search', 'create', 'editcolumn', 'edit', 'list', 'view', 'resources', 'resetpassword', 'tickets'];
+
+  protected function prepareTemplatePostResources()
   {
-    if ($this->sCurrentAction == 'Process' && $this->sCurrentMethod == 'Resources')
+    try
     {
-      try
-      {
-        $hData = $this->editGetData();
-        $this->oItem->setResourceKeys($hData['ResourceKey']);
-        $this->getController()->templateData('success', "This user's resource update has been successful.");
-      }
-      catch (\Exception $e)
-      {
-        $this->getController()->templateData('failure', "This user's resource update has failed. <!--" . $e->getMessage() . '-->');
-      }
-
-      if (isset($_SESSION['EditData']))
-      {
-        unset($_SESSION['EditData']);
-      }
-
-      $this->sCurrentAction = 'Display';
-      $this->sCurrentMethod = 'View';
+      $hData = $this->editGetData();
+      $this->oItem->setResourceKeys($hData['ResourceKey']);
+      $this->oController->templateData('success', "This user's resource update has been successful.");
+    }
+    catch (\Exception $e)
+    {
+      $this->oController->templateData('failure', "This user's resource update has failed. <!--" . $e->getMessage() . '-->');
     }
 
-    if ($this->sCurrentAction == 'Display' && $this->sCurrentMethod == 'ResetPassword')
+    if (isset($_SESSION['EditData']))
     {
-      $this->getController()->templateData('post', $_POST);
+      unset($_SESSION['EditData']);
     }
 
-    if ($this->sCurrentAction == 'Process' && $this->sCurrentMethod == 'ResetPassword')
+    $this->oController->server['request_method'] = 'GET';
+    $this->sCurrentAction = 'view';
+  }
+
+  protected function prepareTemplatePostResetpassword()
+  {
+    try
     {
-      try
-      {
-        $sNewPassword = $this->oItem->resetPassword();
-        $sDomain = $this->getController()->getDomain();
-        $oEmail = new \Omniverse\Email();
-        $oEmail->setFrom($this->getController()->user()->email);
-        $oEmail->addTo($this->oItem->email);
-        $oEmail->setSubject("The password for the $sDomain has been reset.");
-        $oEmail->addBody("Your new password is $sNewPassword, please login and change it ass soon as possible.");
+      $sNewPassword = $this->oItem->resetPassword();
+      $sDomain = $this->oController->getDomain();
+      $oEmail = new \Omniverse\Email();
+      $oEmail->setFrom($this->oController->user()->email);
+      $oEmail->addTo($this->oItem->email);
+      $oEmail->setSubject("The password for the $sDomain has been reset.");
+      $oEmail->addBody("Your new password is $sNewPassword, please login and change it ass soon as possible.");
 
-        if ($oEmail->send())
-        {
-          $this->getController()->templateData('success', "This user's password has been reset and an email sent.");
-        }
-        else
-        {
-          $this->getController()->templateData('failure', "This user's password has been reset, but the email failed to send.");
-        }
-      }
-      catch (\Exception $e)
+      if ($oEmail->send())
       {
-        $this->getController()->templateData('failure', "This user's password reset has failed. <!--" . $e->getMessage() . '-->');
+        $this->oController->templateData('success', "This user's password has been reset and an email sent.");
       }
-
-      $this->sCurrentAction = 'Display';
-      $this->sCurrentMethod = 'View';
+      else
+      {
+        $this->oController->templateData('failure', "This user's password has been reset, but the email failed to send.");
+      }
+    }
+    catch (\Exception $e)
+    {
+      $this->oController->templateData('failure', "This user's password reset has failed. <!--" . $e->getMessage() . '-->');
     }
 
-    return parent::prepareTemplate();
+    $this->oController->server['request_method'] = 'GET';
+    $this->sCurrentAction = 'view';
   }
 
   /**

@@ -13,54 +13,50 @@ function toggleMethod(sOption)
   if (sOption == 'leasttickets' || sOption == 'roundrobin')
   {
     userDiv.style.display = 'none';
-    keyDiv.style.display = levelDiv.style.display = 'table-row';
+    keyDiv.style.display = levelDiv.style.display = 'block';
   }
 
   if (sOption == 'direct')
   {
-    userDiv.style.display = 'table-row';
+    userDiv.style.display = 'block';
     keyDiv.style.display = levelDiv.style.display = 'none';
   }
 
   return false;
 }
 </script>
-<form name="Create" action="?Admin=Process&Module={{module.name}}&Process=Create" method="post" enctype="multipart/form-data">
-<table>
-<tr>
-  <th align="right">Name:</th><td><input type="text" name="{{module.name}}[Name]" id="{{module.name}}[Name]" value=""></td>
-</tr>
-<tr>
-  <th align="right">Assignment Method:</th>
-  <td>
+<form name="Create" action="{{module.generateUri('create')}}" method="post" enctype="multipart/form-data">
+  <div class="field"><span class="label">Name</span><span class="data"><input type="text" name="{{module.name}}[Name]" id="{{module.name}}[Name]" value=""></span></div>
+  <div class="field">
+  <span class="label">Assignment Method</span>
+  <span class="data">
     <select name="{{module.name}}[AssignmentMethod]" id="{{module.name}}AssignmentMethod" onchange="toggleMethod(this.value);">
 {% for assignmentMethod in currentItem.AssignmentMethodList %}      <option value="{{assignmentMethod}}"{% if assignmentMethod == currentItem['AssignmentMethod'] %} selected="selected"{% endif %}>{{assignmentMethod | title}}</option>
 {% endfor %}    </select>
-  </td>
-</tr>
-<tr id="user" style="display: none;">
-  <th align="right">User:</th>
-  <td>
+  </span>
+</div>
+<div id="user" class="field" style="display: none;">
+  <span class="label">User</span>
+  <span class="data">
     <select name="{{module.name}}[UserID]" id="{{module.name}}UserID">
       <option value="">Select a user</option>
 {% for User in currentItem.search('User', {'Active': true, 'Visible': true}) %}      <option value="{{User.ID}}">{{User.Name | title | e}}</option>
 {% endfor %}
     </select>
-  </td>
-</tr>
-<tr id="key" style="display: none;">
-  <th align="right">Required resource:</th>
-  <td>
+  </span>
+</div>
+<div id="key" class="field" style="display: none;">
+  <span class="label">Required resource</span>
+  <span class="data">
     <select name="{{module.name}}[KeyID]" id="{{module.name}}KeyID">
       <option value="">None</option>
 {% for Key in currentItem.search('ResourceKey') %}      <option value="{{Key.ID}}">{{Key.Name | title |e}}</option>
 {% endfor %}
     </select>
-  </td>
-</tr>
-<tr id="level" style="display: none;">
-  <th align="right">Level:</th><td><input type="text" name="{{module.name}}[Level]" id="{{module.name}}[Level]" value="0"></td>
-</tr>
-<tr><td colspan="2" align="center"><input type="reset" value="Reset">&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" value="Create!"></td></tr>
-</table>
+  </span>
+</div>
+<div id="level" class="field" style="display: none;">
+  <span class="label">Level</span><span class="data"><input type="text" name="{{module.name}}[Level]" id="{{module.name}}[Level]" value="0"></span>
+</div>
+<div class="field"><span class="blankLabel"></span><span class="data"><input type="reset" value="Reset">&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" value="Create!"></span></div>
 </form>

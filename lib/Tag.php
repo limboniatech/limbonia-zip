@@ -12,6 +12,8 @@ namespace Omniverse;
  */
 class Tag
 {
+  use \Omniverse\Traits\DriverList;
+
   /**
    * Name of the basic HTML tag represented by the widget
    *
@@ -69,6 +71,25 @@ class Tag
   protected $bCollapse = true;
 
   /**
+   * factory method that creates an instance of a specific type of widget.
+   * It must be called statically.
+   *
+   * @param string $sType - The type of widget to instanciate
+   * @return "mixed" - The object requested on success, otherwise false.
+   */
+  static public function factory($sType)
+  {
+     $sTypeClass = __CLASS__ . '\\' . $sType;
+
+    if (\class_exists($sTypeClass, true))
+    {
+      return new $sTypeClass();
+    }
+
+    return new Tag($sType);
+  }
+
+  /**
    * Constructor
    *
    * It generates the type for further use later...
@@ -81,25 +102,6 @@ class Tag
     {
       throw new Exception\Object(__CLASS__ . " couldn't find a valid type!");
     }
-  }
-
-  /**
-   * factory method that creates an instance of a specific type of widget.
-   * It must be called statically.
-   *
-   * @param string $sType - The type of widget to instanciate
-   * @return "mixed" - The object requested on success, otherwise false.
-   */
-  static public function factory($sType)
-  {
-     $sTypeClass = __NAMESPACE__ . '\\Tag\\' . $sType;
-
-    if (\class_exists($sTypeClass, true))
-    {
-      return new $sTypeClass();
-    }
-
-    return new Tag($sType);
   }
 
   /**
