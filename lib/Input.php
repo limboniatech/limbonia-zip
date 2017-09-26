@@ -70,6 +70,14 @@ class Input implements \ArrayAccess, \Countable, \SeekableIterator
     }
 
     $hData = filter_input_array(self::$aValidTypes[$sType]);
+
+    //to work around a PHP bug in getting server variables on some systems...
+    //If PHP ever fixes that bug then this if statement can be removed!
+    if ($sType == 'server' && count($hData) < 10)
+    {
+      $hData = $_SERVER;
+    }
+
     $this->hData = is_null($hData) ? [] : \array_change_key_case($hData, CASE_LOWER);
   }
 }
