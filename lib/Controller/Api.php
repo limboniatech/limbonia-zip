@@ -90,7 +90,7 @@ class Api extends \Omniverse\Controller
     {
       $_SESSION = [];
       session_destroy();
-      header('Location: ' . $this->baseUrl);
+      header('Location: ' . $this->baseUri);
     }
 
     if (!isset($_SESSION['Email']))

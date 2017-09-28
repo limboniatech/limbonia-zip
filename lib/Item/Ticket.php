@@ -576,7 +576,7 @@ class Ticket extends \Omniverse\Item
   {
     $sTicketNumber = $this->id < 10 ? '0' . (string)$this->id : (string)$this->id;
     $sDir = "/.ticket_attachments/{$sTicketNumber[0]}/{$sTicketNumber[1]}/{$this->id}";
-    return $bWeb ? dirname($this->getDB()->getController()->baseUrl) . $sDir : $this->getDB()->getController()->basePathDir . $sDir;
+    return $bWeb ? $this->getDB()->getController()->domain->url . $sDir : $this->getDB()->getController()->domain->path . $sDir;
   }
 
   /**

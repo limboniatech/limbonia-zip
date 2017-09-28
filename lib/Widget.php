@@ -239,7 +239,7 @@ class Widget extends Tag
       $this->oController = $oController;
     }
 
-    $this->sWebShareDir = $this->getController()->getDir('WebShare');
+    $this->sWebShareDir = $this->getController()->domain->uri . '/' . $this->getController()->getDir('share');
     self::$iCount++;
     $this->sName = empty($sName) ? 'Omnisys' . $this->sType . self::widgetCount() : $sName;
     $this->setParam('name', $this->sName);
@@ -609,10 +609,10 @@ class Widget extends Tag
     if (!in_array($sAjaxFunction, self::$aAjaxFunction))
     {
       $sClassName = str_replace('\\', '/', preg_replace("#^Omniverse\\\#", '', get_class($this)));
-      self::includeScript($this->getController()->getDir('WebShare') . "/ajax.js");
+      self::includeScript($this->getController()->domain->uri . '/' . $this->getController()->getDir('share') . "/ajax.js");
       $sReportStatus = $bReportStatus === true ? 'true' : 'false';
       $sDebug = self::$bAjaxDebug === true ? 'true' : 'false';
-      $sBaseUrl = "'" . dirname($this->getController()->baseUrl) . 'ajax' ."'";
+      $sBaseUrl = "'" . $this->getController()->domain->url . '/ajax' ."'";
 
       $sJavascript =  "\n<script type=\"text/JavaScript\" language=\"JavaScript\">function $sAjaxFunction(){Omniverse_HttpRequest('$sClassName', '$sFunction', arguments, $sReportStatus, $sDebug, $sBaseUrl);}</script>\n";
       $this->write($sJavascript);

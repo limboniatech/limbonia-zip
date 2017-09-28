@@ -41,8 +41,8 @@ class Template extends \Omniverse\Module
   {
     return
     [
-      'baseuri' => $this->oController->baseUrl,
-      'basedir' => dirname($this->oController->server['SCRIPT_FILENAME']),
+      'baseuri' => $this->oController->domain->uri,
+      'basedir' => $this->oController->domain->path,
       'templatedir' => $this->oController->getDir('templates'),
       'defaulttemplate' => $this->oController->defaultTemplate
     ];

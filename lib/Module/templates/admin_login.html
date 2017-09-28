@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Omniverse Password Check</title>
-  <link rel="stylesheet" type="text/css" href="{{controller.getDir('WebShare')}}/login.css" />
-  <script type="text/javascript" src="{{controller.getDir('WebShare')}}/modernizr-custom.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{controller.domain.uri}}/{{controller.getDir('share')}}/login.css" />
+  <script type="text/javascript" src="{{controller.domain.uri}}/{{controller.getDir('share')}}/modernizr-custom.js"></script>
   <script type="text/javascript">
   document.cookie = '{{controller.allowGridCookieName}}=' + (Modernizr.cssgrid ? '1' : '0');
   document.cookie = '{{controller.datePickerCookieName}}=' + (Modernizr.inputtypes.date ? '1' : '0');

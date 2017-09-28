@@ -19,7 +19,7 @@ class Ajax extends \Omniverse\Controller
   public function run()
   {
     ob_start();
-    $sApiPath = trim(preg_replace("#\?.*#", '', str_replace($this->baseUrl, '', $this->server['request_uri'])), '/');
+    $sApiPath = trim(preg_replace("#\?.*#", '', str_replace($this->baseUri, '', $this->server['request_uri'])), '/');
     $aApiCall = explode('/', $sApiPath);
     $sFunction = 'ajax_' . urldecode(array_pop($aApiCall));
     array_unshift($aApiCall, 'Omniverse');

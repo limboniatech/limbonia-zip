@@ -32,6 +32,13 @@ class Domain
   protected $sName = '';
 
   /**
+   * The base URI for this domain, if there is one...
+   *
+   * @var string
+   */
+  protected $sBaseUri = '';
+
+  /**
    * The path to the domain root directory
    *
    * @var string
@@ -137,35 +144,58 @@ class Domain
    */
   public function __construct($sName, $sPath = '')
   {
-    $this->sName = $sName;
-    $this->sPath = empty($sPath) ? self::generatePath($sName) : $sPath;
+    if (preg_match('#(.*?)(/.*)#', $sName, $aMatch))
+    {
+      $this->sName = $aMatch[1];
+      $this->sBaseUri = $aMatch[2];
+    }
+    else
+    {
+      $this->sName = $sName;
+    }
+
+    $this->sPath = empty($sPath) || !is_dir($sPath) ? self::generatePath($sName) : $sPath;
   }
 
   /**
-   * Return the value specified by the specifid name
+   * Return the value specified by the specified name
    *
    * @param string $sName
    * @return string
    */
   public function __get($sName)
   {
-    $sName = strtolower(trim($sName));
-
-    if ($sName == 'name')
+    switch (strtolower($sName))
     {
-      return $this->sName;
+      case 'name':
+        return $this->sName;
+
+      case 'path':
+        return $this->sPath;
+
+      case 'uri':
+        return $this->sBaseUri;
+
+      case 'url':
+        return '//' . $this->sName . $this->sBaseUri;
     }
+  }
 
-    if ($sName == 'path')
+  /**
+   * Return the value specified by the specified name
+   *
+   * @param string $sName
+   * @return string
+   */
+  public function __isset($sName)
+  {
+    switch (strtolower($sName))
     {
-      return $this->sPath;
-    }
-
-    $sDir = $this->sPath . '/' . $sName;
-
-    if (is_dir($sDir))
-    {
-      return $sDir;
+      case 'name':
+      case 'path':
+      case 'uri':
+      case 'url':
+        return true;
     }
   }
 

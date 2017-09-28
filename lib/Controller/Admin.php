@@ -205,7 +205,7 @@ class Admin extends \Omniverse\Controller
     {
       $_SESSION = [];
       session_destroy();
-      header('Location: ' . $this->baseUrl);
+      header('Location: ' . $this->baseUri);
     }
 
     $sEmail = $this->post['email'];

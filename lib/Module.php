@@ -972,7 +972,7 @@ class Module
    */
   public function processSearchGridRowControl($sIDColumn, $iID)
   {
-    $sURL = $this->oController->baseUrl . '/' . strtolower($this->sType) . "/$iID";
+    $sURL = $this->oController->baseUri . '/' . strtolower($this->sType) . "/$iID";
     return "<input type=\"checkbox\" class=\"OmnisysSortGridCellCheckbox\" name=\"{$sIDColumn}[$iID]\" id=\"{$sIDColumn}[$iID]\" value=\"1\"> [<a href=\"$sURL\">View</a>]";
   }
 

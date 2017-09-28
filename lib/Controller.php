@@ -291,19 +291,6 @@ abstract class Controller
    */
   protected function __construct(array $hConfig = [])
   {
-    if (self::isWeb())
-    {
-      $this->oApi = \Omniverse\Api::singleton();
-      $this->hConfig['baseurl'] = $this->oApi->baseUrl;
-
-      //if the controller is any web type *other* than base web
-      //then we need to append the controller type to the baseurl
-      if ($this->oApi->controller !== 'web')
-      {
-        $this->hConfig['baseurl'] .= $this->oApi->controller;
-      }
-    }
-
     $hLowerConfig = \array_change_key_case($hConfig, CASE_LOWER);
 
     if (isset($hLowerConfig['sessionname']))
@@ -313,21 +300,6 @@ abstract class Controller
     }
 
     SessionManager::start();
-
-    $this->hDirectories['root'] = \dirname(__DIR__);
-    $this->hDirectories['basepath'] = dirname($this->server['script_filename']);
-
-    if (isset($hLowerConfig['directories']))
-    {
-      foreach ($hLowerConfig['directories'] as $sName => $sDir)
-      {
-        $this->hDirectories[\strtolower($sName)] = $sDir;
-      }
-
-      unset($hLowerConfig['directories']);
-    }
-
-    $this->hDirectories['libs'] = \array_unique($this->hDirectories['libs']);
 
     if (isset($hLowerConfig['domaindirtemplate']))
     {
@@ -348,6 +320,38 @@ abstract class Controller
 
       unset($hLowerConfig['domain']);
     }
+    else
+    {
+      $this->oDomain = \Omniverse\Domain::getByDirectory($this->server['document_root']);
+    }
+
+    $this->hConfig['baseuri'] = $this->oDomain->uri;
+
+    if (self::isWeb())
+    {
+      $this->oApi = \Omniverse\Api::singleton();
+
+      //if the controller is any web type *other* than base web
+      //then we need to append the controller type to the baseuri
+      if ($this->oApi->controller !== 'web')
+      {
+        $this->hConfig['baseuri'] .= '/' . $this->oApi->controller;
+      }
+    }
+
+    $this->hDirectories['root'] = \dirname(__DIR__);
+
+    if (isset($hLowerConfig['directories']))
+    {
+      foreach ($hLowerConfig['directories'] as $sName => $sDir)
+      {
+        $this->hDirectories[\strtolower($sName)] = $sDir;
+      }
+
+      unset($hLowerConfig['directories']);
+    }
+
+    $this->hDirectories['libs'] = \array_unique($this->hDirectories['libs']);
 
     $sTimeZone = 'UTC';
 
@@ -531,7 +535,7 @@ abstract class Controller
    */
   public function generateUri(string ...$aParam): string
   {
-    $aUri = array_merge([$this->baseUrl], $aParam);
+    $aUri = array_merge([$this->baseUri], $aParam);
     return strtolower(implode('/', $aUri));
   }
 
