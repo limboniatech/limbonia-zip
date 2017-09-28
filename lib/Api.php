@@ -54,7 +54,7 @@ class Api
     $oServer = Input::singleton('server');
     $this->hData['method'] = strtolower($oServer['request_method']);
     $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
-    $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', str_replace($this->hData['baseurl'], '', $oServer['request_uri'])), '/');
+    $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
     $this->hData['rawcall'] = explode('/', $this->hData['rawpath']);
     $aCall = explode('/', strtolower($this->hData['rawpath']));
 
