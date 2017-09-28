@@ -46,7 +46,7 @@ class Software extends \Omniverse\Item
 
     if ($sLowerType == 'active')
     {
-      $sSQL = "SELECT R.* from SoftwareRelease AS R, Ticket AS T WHERE R.TicketID = T.TicketID AND T.Status != 'closed' ORDER BY Major, Minor, Patch";
+      $sSQL = "SELECT R.* from SoftwareRelease AS R, Ticket AS T WHERE R.TicketID = T.TicketID AND T.Status != 'closed' AND R.SoftwareID = $this->id ORDER BY Major, Minor, Patch";
       return parent::getList('SoftwareRelease', $sSQL, $this->getDB());
     }
 

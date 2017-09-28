@@ -1,5 +1,5 @@
-{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{error}}</div>{% endif %}
-{% if controller.api.call[4] == 'edit' %}
+{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{failure}}</div>{% endif %}
+{% if controller.api.subAction == 'edit' and element %}
 {% import 'macros.html' as macros %}
 <h2>Edit Software Element</h2>
  <form action="{{module.generateUri(currentItem.id, method, element.id, 'edit')}}" method="post">
@@ -7,21 +7,21 @@
  <div class="field">
    <span class="label">User</span>
    <span class="data">
-     <select name="{{module.name}}[UserID]">
+     <select name="{{module.type}}[UserID]">
        <option value="0">None</option>
        {% for user in internalUserList %}<option value="{{user.id}}"{% if element.userID == user.id %} selected="selected"{% endif %}>{{user.name}}</option>
      {% endfor %}</select>
    </span>
  </div>
- <div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id)}}'"></span></div>
+ <div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id, method)}}'"></span></div>
  </form>
-{% elseif controller.get.delete %}
+{% elseif controller.api.subAction == 'delete' and element %}
 <h2>Delete Software Element</h2>
  <form action="{{module.generateUri(currentItem.id, method, element.id, 'delete')}}" method="post">
 Are you sure you want to delete {{currentItem.name}}'s element "{{element.name}}"?
 <input type="submit" name="Yes" value="Yes">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id, method)}}'"></form>
 {% else %}
-<form action="{{module.generateUri(currentItem.id, method)}}" method="post">
+<form action="{{module.generateUri(currentItem.id, method, 'create')}}" method="post">
 <div class="display">
   <header>
     <span>Name</span>

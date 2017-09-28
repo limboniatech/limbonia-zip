@@ -40,7 +40,7 @@ class Module
    *
    * @var array
    */
-  protected $hFields = [];
+  protected static $hSettingsFields = [];
 
   /**
    * A list of the actual module settings
@@ -184,13 +184,6 @@ class Module
   protected $hAllow = [];
 
   /**
-   * Have the settings been loaded yet?
-   *
-   * @var boolean
-   */
-  protected $bSettingsLoaded = false;
-
-  /**
    * Has the "City / State / Zip" block been output yet?
    *
    * @var boolean
@@ -204,16 +197,16 @@ class Module
    * @param \Omniverse\Controller $oController
    * @return \Omniverse\Module
    */
-  public static function factory($sType, Controller $oController)
+  public static function factory($sType, \Omniverse\Controller $oController)
   {
     $sTypeClass = __CLASS__ . '\\' . self::driver($sType);
 
-    if (\class_exists($sTypeClass, true))
+    if (!class_exists($sTypeClass, true))
     {
-      return new $sTypeClass($oController);
+      throw new \Omniverse\Exception\Object("The driver for module type \"$sType\" does not exist!");
     }
 
-    return new self($oController);
+    return new $sTypeClass($oController);
   }
 
   /**
@@ -221,16 +214,35 @@ class Module
    *
    * @param \Omniverse\Controller $oController
    */
-  public function __construct(\Omniverse\Controller $oController)
+  protected function __construct(\Omniverse\Controller $oController)
   {
     $this->oController = $oController;
     $this->sType = empty($this->sType) ? preg_replace("#.*Module\\\#", '', get_class($this)) : $this->sType;
 
-    if (count($this->hSettings) > 0)
+    if (count(static::$hSettingsFields) > 0)
     {
       $this->hMenuItems['settings'] = 'Settings';
       $this->aAllowedActions[] = 'settings';
       $this->hComponent['configure'] = "The ability to alter the module's configuration.";
+
+      $oStatement = $this->oController->getDB()->prepare('SELECT Data FROM Settings WHERE Type = :Type LIMIT 1');
+      $oStatement->bindParam(':Type', $this->sType);
+      $oStatement->execute();
+      $sSettings = $oStatement->fetchOne();
+
+      if (empty($sSettings))
+      {
+        $this->hSettings = $this->defaultSettings();
+        $sSettings = addslashes(serialize($this->hSettings));
+        $oStatement = $this->oController->getDB()->prepare('INSERT INTO Settings (Type, Data) values (:Type, :Data)');
+        $oStatement->bindParam(':Type', $this->sType);
+        $oStatement->bindParam(':Data', $sSettings);
+        $oStatement->execute();
+      }
+      else
+      {
+        $this->hSettings = unserialize(stripslashes($sSettings));
+      }
     }
 
     try
@@ -263,6 +275,80 @@ class Module
     $this->saveSettings();
   }
 
+  public function processApi()
+  {
+    switch ($this->oController->api->method)
+    {
+      case 'get':
+        if (!$this->allow('search'))
+        {
+          throw new \Exception("Action (dispaly) not allowed", 405);
+        }
+
+        if (is_null($this->oController->api->id))
+        {
+          $xSearch = $this->processSearchGetCriteria();
+
+          if (is_array($xSearch))
+          {
+            foreach (array_keys($xSearch) as $sKey)
+            {
+              $this->processSearchTerm($xSearch, $sKey);
+            }
+          }
+
+          $oData = $this->processSearchGetData($xSearch);
+          $aList = [];
+
+          foreach ($oData as $oItem)
+          {
+            $aList[] = $oItem->getAll(true);
+          }
+
+          return $aList;
+        }
+
+        if ($this->oItem->id == 0)
+        {
+          throw new \Exception($this->getType() . ' not found', 404);
+        }
+
+        return $this->oItem->getAll(true);
+
+      case 'put':
+        if (!$this->allow('edit'))
+        {
+          throw new \Exception("Action (update) not allowed", 405);
+        }
+
+        return is_null($this->oController->api->id) ? 'list' : 'view';
+
+      case 'post':
+        if (!$this->allow('create'))
+        {
+          throw new \Exception("Action (create) not allowed", 405);
+        }
+
+        if (is_null($this->oController->api->id))
+        {
+          //create new item
+        }
+
+      case 'delete':
+        if (!$this->allow('delete'))
+        {
+          throw new \Exception("Action (delete) not allowed", 405);
+        }
+
+        if (is_null($this->oController->api->id))
+        {
+          throw new \Exception("Deleting multiple items is forbidden", 403);
+        }
+
+        return is_null($this->oController->api->id) ? 'list' : 'view';
+    }
+  }
+
   /**
    * Is this module currently performing a search?
    *
@@ -270,7 +356,7 @@ class Module
    */
   public function isSearch()
   {
-    return in_array($this->oController->api->call[1], ['search', 'list']);
+    return in_array($this->oController->api->action, ['search', 'list']);
   }
 
   /**
@@ -301,7 +387,7 @@ class Module
    */
   public function getSettingsFields()
   {
-    return $this->hFields;
+    return static::$hSettingsFields;
   }
 
   /**
@@ -469,7 +555,6 @@ class Module
       unset($_SESSION['EditData']);
     }
 
-    $this->oController->api->method = 'get';
     $this->sCurrentAction = 'view';
   }
 
@@ -490,7 +575,7 @@ class Module
 
     $oData = $this->processSearchGetData($xSearch);
 
-    if (isset($this->oController->api->call[2]) && $this->oController->api->call[2] == 'quick' && $oData->count() == 1)
+    if (isset($this->oController->api->subAction) && $this->oController->api->subAction == 'quick' && $oData->count() == 1)
     {
       $oItem = $oData[0];
       header('Location: '. $this->generateUri($oItem->id));
@@ -529,94 +614,78 @@ class Module
    */
   public function prepareTemplate()
   {
-    $sPrepareMethod = '';
-    $sActionSubMethod = 'prepareTemplate' . ucfirst($this->sCurrentAction) . ucfirst($this->oController->api->subAction);
-    $sActionMethod = 'prepareTemplate' . ucfirst($this->sCurrentAction);
-    $sMethodActionSubMethod = 'prepareTemplate' . ucfirst($this->oController->api->method) . ucfirst($this->sCurrentAction) . ucfirst($this->oController->api->subAction);
-    $sMethodActionMethod = 'prepareTemplate' . ucfirst($this->oController->api->method) . ucfirst($this->sCurrentAction);
+    $aMethods = [];
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction) . ucfirst($this->oController->api->subAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->oController->api->method) . ucfirst($this->sCurrentAction) . ucfirst($this->oController->api->subAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->oController->api->method) . ucfirst($this->sCurrentAction);
+    $aMethods = array_unique($aMethods);
 
-    if (method_exists($this, $sActionSubMethod))
+    foreach ($aMethods as $sMethod)
     {
-      $sPrepareMethod = $sActionSubMethod;
-    }
-    elseif (method_exists($this, $sActionMethod))
-    {
-      $sPrepareMethod = $sActionMethod;
-    }
-    elseif (method_exists($this, $sMethodActionSubMethod))
-    {
-      $sPrepareMethod = $sMethodActionSubMethod;
-    }
-    elseif (method_exists($this, $sMethodActionMethod))
-    {
-      $sPrepareMethod = $sMethodActionMethod;
-    }
+      //run every template method can be found
+      if (method_exists($this, $sMethod))
+      {
+        try
+        {
+          $this->$sMethod();
+        }
+        catch (\Exception $e)
+        {
+          $this->oController->templateData('failure', "Method ($sMethod) failed: " . $e->getMessage());
 
-    if (!empty($sPrepareMethod))
-    {
-      try
-      {
-        $this->$sPrepareMethod();
-      }
-      catch (\Exception $e)
-      {
-        $this->oController->templateData('error', $e->getMessage());
+          //stop looking for a template method after an error occurs
+          break;
+        }
       }
     }
 
-    $this->oController->templateData('method', $this->sCurrentAction);
     $this->oController->templateData('module', $this);
+    $this->oController->templateData('method', $this->sCurrentAction);
     $this->oController->templateData('currentItem', $this->oItem);
   }
 
   /**
-   * Display the template
+   * Generate and return the path of the template to display
+   *
+   * @return boolean|string
    */
-  public function showTemplate()
+  public function getTemplate()
   {
     if (!$this->allow($this->sCurrentAction))
     {
-      echo '';
-      return;
+      return false;
     }
 
-    $sTemplate = null;
     $sModuleDir = strtolower($this->getType());
     $sActionTemplate = $this->sCurrentAction == 'list' ? 'search.html' : strtolower("{$this->sCurrentAction}.html");
-    $sMethod = $this->oController->api->isPost()|| $this->sCurrentAction == 'list' ? 'process' : 'display';
+    $sMethod = $this->oController->api->isPost() || $this->sCurrentAction == 'list' ? 'process' : 'display';
     $sMethodTemplate = $sMethod . $sActionTemplate;
 
     foreach ($_SESSION['ModuleDirs'] as $sDir)
     {
       if (is_readable("$sDir/$sModuleDir/$sActionTemplate"))
       {
-        $sTemplate = "$sModuleDir/$sActionTemplate";
-        break;
+        return "$sModuleDir/$sActionTemplate";
       }
-      elseif (is_readable("$sDir/$sModuleDir/$sMethodTemplate"))
+
+      if (is_readable("$sDir/$sModuleDir/$sMethodTemplate"))
       {
-        $sTemplate = "$sModuleDir/$sMethodTemplate";
-        break;
+        return "$sModuleDir/$sMethodTemplate";
       }
-      elseif (is_readable("$sDir/$sActionTemplate"))
+
+      if (is_readable("$sDir/$sActionTemplate"))
       {
-        $sTemplate = $sActionTemplate;
-        break;
+        return $sActionTemplate;
       }
-      elseif (is_readable("$sDir/$sMethodTemplate"))
+
+      if (is_readable("$sDir/$sMethodTemplate"))
       {
-        $sTemplate = $sMethodTemplate;
-        break;
+        return $sMethodTemplate;
       }
     }
 
-    if (empty($sTemplate))
-    {
-      $sTemplate = 'error.html';
-      $this->oController->templateData('error', "The action \"{$this->sCurrentAction}\" does *not* exist in {$this->sType}!!!");
-    }
-
-    $this->oController->templateDisplay($sTemplate);
+    throw new Exception("The action \"{$this->sCurrentAction}\" does *not* exist in {$this->sType}!!!");
   }
 
   /**
@@ -630,25 +699,13 @@ class Module
   }
 
   /**
-   * Load this module's settings from the database, if there are any
+   * Return the default settings
+   *
+   * @return array
    */
-  protected function loadSettings()
+  protected function defaultSettings()
   {
-    $oStatement = $this->oController->getDB()->prepare('SELECT Data FROM Settings WHERE Type = :Type LIMIT 1');
-    $oStatement->bindColumn(':Type', $this->sType, \PDO::PARAM_STR);
-    $sSettings = $oStatement->fetchOne();
-
-    if (!is_null($sSettings))
-    {
-      $this->hSettings = unserialize($sSettings);
-    }
-    elseif (count($this->hSettings) > 0)
-    {
-      $oStatement = $this->oController->getDB()->prepare('INSERT INTO Settings (Type, Data) values (:Type, :Data)');
-      $oStatement->bindColumn(':Type', $this->sType, \PDO::PARAM_STR);
-      $oStatement->bindColumn(':Data', addslashes(serialize($this->hSettings)), \PDO::PARAM_STR);
-      $oStatement->execute();
-    }
+    return [];
   }
 
   /**
@@ -663,9 +720,10 @@ class Module
       return true;
     }
 
+    $sSettings = addslashes(serialize($this->hSettings));
     $oStatement = $this->oController->getDB()->prepare('UPDATE Settings SET Data = :Data WHERE Type = :Type');
-    $oStatement->bindColumn(':Type', $this->sType, \PDO::PARAM_STR);
-    $oStatement->bindColumn(':Data', addslashes(serialize($this->hSettings)), \PDO::PARAM_STR);
+    $oStatement->bindParam(':Data', $sSettings);
+    $oStatement->bindParam(':Type', $this->sType);
     $oStatement->execute();
     $this->bChangedSettings = false;
   }
@@ -680,14 +738,7 @@ class Module
   {
     if (count($this->hSettings) == 0)
     {
-      return false;
-    }
-
-    //if this is the first time try to load the settings...
-    if (!$this->bSettingsLoaded)
-    {
-      $this->loadSettings();
-      $this->bSettingsLoaded = true;
+      return null;
     }
 
     if (empty($sName))
@@ -695,7 +746,7 @@ class Module
       return $this->hSettings;
     }
 
-    return isset($this->hSettings[$sName]) ? $this->hSettings[$sName] : null;
+    return $this->hSettings[strtolower($sName)] ?? null;
   }
 
   /**
@@ -707,13 +758,15 @@ class Module
    */
   protected function setSetting($sName, $xValue)
   {
-    if (!isset($this->hFields[$sName]))
+    $sLowerName = strtolower($sName);
+
+    if (!isset(static::$hSettingsFields[$sLowerName]))
     {
       return false;
     }
 
     $this->bChangedSettings = true;
-    $this->hSettings[$sName] = $xValue;
+    $this->hSettings[$sLowerName] = $xValue;
     return true;
   }
 
@@ -736,9 +789,9 @@ class Module
    */
   protected function getComponent($sMenuItem)
   {
-    if (strpos($sMenuItem, 'quicksearch_') === 0 || $sMenuItem == 'list')
+    if ($sMenuItem == 'list')
     {
-      return "search";
+      return 'search';
     }
 
     if ($sMenuItem == 'editcolumn')
@@ -1381,13 +1434,13 @@ class Module
    */
   protected function editFinish($sType, $sText, $bReload=false)
   {
+    $sURL = $this->oItem->id > 0 ? $this->generateUri($this->oItem->id, 'view') : $this->generateUri('list');
+
     if (isset($_SESSION['EditData']))
     {
       unset($_SESSION['EditData']);
     }
 
-    $sReload = $bReload ? 'javascript:opener.location.reload(); ' : '';
-    $sURL = $sType == 'Popup' ? "javascript:{$sReload}window.close();" : $this->generateUri('search');
     return "<center><h1>$sText</h1> Click <a href=\"$sURL\">here</a> to continue.</center>";
   }
 
@@ -1497,8 +1550,7 @@ class Module
    */
   protected function editGetData()
   {
-    $hFullPost = $this->oController->post;
-    $hPost = isset($hFullPost[$this->sType]) ? $hFullPost[$this->sType] : $hFullPost;
+    $hPost = isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : $this->oController->post->getRaw();
     $hTemp = $this->oItem->getColumns();
     $aIgnore = isset($this->aIgnore['boolean']) ? $this->aIgnore['boolean'] : [];
 

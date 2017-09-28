@@ -12,7 +12,7 @@ namespace Omniverse\Traits;
  */
 trait DriverList
 {
-  protected function generateDriverList()
+  protected static function generateDriverList()
   {
     if (!isset($_SESSION['DriverList']))
     {
@@ -44,7 +44,6 @@ trait DriverList
   public static function driver(string $sName)
   {
     self::generateDriverList();
-    $sLowerName = strtolower($sName);
-    return $_SESSION['DriverList'][__CLASS__][$sLowerName] ?? $sName;
+    return $_SESSION['DriverList'][__CLASS__][strtolower($sName)] ?? $sName;
   }
 }

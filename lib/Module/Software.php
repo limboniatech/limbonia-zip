@@ -34,149 +34,82 @@ class Software extends \Omniverse\Module
    */
   protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'elements', 'releases', 'changelog', 'roadmap'];
 
-  protected function prepareTemplateGetElements()
+  protected function prepareTemplateElements()
   {
     $oSearch = $this->oController->itemSearch('User', ['Type' => 'internal', 'Active' => 1], ['LastName', 'FirstName']);
     $this->oController->templateData('internalUserList', $oSearch);
+  }
 
-    if (isset($this->oController->api->subid))
+  protected function prepareTemplateGetElements()
+  {
+    if (isset($this->oController->api->subId))
     {
-      $oElement = $this->oController->itemFromId('SoftwareElement', $this->oController->api->subid);
+      $oElement = $this->oController->itemFromId('SoftwareElement', $this->oController->api->subId);
       $this->oController->templateData('element', $oElement);
     }
   }
 
-  protected function prepareTemplatePostElements()
+  protected function prepareTemplatePostElementsCreate()
   {
-    $oSearch = $this->oController->itemSearch('User', ['Type' => 'internal', 'Active' => 1], ['LastName', 'FirstName']);
-    $this->oController->templateData('internalUserList', $oSearch);
-    $this->oController->server['request_method'] = 'GET';
+    $sName = trim($this->oController->post['Name']);
 
-    if (isset($this->oController->post['Name']))
+    if (empty($sName))
     {
-      $sName = trim($this->oController->post['Name']);
-
-      if (empty($sName))
-      {
-        $this->oController->templateData('failure', "Software element creation failed: no name given");
-      }
-      else
-      {
-        try
-        {
-          $iUser = isset($this->oController->post['UserID']) ? (integer)$this->oController->post['UserID'] : 0;
-          $this->oItem->addElement($sName, $iUser);
-          $this->oController->templateData('success', "Software element creation has been successful.");
-        }
-        catch (\Exception $e)
-        {
-          $this->oController->templateData('failure', "Software element creation failed: " . $e->getMessage());
-        }
-      }
+      throw new Exception('Software element creation failed: no name given');
     }
-    elseif ($this->oController->get['Edit'] == 1)
-    {
-      unset($this->oController->get['Edit']);
 
-      try
-      {
-        $oElement = $this->oController->itemFromId('SoftwareElement', $this->oController->get['ElementID']);
-        $oElement->setAll($this->editGetData());
-        $oElement->save();
-        $this->oController->templateData('success', "Software element successfully updated");
-      }
-      catch (\Exception $e)
-      {
-        $this->oController->templateData('failure', "Software element update failed: " . $e->getMessage());
-      }
-    }
-    elseif ($this->oController->get['Delete'] == 1)
-    {
-      unset($this->oController->get['Delete']);
+    $iUser = (integer)$this->oController->post['UserID'] ?? 0;
+    $this->oItem->addElement($sName, $iUser);
+    $this->oController->templateData('success', "Software element creation has been successful.");
+  }
 
-      try
-      {
-        $this->oItem->removeElement($this->oController->get['ElementID']);
-        $this->oController->templateData('success', "Software element successfully deleted");
-      }
-      catch (\Exception $e)
-      {
-        $this->oController->templateData('failure', "Software element delete failed: " . $e->getMessage());
-      }
-    }
+  protected function prepareTemplatePostElementsEdit()
+  {
+    $oElement = $this->oController->itemFromId('SoftwareElement', $this->oController->api->subId);
+    $oElement->setAll($this->editGetData());
+    $oElement->save();
+    $this->oController->templateData('success', "Software element successfully updated");
+  }
+
+  protected function prepareTemplatePostElementsDelete()
+  {
+    $this->oItem->removeElement($this->oController->api->subId);
+    $this->oController->templateData('success', "Software element successfully deleted");
   }
 
   protected function prepareTemplateGetReleases()
   {
-    if (isset($this->oController->get['ReleaseID']))
+    if (isset($this->oController->api->subId))
     {
-      try
-      {
-        $oRelease = $this->oController->itemFromId('SoftwareRelease', $this->oController->get['ReleaseID']);
-        $this->oController->templateData('release', $oRelease);
-      }
-      catch (\Exception $e)
-      {
-        $this->oController->templateData('failure', "Software release could not be found: " . $e->getMessage());
-      }
+      $oRelease = $this->oController->itemFromId('SoftwareRelease', $this->oController->api->subId);
+      $this->oController->templateData('release', $oRelease);
     }
   }
 
-  protected function prepareTemplatePostReleases()
+  protected function prepareTemplatePostReleasesCreate()
   {
-    $this->oController->server['request_method'] = 'GET';
-    $sVersion = $this->oController->post['Version'];
+    $sVersion = trim($this->oController->post['Version']);
 
-    if (!is_null($sVersion))
+    if (empty($sVersion))
     {
-      $sVersion = trim($sVersion);
-
-      if (empty($sVersion))
-      {
-        $this->oController->templateData('failure', "Software release creation failed: no version given");
-      }
-      else
-      {
-        try
-        {
-          $this->oItem->addRelease($sVersion, $this->oController->post['Note']);
-          $this->oController->templateData('success', "Software release creation has been successful.");
-        }
-        catch (\Exception $e)
-        {
-          $this->oController->templateData('failure', "Software release creation failed: " . $e->getMessage());
-        }
-      }
+      throw new Exception('Software release creation failed: no version given');
     }
-    elseif ($this->oController->get['Edit'] == 1)
-    {
-      unset($this->oController->get['Edit']);
 
-      try
-      {
-        $oRelease = $this->oController->itemFromId('SoftwareRelease', $this->oController->get['ReleaseID']);
-        $oRelease->setAll($this->editGetData());
-        $oRelease->save();
-        $this->oController->templateData('success', "Software release successfully updated");
-      }
-      catch (\Exception $e)
-      {
-        $this->oController->templateData('failure', "Software release update failed: " . $e->getMessage());
-      }
-    }
-    elseif ($this->oController->get['Delete'] == 1)
-    {
-      unset($this->oController->get['Delete']);
+    $this->oItem->addRelease($sVersion, $this->oController->post['Note']);
+    $this->oController->templateData('success', "Software release creation has been successful.");
+  }
 
-      try
-      {
-        $this->oItem->removeRelease($this->oController->get['ReleaseID']);
-        $this->oController->templateData('success', "Software release successfully deleted");
-      }
-      catch (\Exception $e)
-      {
-        $this->oController->templateData('failure', "Software release delete failed: " . $e->getMessage());
-      }
-    }
+  protected function prepareTemplatePostReleasesEdit()
+  {
+    $oRelease = $this->oController->itemFromId('SoftwareRelease', $this->oController->api->subId);
+    $oRelease->setAll($this->editGetData());
+    $oRelease->save();
+    $this->oController->templateData('success', "Software release successfully updated");
+  }
+
+  protected function prepareTemplatePostReleasesDelete()
+  {
+    $this->oItem->removeRelease($this->oController->api->subId);
+    $this->oController->templateData('success', "Software release successfully deleted");
   }
 }

@@ -12,4 +12,13 @@ namespace Omniverse\Item;
  */
 class TicketCategory extends \Omniverse\Item
 {
+  /**
+   * List of names and their associated types, used by __get to generate item objects
+   *
+   * @var array
+   */
+  protected $hAutoExpand =
+  [
+    'key' => 'ResourceKey'
+  ];
 }

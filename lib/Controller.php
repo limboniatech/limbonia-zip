@@ -12,7 +12,6 @@ namespace Omniverse;
  */
 abstract class Controller
 {
-
   /**
    * The current default Controller
    *
@@ -128,7 +127,7 @@ abstract class Controller
    */
   public static function isCLI()
   {
-    return \preg_match("/cli/i", PHP_SAPI);
+    return preg_match("/cli/i", PHP_SAPI);
   }
 
   /**
@@ -279,7 +278,7 @@ abstract class Controller
     }
 
     $oApi = \Omniverse\Api::singleton();
-    $sControllerClass = __NAMESPACE__ . '\\Controller\\' . $oApi->controllerType;
+    $sControllerClass = __CLASS__ . '\\' . ucfirst($oApi->controller);
     return new $sControllerClass($hConfig);
   }
 
@@ -296,6 +295,13 @@ abstract class Controller
     {
       $this->oApi = \Omniverse\Api::singleton();
       $this->hConfig['baseurl'] = $this->oApi->baseUrl;
+
+      //if the controller is any web type *other* than base web
+      //then we need to append the controller type to the baseurl
+      if ($this->oApi->controller !== 'web')
+      {
+        $this->hConfig['baseurl'] .= $this->oApi->controller;
+      }
     }
 
     $hLowerConfig = \array_change_key_case($hConfig, CASE_LOWER);

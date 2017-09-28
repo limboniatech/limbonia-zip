@@ -90,77 +90,39 @@ class Admin extends \Omniverse\Controller
       throw new \Exception('Domain not found');
     }
 
-    if (empty($_SESSION['ModuleList']))
-    {
-      $aTemp = [];
-
-      foreach (get_class_methods($this) as $sMethod)
-      {
-        if (preg_match("/^System(.+)/i", $sMethod, $aMatch))
-        {
-          $aTemp[] = $aMatch[1];
-        }
-      }
-
-      sort($aTemp);
-      reset($aTemp);
-
-      $_SESSION['ResourceList'] = ['System' => $aTemp];
-      $_SESSION['ModuleList'] = [];
-      $_SESSION['ModuleDirs'] = [];
-      $aBlackList = isset($this->hConfig['moduleblacklist']) ? $this->hConfig['moduleblacklist'] : [];
-
-      foreach (parent::getLibs() as $sLibDir)
-      {
-        foreach (glob("$sLibDir/Module/*.php") as $sModule)
-        {
-          if (in_array($sModule, $_SESSION['ModuleList']) || in_array($sModule, $aBlackList))
-          {
-            continue;
-          }
-
-          $sModuleName = basename($sModule, ".php");
-
-          try
-          {
-            $oModule = $this->moduleFactory($sModuleName);
-          }
-          catch (\Exception $e)
-          {
-            echo $e->getMessage();
-            continue;
-          }
-
-          $_SESSION['ModuleDirs'][] = "$sLibDir/Module/templates";
-          $_SESSION['ModuleList'][strtolower($oModule->getType())] = $oModule->getType();
-          $hComponent = $oModule->getComponents();
-          ksort($hComponent);
-          reset($hComponent);
-          $_SESSION['ResourceList'][$oModule->getType()] = $hComponent;
-        }
-
-        $_SESSION['ModuleDirs'] = array_unique($_SESSION['ModuleDirs']);
-
-        if (isset($_SESSION['ModuleList']) && is_array($_SESSION['ModuleList']))
-        {
-          ksort($_SESSION['ModuleList']);
-          reset($_SESSION['ModuleList']);
-        }
-
-        ksort($_SESSION['ResourceList']);
-        reset($_SESSION['ResourceList']);
-      }
-    }
-
     \Twig_autoloader::register();
-    $oLoader = new \Twig_Loader_Filesystem($_SESSION['ModuleDirs']);
-    self::$oTemplateGenerator = new \Twig_Environment($oLoader, ['trim_blocks' => true, 'cache' => $this->cacheDir, 'auto_reload' => true, 'autoescape' => false]);
     $this->templateData('controller', $this);
-    self::$oTemplateGenerator->addFilter('replace', new \Twig_Filter_Function('\Omniverse\Controller\Admin::replace'));
-    self::$oTemplateGenerator->addFilter('match', new \Twig_Filter_Function('\Omniverse\Controller\Admin::match'));
   }
 
   /**
+   * Generate and return the Twig Template generator object
+   *
+   * @return \Twig_Environment
+   */
+  protected function getTemplateGenerator()
+  {
+    if (is_null(self::$oTemplateGenerator))
+    {
+      if (!isset($_SESSION['ModuleDirs']))
+      {
+        $_SESSION['ModuleDirs'] = [];
+
+        foreach (parent::getLibs() as $sLibDir)
+        {
+          $_SESSION['ModuleDirs'][] = "$sLibDir/Module/templates";
+        }
+      }
+
+      $oLoader = new \Twig_Loader_Filesystem($_SESSION['ModuleDirs']);
+      self::$oTemplateGenerator = new \Twig_Environment($oLoader, ['trim_blocks' => true, 'cache' => $this->cacheDir, 'auto_reload' => true, 'autoescape' => false]);
+      self::$oTemplateGenerator->addFilter('replace', new \Twig_Filter_Function('\Omniverse\Controller\Admin::replace'));
+      self::$oTemplateGenerator->addFilter('match', new \Twig_Filter_Function('\Omniverse\Controller\Admin::match'));
+    }
+
+    return self::$oTemplateGenerator;
+  }
+
+    /**
    * Return the currently logged in user
    *
    * @return \Omniverse\Item\User
@@ -189,9 +151,9 @@ class Admin extends \Omniverse\Controller
    */
   public function templateDisplay($sTemplateName, $hData = null)
   {
-    if (!is_null(self::$oTemplateGenerator))
+    if (!empty($sTemplateName))
     {
-      $oTemplate = self::$oTemplateGenerator->loadTemplate($sTemplateName);
+      $oTemplate = $this->getTemplateGenerator()->loadTemplate($sTemplateName);
       $hTemplateData = is_null($hData) ? $this->hTemplateData : $hData;
       $oTemplate->display($hTemplateData);
     }
@@ -203,87 +165,32 @@ class Admin extends \Omniverse\Controller
   public function run()
   {
     $this->login();
+    $sModuleTemplate = null;
 
-    if (empty($_SESSION['ModuleList'][$this->oApi->module]))
-    {
-      $sMessage = '';
-    }
-    else
+    if (!empty($_SESSION['ModuleList'][$this->oApi->module]))
     {
       try
       {
+        $sModuleTemplate = 'error.html';
         $oCurrentModule = $this->moduleFactory($_SESSION['ModuleList'][$this->oApi->module]);
         $oCurrentModule->prepareTemplate();
+        $sModuleTemplate = $oCurrentModule->getTemplate();
+      }
+      catch (\Omniverse\Exception\Object $e)
+      {
+        $this->templateData('failure', "The module {$this->oApi->module} could not be instaniated!!!<br />");
       }
       catch (\Exception $e)
       {
-        $sMessage = "The module {$this->oApi->module} could not be instaniated!!!<br />";
-        error_log($e->getMessage());
+        $this->templateData('failure', $e->getMessage());
       }
     }
 
-    if (!isset($_SESSION['ModuleGroups']))
-    {
-      $_SESSION['ModuleGroups'] = [];
-
-      if (count($_SESSION['ModuleList']) > 0)
-      {
-        foreach (array_keys($_SESSION['ModuleList']) as $sModuleLabel)
-        {
-          $sModuleName = $_SESSION['ModuleList'][$sModuleLabel];
-
-          if (isset($oCurrentModule) && $sModule === $sModuleName)
-          {
-            $oModule = $oCurrentModule;
-          }
-          else
-          {
-            try
-            {
-              $oModule = $this->moduleFactory($sModuleName);
-            }
-            catch (\Exception $e)
-            {
-              echo "Failed to get group for: $sModuleName" . $e->getMessage() . "<br>\n";
-              continue;
-            }
-          }
-
-          $bHasResource= $this->oUser->hasResource($oModule->getType());
-
-          if ($bHasResource && $oModule->visibleInMenu())
-          {
-            $_SESSION['ModuleGroups'][$oModule->getGroup()][$sModuleLabel] = $oModule->getType();
-          }
-
-          if (!$bHasResource)
-          {
-            unset($_SESSION['ModuleList'][$sModuleLabel]);
-          }
-        }
-
-        ksort($_SESSION['ModuleGroups']);
-
-        foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
-        {
-          ksort($_SESSION['ModuleGroups'][$sKey]);
-        }
-      }
-    }
-
-    $this->templateData('moduleGroups', $_SESSION['ModuleGroups']);
+    ob_start();
     $this->templateDisplay('admin-top.html');
-
-    if (isset($sMessage))
-    {
-      echo $sMessage;
-    }
-    else
-    {
-      $oCurrentModule->showTemplate();
-    }
-
+    $this->templateDisplay($sModuleTemplate);
     $this->templateDisplay('admin-bottom.html');
+    die(ob_get_clean());
   }
 
   /**
@@ -318,7 +225,7 @@ class Admin extends \Omniverse\Controller
           }
           else
           {
-            $this->oUser = \Omniverse\Item\User::getByEmail($_SESSION['Email']);
+            $this->oUser = \Omniverse\Item\User::getByEmail($_SESSION['Email'], $this->getDB());
           }
         }
         catch (\Exception $e)
@@ -353,6 +260,86 @@ class Admin extends \Omniverse\Controller
           $_SESSION['Email'] = $sEmail;
         }
 
+        if (empty($_SESSION['ModuleList']))
+        {
+          $aTemp = [];
+
+          foreach (get_class_methods($this) as $sMethod)
+          {
+            if (preg_match("/^System(.+)/i", $sMethod, $aMatch))
+            {
+              $aTemp[] = $aMatch[1];
+            }
+          }
+
+          sort($aTemp);
+          reset($aTemp);
+
+          $_SESSION['ResourceList'] = ['System' => $aTemp];
+          $_SESSION['ModuleList'] = [];
+          $_SESSION['ModuleDirs'] = [];
+          $_SESSION['ModuleGroups'] = [];
+          $aBlackList = isset($this->hConfig['moduleblacklist']) ? $this->hConfig['moduleblacklist'] : [];
+
+          foreach (parent::getLibs() as $sLibDir)
+          {
+            foreach (glob("$sLibDir/Module/*.php") as $sModule)
+            {
+              if (in_array($sModule, $_SESSION['ModuleList']) || in_array($sModule, $aBlackList))
+              {
+                continue;
+              }
+
+              $sModuleName = basename($sModule, ".php");
+
+              try
+              {
+                $oModule = $this->moduleFactory($sModuleName);
+              }
+              catch (\Exception $e)
+              {
+                echo $e->getMessage();
+                continue;
+              }
+
+              $_SESSION['ModuleDirs'][] = "$sLibDir/Module/templates";
+              $hComponent = $oModule->getComponents();
+              ksort($hComponent);
+              reset($hComponent);
+              $_SESSION['ResourceList'][$oModule->getType()] = $hComponent;
+
+              if ($this->oUser->hasResource($oModule->getType()))
+              {
+                $_SESSION['ModuleList'][strtolower($oModule->getType())] = $oModule->getType();
+
+                if ($oModule->visibleInMenu())
+                {
+                  $_SESSION['ModuleGroups'][$oModule->getGroup()][strtolower($oModule->getType())] = $oModule->getType();
+                }
+              }
+            }
+          }
+
+          $_SESSION['ModuleDirs'] = array_unique($_SESSION['ModuleDirs']);
+
+          if (isset($_SESSION['ModuleList']) && is_array($_SESSION['ModuleList']))
+          {
+            ksort($_SESSION['ModuleList']);
+            reset($_SESSION['ModuleList']);
+          }
+
+          ksort($_SESSION['ResourceList']);
+          reset($_SESSION['ResourceList']);
+
+          ksort($_SESSION['ModuleGroups']);
+
+          foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
+          {
+            ksort($_SESSION['ModuleGroups'][$sKey]);
+          }
+        }
+
+        $this->templateData('moduleGroups', $_SESSION['ModuleGroups']);
         return true;
       }
     }
@@ -371,9 +358,9 @@ class Admin extends \Omniverse\Controller
    */
   protected function printPasswordForm($sError = '')
   {
-    $sAction = empty($this->server['QUERY_STRING']) ? $this->baseUrl : $this->baseUrl . '?' . $this->server['QUERY_STRING'];
+    $sAction = empty($this->server['QUERY_STRING']) ? $this->server['request_uri'] : $this->server['request_uri'] . '?' . $this->server['QUERY_STRING'];
     $this->templateData('action', $sAction);
-    $this->templateData('error', $sError);
+    $this->templateData('failure', $sError);
     $this->templateDisplay('admin_login.html');
     die();
   }

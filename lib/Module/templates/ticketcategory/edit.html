@@ -30,11 +30,11 @@ function toggleMethod(sOption)
 }
 </script>
 <form name="Edit" action="{{module.generateUri(currentItem.id, method)}}" method="post">
-<div class="field"><span class="label">Name</span><span class="data"><input type="text" name="{{module.name}}[Name]" id="{{module.name}}[Name]" value="{{currentItem.Name | title | e}}"></span></div>
+<div class="field"><span class="label">Name</span><span class="data"><input type="text" name="{{module.type}}[Name]" id="{{module.type}}[Name]" value="{{currentItem.Name | title | e}}"></span></div>
 <div class="field">
   <span class="label">Assignment Method</span>
   <span class="data">
-    <select name="{{module.name}}[AssignmentMethod]" id="{{module.name}}AssignmentMethod" onchange="toggleMethod(this.value);">
+    <select name="{{module.type}}[AssignmentMethod]" id="{{module.type}}AssignmentMethod" onchange="toggleMethod(this.value);">
 {% for assignmentMethod in currentItem.AssignmentMethodList %}      <option value="{{assignmentMethod}}"{% if assignmentMethod == currentItem.AssignmentMethod %} selected="selected"{% endif %}>{{assignmentMethod | title}}</option>
 {% endfor %}    </select>
   </span>
@@ -42,7 +42,7 @@ function toggleMethod(sOption)
 <div id="user" class="field" style="display: none;">
   <span class="label">User</span>
   <span class="data">
-    <select name="{{module.name}}[UserID]" id="{{module.name}}UserID">
+    <select name="{{module.type}}[UserID]" id="{{module.tyoe}}UserID">
       <option value="">Select a user</option>
 {% for user in currentItem.search('User', {'Active': true, 'Visible': true}) %}      <option value="{{user.id}}"{% if user.id == currentItem.userID %} selected="selected"{% endif %}>{{user.name | title | e}}</option>
 {% endfor %}
@@ -52,7 +52,7 @@ function toggleMethod(sOption)
 <div id="key" class="field" style="display: none;">
   <span class="label">Required resource</span>
   <span class="data">
-    <select name="{{module.name}}[KeyID]" id="{{module.name}}KeyID">
+    <select name="{{module.type}}[KeyID]" id="{{module.type}}KeyID">
       <option value="">None</option>
 {% for key in currentItem.search('ResourceKey') %}      <option value="{{key.id}}"{% if key.id == currentItem.keyID %} selected="selected"{% endif %}>{{key.name | title |e}}</option>
 {% endfor %}
@@ -60,9 +60,9 @@ function toggleMethod(sOption)
   </span>
 </div>
 <div id="level" class="field" style="display: none;">
-  <span class="label">Level</span><span class="data"><span class="data>"<input type="text" name="{{module.name}}[Level]" id="{{module.name}}[Level]" value="{{currentItem.level}}"></span>
+  <span class="label">Level</span><span class="data"><input type="text" name="{{module.type}}[Level]" id="{{module.type}}[Level]" value="{{currentItem.level}}"></span>
 </div>
 <div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="No" value="No" onClick="history.go(-1)"></span></div>
 </form>
-<script type="text/javascript">toggleMethod('{{currentItem.AssignmentMethod}}');</script>
+<script type="text/javascript">toggleMethod('{{currentItem.assignmentMethod}}');</script>
 {% endif %}

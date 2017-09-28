@@ -195,21 +195,15 @@ class Ticket extends \Omniverse\Module
     $this->oController->templateData('success', "Successfully removed child ticket.");
   }
 
-  protected function prepareTemplatePostWatchers()
+  protected function prepareTemplateWatchersAdd()
   {
-    $hPost = $this->editGetData();
-    $iUser = $this->oController->user()->id;
+    $this->oItem->addWatcher($this->oController->user()->id);
+    $this->sCurrentAction = 'view';
+  }
 
-    if (isset($hPost['submit']) && $hPost['submit'] == 'Watch this ticket')
-    {
-      $this->oItem->addWatcher($iUser);
-    }
-    elseif (isset($hPost['submit']) && $hPost['submit'] == 'Stop watching this ticket')
-    {
-      $this->oItem->removeWatcher($iUser);
-    }
-
-    $this->oController->server['request_method'] = 'GET';
+  protected function prepareTemplateWatchersRemove()
+  {
+    $this->oItem->removeWatcher($this->oController->user()->id);
     $this->sCurrentAction = 'view';
   }
 
@@ -502,9 +496,10 @@ class Ticket extends \Omniverse\Module
       }
 
       $sWatcherList = count($aWatcher) == 0 ? 'None' : implode(', ', $aWatcher);
-      $sButtonValue = $bCurrentlyWatching ? 'Stop watching this ticket' : 'Watch this ticket';
+      $sButtonText = $bCurrentlyWatching ? 'Stop watching this ticket' : 'Watch this ticket';
+      $sSubAction = $bCurrentlyWatching ? 'remove' : 'add';
 
-      return "        <div class=\"field\"><span class=\"label\">Watchers</span><span class=\"data\">$sWatcherList<br /><form method=\"post\" action=\"" . $this->generateUri($this->oItem->id, 'watchers') . "\"><input type=\"submit\" name=\"$this->sType[submit]\" value=\"$sButtonValue\"></form></span></div>";
+      return "        <div class=\"field\"><span class=\"label\">Watchers</span><span class=\"data\">$sWatcherList<br /><form method=\"post\" action=\"" . $this->generateUri($this->oItem->id, 'watchers', $sSubAction) . "\"><button type=\"submit\">$sButtonText</button></form></span></div>";
     }
 
     return parent::getFormField($sName, $sValue, $hData, $bInTable);

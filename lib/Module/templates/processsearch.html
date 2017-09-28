@@ -1,5 +1,5 @@
 {% if (data | length) == 0  %}
-Sorry!  Your {{module.name | lower}} {{method | lower}} has no results at this time!<br />
+Sorry!  Your {{module.type | lower}} {{method | lower}} has no results at this time!<br />
 Try a{% if method != 'List' %} different{% endif %} <a href="{{module.generateUri('search')}}">search</a>?
 {% else %}
 {{table.makeSortable}}{{table.addClass('sortGrid')}}{% set x = table.startHeader %}{% set sDelete = module.allow('delete') ? '<span class="OmnisysSortGridDelete" onClick="document.getElementById(\'Omnisys_SortGrid_Edit\').name=\'Delete\';document.getElementById(\'EditColumn\').submit(); \">Delete</span>' : '' %}{% set x = table.addCell(sDelete, false) %}

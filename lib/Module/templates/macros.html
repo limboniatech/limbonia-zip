@@ -13,7 +13,7 @@
 {% endmacro %}
 
 {% macro getForm(module, sType, hFields, hValues) %}
-{% set sButtonValue = sType %}
+{% set sButtonValue = sType | title %}
 {% set sType = sType | replace('/ /', '') %}
 {% set sProcessType = 'process' %}
 <form name="{{sType}}" action="{{module.generateUri(sType)}}" method="post" enctype="multipart/form-data">

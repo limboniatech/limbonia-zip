@@ -12,7 +12,7 @@
   </script>
 </head>
 <body onLoad="document.passCheck.email.focus();">
-{% if error %}  <h1>{{ error }}</h1>{% endif %}
+{% if failure %}  <h1>{{ failure }}</h1>{% endif %}
   <form action="{{action}}" method="post" name="passCheck">
     <div class="field"><span class="name">Email:</span><span class="value"><input type="text" name="email"></span></div>
     <div class="field"><span class="name">Password:</span><span class="value"><input type="password" name="password"></span></div>

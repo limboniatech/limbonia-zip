@@ -1,7 +1,9 @@
 {% import 'macros.html' as macros %}{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{failure}}</div>{% endif %}
-{{macros.dataField(module.getColumnTitle('Name'), module.getColumnValue(currentItem, 'Name'))}}
-{{macros.dataField(module.getColumnTitle('AssignmentMethod'), module.getColumnValue(currentItem, 'AssignmentMethod'))}}
+{{macros.dataField('Name', module.getColumnValue(currentItem, 'Name'))}}
+{{macros.dataField('AssignmentMethod', module.getColumnValue(currentItem, 'AssignmentMethod'))}}
 {% if currentItem.assignmentMethod == 'leasttickets' or currentItem.assignmentMethod == 'roundrobin' %}
-{{macros.dataField(module.getColumnTitle('KeyID'), module.getColumnValue(currentItem, 'KeyID'))}}
-{{macros.dataField(module.getColumnTitle('Level'), module.getColumnValue(currentItem, 'Level'))}}
+{{macros.dataField('Key', module.getColumnValue(currentItem, 'KeyID'))}}
+{{macros.dataField('Level', module.getColumnValue(currentItem, 'Level'))}}
+{% elseif currentItem.assignmentMethod == 'direct' %}
+{{macros.dataField('User', module.getColumnValue(currentItem, 'UserID'))}}
 {% endif %}

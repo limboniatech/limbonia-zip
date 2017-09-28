@@ -1,5 +1,5 @@
-{% if error %}
-<h3>Failed creating new {{module.name}}: {{error}}</h3>
+{% if failure %}
+<h3>Failed creating new {{module.type}}: {{failure}}</h3>
 {% else %}
-<h3>Successfully created new {{module.name}} called:  "{{currentItem.subject}}"</h3><a href="{{module.generateUri('create')}}">Create another?</a><br />
+<h3>Successfully created new {{module.type}} called:  "{{currentItem.subject}}"</h3><a href="{{module.generateUri('create')}}">Create another?</a><br />
 {% endif %}

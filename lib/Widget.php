@@ -612,7 +612,7 @@ class Widget extends Tag
       self::includeScript($this->getController()->getDir('WebShare') . "/ajax.js");
       $sReportStatus = $bReportStatus === true ? 'true' : 'false';
       $sDebug = self::$bAjaxDebug === true ? 'true' : 'false';
-      $sBaseUrl = "'" . dirname($this->getController()->baseUrl) . '/ajax' ."'";
+      $sBaseUrl = "'" . dirname($this->getController()->baseUrl) . 'ajax' ."'";
 
       $sJavascript =  "\n<script type=\"text/JavaScript\" language=\"JavaScript\">function $sAjaxFunction(){Omniverse_HttpRequest('$sClassName', '$sFunction', arguments, $sReportStatus, $sDebug, $sBaseUrl);}</script>\n";
       $this->write($sJavascript);

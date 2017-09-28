@@ -26,8 +26,8 @@ class Error extends Exception
    *
    * @param string $sError - the error message
    * @param integer $iCode - the error code number
-   * @param string $sFileName - the name of the file that the exceptipon occured in
-   * @param integer $iLine - the line number that the exception occured
+   * @param string $sFileName - the name of the file that the exception occurred in
+   * @param integer $iLine - the line number that the exception occurred
    */
   public function __construct($sError, $iCode, $sFileName, $iLine)
   {

@@ -20,24 +20,11 @@ class Template extends \Omniverse\Module
   protected $sGroup = 'Site';
 
   /**
-   * A list of the actual module settings
-   *
-   * @var array
-   */
-  protected $hSettings =
-  [
-    'baseuri' => '',
-    'basedir' => '',
-    'templatedir' => '',
-    'defaulttemplate' => ''
-  ];
-
-  /**
    * List of fields used by module settings
    *
    * @var array
    */
-  protected $hFields =
+  protected static $hSettingsFields =
   [
     'baseuri' => ['Type' => 'char'],
     'basedir' => ['Type' => 'char'],
@@ -46,17 +33,18 @@ class Template extends \Omniverse\Module
   ];
 
   /**
-   * Instantiate the template module
+   * Return the default settings
    *
-   * @param \Omniverse\Controller $oController
+   * @return array
    */
-  public function __construct(\Omniverse\Controller $oController)
+  protected function defaultSettings()
   {
-    parent::__construct($oController);
-
-    $this->hSettings['baseuri'] = $this->oController->baseUrl;
-    $this->hSettings['basedir'] = dirname($this->oController->server['SCRIPT_FILENAME']);
-    $this->hSettings['templatedir'] = $this->oController->getDir('templates');
-    $this->hSettings['defaulttemplate'] = $this->oController->defaultTemplate;
+    return
+    [
+      'baseuri' => $this->oController->baseUrl,
+      'basedir' => dirname($this->oController->server['SCRIPT_FILENAME']),
+      'templatedir' => $this->oController->getDir('templates'),
+      'defaulttemplate' => $this->oController->defaultTemplate
+    ];
   }
 }

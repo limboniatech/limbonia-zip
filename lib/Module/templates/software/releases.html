@@ -1,19 +1,19 @@
-{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{error}}</div>{% endif %}
-{% if controller.get.edit %}
+{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{failure}}</div>{% endif %}
+{% if controller.api.subAction == 'edit' and release %}
 {% import 'macros.html' as macros %}
 <h2>Edit Software Release</h2>
 <form action="{{module.generateUri(currentItem.id, method, release.id, 'edit')}}" method="post">
 {{module.getFormField('Version', release.Version, {'Type': 'varchar'})}}
 {{module.getFormField('Note', release.Note, {'Type': 'varchar'})}}
-<div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id)}}'"></span></div>
+<div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id, method)}}'"></span></div>
 </form>
-{% elseif controller.get.delete %}
+{% elseif controller.api.subAction == 'delete' and release %}
 <h2>Delete Software Release</h2>
 <form action="{{module.generateUri(currentItem.id, method, release.id, 'delete')}}" method="post">
 Are you sure you want to delete {{currentItem.Name}}'s release number "{{release.Version}}"?
 <input type="submit" name="Yes" value="Yes">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id, method)}}'"></form>
 {% else %}
-<form action="{{module.generateUri(currentItem.id, method)}}" method="post">
+<form action="{{module.generateUri(currentItem.id, method, 'create')}}" method="post">
 <div class="display">
   <header>
     <span>Version</span>

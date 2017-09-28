@@ -133,13 +133,13 @@ class Editor extends \Omniverse\Widget
   }
 
   /**
-   * Is the browser that is currently running compatable with this editor?
+   * Is the browser that is currently running compatible with this editor?
    *
    * @return boolean
    */
   function isCompatible()
   {
-    $sUserAgent = $this->getController->server['HTTP_USER_AGENT'];
+    $sUserAgent = $this->getController()->server['HTTP_USER_AGENT'];
     $iIEPos = strpos($sUserAgent, 'MSIE');
 
     if ($iIEPos !== false && strpos($sUserAgent, 'mac') === FALSE && strpos($sUserAgent, 'Opera') === FALSE)
