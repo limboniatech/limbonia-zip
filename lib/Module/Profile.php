@@ -12,12 +12,21 @@ namespace Omniverse\Module;
  */
 class Profile extends \Omniverse\Module
 {
+  use \Omniverse\Traits\ItemModule;
+
   /**
    * The admin group that this module belongs to
    *
    * @var string
    */
   protected $sGroup = 'System';
+
+  /**
+   * The item object associated with this module
+   *
+   * @var \Omniverse\Item
+   */
+  protected $oItem = null;
 
   /**
    * Should this module's name appear in the menu?
@@ -121,17 +130,31 @@ class Profile extends \Omniverse\Module
   protected $aAllowedActions = ['editdialog', 'edit', 'view', 'changepassword'];
 
   /**
-   * Instantiate the profile module
+   * List of valid HTTP methods
    *
-   * @param \Omniverse\Controller $oController
+   * @var array
    */
-  public function __construct(\Omniverse\Controller $oController)
+  protected static $hHttpMethods =
+  [
+    'head',
+    'get',
+    'put',
+    'options'
+  ];
+
+  /**
+   * Generate and set this module's item, if there is one
+   */
+  protected function init()
   {
-    $this->oController = $oController;
     $this->oItem = $this->oController->user();
-    $this->sCurrentAction = in_array($oController->api->action, $this->aAllowedActions) ? $oController->api->action : $this->sDefaultAction;
   }
 
+  /**
+   * Process the posted password changes
+   *
+   * @throws Exception
+   */
   protected function prepareTemplatePostChangepassword()
   {
     $hData = $this->editGetData();
@@ -140,7 +163,7 @@ class Profile extends \Omniverse\Module
     {
       $this->oController->templateData('failure', "The passwords did not match. Please try again.");
       $this->oController->server['request_method'] = 'GET';
-      return parent::prepareTemplate();
+      return true;
     }
 
     try
@@ -151,7 +174,7 @@ class Profile extends \Omniverse\Module
     {
       $this->oController->templateData('failure', $e->getMessage() . ' Please try again');
       $this->oController->server['request_method'] = 'GET';
-      return parent::prepareTemplate();
+      return true;
     }
 
     $this->oItem->password = $hData['Password'];
@@ -172,5 +195,43 @@ class Profile extends \Omniverse\Module
 
     $this->oController->server['request_method'] = 'GET';
     $this->sCurrentAction = 'view';
+  }
+
+  /**
+   * Perform the base "GET" code then return null on success
+   *
+   * @return null
+   * @throws \Exception
+   */
+  protected function processApiHead()
+  {
+    return null;
+  }
+
+  /**
+   * Perform and return the default "GET" code
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiGet()
+  {
+    return $this->processApiGetItem();
+  }
+
+  /**
+   * Run the default "PUT" code and return the updated data
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiPut()
+  {
+    if (!is_array($this->api->data) || count($this->api->data) == 0)
+    {
+      throw new \Exception('No valid data found to process', 400);
+    }
+
+    return $this->processApiPutItem();
   }
 }

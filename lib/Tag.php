@@ -57,7 +57,7 @@ class Tag
   protected $hParam = [];
 
   /**
-   * Array of registerd objects
+   * Array of registered objects
    *
    * @var array $aContent
    */
@@ -189,7 +189,7 @@ class Tag
   }
 
   /**
-   * Genereate and return the name of an event based on the specified name
+   * Generate and return the name of an event based on the specified name
    *
    * @param string $sEvent
    * @return string
@@ -475,7 +475,7 @@ class Tag
   }
 
   /**
-   * If theparameter is empty then return the current value otherwise attempt to set to the specified value
+   * If the parameter is empty then return the current value otherwise attempt to set to the specified value
    *
    * @param string $bXHTML
    * @return boolean

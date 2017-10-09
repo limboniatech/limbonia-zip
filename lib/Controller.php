@@ -104,6 +104,13 @@ abstract class Controller
   protected $oApi = null;
 
   /**
+   * The logged in user
+   *
+   * @var \Omniverse\Item\User
+   */
+  protected $oUser = null;
+
+  /**
    * Generate the build data so it can be used in other places
    */
   protected static function generateBuildData()
@@ -293,14 +300,6 @@ abstract class Controller
   {
     $hLowerConfig = \array_change_key_case($hConfig, CASE_LOWER);
 
-    if (isset($hLowerConfig['sessionname']))
-    {
-      SessionManager::sessionName($hLowerConfig['sessionname']);
-      unset($hLowerConfig['sessionname']);
-    }
-
-    SessionManager::start();
-
     if (isset($hLowerConfig['domaindirtemplate']))
     {
       Domain::setDirTemplate($hLowerConfig['domaindirtemplate']);
@@ -320,25 +319,8 @@ abstract class Controller
 
       unset($hLowerConfig['domain']);
     }
-    else
-    {
-      $this->oDomain = \Omniverse\Domain::getByDirectory($this->server['document_root']);
-    }
 
-    $this->hConfig['baseuri'] = $this->oDomain->uri;
-
-    if (self::isWeb())
-    {
-      $this->oApi = \Omniverse\Api::singleton();
-
-      //if the controller is any web type *other* than base web
-      //then we need to append the controller type to the baseuri
-      if ($this->oApi->controller !== 'web')
-      {
-        $this->hConfig['baseuri'] .= '/' . $this->oApi->controller;
-      }
-    }
-
+    $this->hConfig['baseuri'] = $this->oDomain ? $this->oDomain->uri : '';
     $this->hDirectories['root'] = \dirname(__DIR__);
 
     if (isset($hLowerConfig['directories']))
@@ -381,11 +363,25 @@ abstract class Controller
     }
   }
 
+  /**
+   * Magic method used to set the specified property to the specified value
+   *
+   * @note Settings should not be changed so this method does nothing...
+   *
+   * @param string $sName
+   * @param mixed $xValue
+   */
   public function __set($sName, $xValue)
   {
     //don't allow public setting of anything
   }
 
+  /**
+   * Magic method used to generate and return the specified property
+   *
+   * @param string $sName
+   * @return mixed
+   */
   public function __get($sName)
   {
     $sLowerName = strtolower($sName);
@@ -416,6 +412,12 @@ abstract class Controller
     }
   }
 
+  /**
+   * Magic method used to determine if the specified property is set
+   *
+   * @param string $sName
+   * @return boolean
+   */
   public function __isset($sName)
   {
     $sLowerName = strtolower($sName);
@@ -444,7 +446,9 @@ abstract class Controller
   }
 
   /**
-   * Settings should not be unset so this method does nothing...
+   * Magic method used to remove the specified property
+   *
+   * @note Settings should not be unset so this method does nothing...
    *
    * @param string $sName
    */
@@ -540,6 +544,18 @@ abstract class Controller
   }
 
   /**
+   * Generate and return a cache object
+   *
+   * @param string $sCacheDir (optional)- The directory the cache object will use, if empty it will default to the controller's cache directory
+   * @return \Omniverse\Cache
+   */
+  public function cacheFactory($sCacheDir = null)
+  {
+    $sCacheDir = $sCacheDir ?? $this->cacheDir;
+    return \Omniverse\Cache::factory($sCacheDir);
+  }
+
+  /**
    * Generate and return an empty item object based on the specified table.
    *
    * @param string $sTable
@@ -623,10 +639,38 @@ abstract class Controller
   }
 
   /**
+   * Return the currently logged in user
+   *
+   * @return \Omniverse\Item\User
+   */
+  public function user()
+  {
+    return $this->oUser;
+  }
+
+  /**
+   * Generate and return the current user
+   *
+   * @return \Omniverse\Item\User
+   * @throws \Exception
+   */
+  protected function generateUser()
+  {
+    $oUserList = $this->itemSearch('User', ['Email' => 'MasterAdmin']);
+
+    if (count($oUserList) == 0)
+    {
+      throw new \Exception('Master user not found!');
+    }
+
+    return $oUserList[0];
+  }
+
+  /**
    * Run everything needed to react and display data in the way this controller is intended
    */
   public function run()
   {
-
+    $this->oUser = $this->generateUser();
   }
 }

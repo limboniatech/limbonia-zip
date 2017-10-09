@@ -12,6 +12,8 @@ namespace Omniverse\Module;
  */
 class ResourceLock extends \Omniverse\Module
 {
+  use \Omniverse\Traits\ItemModule;
+
   /**
    * List of column names that should remain static
    *
@@ -123,6 +125,18 @@ class ResourceLock extends \Omniverse\Module
    */
   public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
   {
-    return $sColumn == 'KeyID' ? $this->oController->itemFromId('ResourceKey', $oItem->keyId)->name : parent::getColumnValue($oItem, $sColumn);
+    if ($sColumn == 'KeyID')
+    {
+      try
+      {
+        return $this->oController->itemFromId('ResourceKey', $oItem->keyId)->name;
+      }
+      catch (Exception $e)
+      {
+        return '';
+      }
+    }
+
+    return parent::getColumnValue($oItem, $sColumn);
   }
 }

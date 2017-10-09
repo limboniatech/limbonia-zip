@@ -69,9 +69,9 @@ trait Config
   }
 
   /**
-   * Read the specified ini file(s) and store the data fro later use.
+   * Read the specified INI file(s) and store the data fro later use.
    *
-   * @param array|string $xIni Either an array of ini files or a single ini file
+   * @param array|string $xIni Either an array of INI files or a single INI file
    */
   protected function readIni($xIni)
   {
@@ -99,7 +99,7 @@ trait Config
   }
 
   /**
-   * Set a whole section of the internal config data with the specifie array
+   * Set a whole section of the internal config data with the specified array
    *
    * @param string $sSection
    * @param array $hSection
@@ -156,7 +156,7 @@ trait Config
   }
 
   /**
-   * Get ans return the specified value
+   * Return the specified value
    *
    * @param string $sName
    * @param string $sSection

@@ -12,6 +12,14 @@ namespace Omniverse\Module;
  */
 class Ticket extends \Omniverse\Module
 {
+  use \Omniverse\Traits\ItemModule
+  {
+    \Omniverse\Traits\ItemModule::processApiGetItem as originalProcessApiGetItem;
+    \Omniverse\Traits\ItemModule::processApiGetList as originalProcessApiGetList;
+    \Omniverse\Traits\ItemModule::processCreateGetData as originalProcessCreateGetData;
+    \Omniverse\Traits\ItemModule::editGetData as originalEditGetData;
+  }
+
   /**
    * Lists of columns to ignore when filling template data
    *
@@ -115,6 +123,68 @@ class Ticket extends \Omniverse\Module
   protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'attachments', 'relationships', 'watchers'];
 
   /**
+   * Generate and return the default item data, filtered by API controls
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiGetItem()
+  {
+    switch ($this->oController->api->action)
+    {
+      case 'attachments':
+        return $this->oItem->getAttachmentList();
+
+      case 'parent':
+        return $this->oItem->parentID > 0 ? $this->oItem->parent : [];
+
+      case 'children':
+        return $this->oItem->getChildren();
+    }
+
+    return $this->originalProcessApiGetItem();
+  }
+
+  /**
+   * Generate and return the default list of data, filtered and ordered by API controls
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiGetList()
+  {
+    //if the field list is either not narrowed down at all or includes "children"
+    if (empty($this->oController->api->fields) || in_array('children', $this->oController->api->fields))
+    {
+      //then add the children list to each ticket
+      $hList = $this->originalProcessApiGetList();
+
+      if (empty($hList))
+      {
+        return $hList;
+      }
+
+      $sSQL = "SELECT ParentID AS 'id', TicketID AS 'child' FROM Ticket WHERE ParentID IN (" . implode(', ', array_keys($hList)) . ')';
+      $oResult = $this->oController->getDB()->query($sSQL);
+
+      foreach (array_keys($hList) as $iID)
+      {
+        $hList[$iID]['Children'] = [];
+      }
+
+      foreach ($oResult as $hRow)
+      {
+        $hList[$hRow['id']]['Children'][] = (integer)$hRow['child'];
+      }
+
+      return $hList;
+    }
+
+    //otherwise directly return the original list
+    return $this->originalProcessApiGetList();
+  }
+
+  /**
    * Return the module criteria
    *
    * @return array
@@ -140,11 +210,14 @@ class Ticket extends \Omniverse\Module
    */
   protected function processCreateGetData()
   {
-    $hData = parent::processCreateGetData();
+    $hData = $this->originalProcessCreateGetData();
     $hData['CreatorID'] = $this->oController->user()->id;
     return $hData;
   }
 
+  /**
+   * Process the attachment addition then display the result
+   */
   protected function prepareTemplateAttachmentsAdd()
   {
     if (isset($_FILES['Attachment']))
@@ -158,12 +231,18 @@ class Ticket extends \Omniverse\Module
     }
   }
 
+  /**
+   * Process the attachment deletion then display the result
+   */
   protected function prepareTemplateAttachmentsDelete()
   {
     $this->oItem->removeAttachmentById($this->oController->api->subId);
     $this->oController->templateData('success', "Successfully removed attachment.");
   }
 
+  /**
+   * Process the new parent then display the result
+   */
   protected function prepareTemplateRelationshipsSetparent()
   {
     $oParent = $this->oController->itemFromId('ticket', $this->oController->post['SetParent']);
@@ -172,6 +251,9 @@ class Ticket extends \Omniverse\Module
     $this->oController->templateData('success', "Successfully set parent ticket.");
   }
 
+  /**
+   * Process parent removal then display the result
+   */
   protected function prepareTemplateRelationshipsRemoveparent()
   {
     $this->oItem->parentId = 0;
@@ -179,6 +261,9 @@ class Ticket extends \Omniverse\Module
     $this->oController->templateData('success', "Successfully removed parent ticket.");
   }
 
+  /**
+   * Process the new child then display the result
+   */
   protected function prepareTemplateRelationshipsAddchild()
   {
     $oChild = $this->oController->itemFromId('ticket', $this->oController->post['AddChild']);
@@ -187,6 +272,9 @@ class Ticket extends \Omniverse\Module
     $this->oController->templateData('success', "Successfully added child ticket.");
   }
 
+  /**
+   * Process the child removal then display the result
+   */
   protected function prepareTemplateRelationshipsRemovechild()
   {
     $oChild = $this->oController->itemFromId('ticket', $this->oController->api->subId);
@@ -195,12 +283,18 @@ class Ticket extends \Omniverse\Module
     $this->oController->templateData('success', "Successfully removed child ticket.");
   }
 
+  /**
+   * Process the watcher addition then display the result
+   */
   protected function prepareTemplateWatchersAdd()
   {
     $this->oItem->addWatcher($this->oController->user()->id);
     $this->sCurrentAction = 'view';
   }
 
+  /**
+   * Process the watcher removal then display the result
+   */
   protected function prepareTemplateWatchersRemove()
   {
     $this->oItem->removeWatcher($this->oController->user()->id);
@@ -214,7 +308,7 @@ class Ticket extends \Omniverse\Module
    */
   protected function editGetData()
   {
-    $hPost = parent::editGetData();
+    $hPost = $this->originalEditGetData();
     $hPost['UserID'] = $this->oController->user()->id;
     return $hPost;
   }

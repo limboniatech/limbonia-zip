@@ -53,10 +53,6 @@ class Software extends \Omniverse\Item
     return parent::search('SoftwareRelease', ['SoftwareID' => $this->id], ['Major', 'Minor', 'Patch'], $this->getDB());
   }
 
-  public function getCurrentRelease()
-  {
-  }
-
   /**
    * Add a new release to this software
    *

@@ -12,6 +12,8 @@ namespace Omniverse;
  */
 class Database extends \PDO
 {
+  use \Omniverse\Traits\HasController;
+
   /**
    * List of existing database objects
    *
@@ -53,13 +55,6 @@ class Database extends \PDO
    * @var array
    */
   protected $hColumnAlias = [];
-
-  /**
-   * The owner of this database object
-   *
-   * @var \Omniverse\Controller
-   */
-  protected $oController = null;
 
   /**
    * Return the existing column type from the data passed in
@@ -239,9 +234,16 @@ class Database extends \PDO
    * @param string|array $xColumns (optional) - specify either a single column string or an array of column names
    * @return string
    */
-  public static function makeSelect($xColumns = null)
+  public static function makeSelect($xColumns = null, $sTable = null)
   {
-    return empty($xColumns) ? '*' : implode(', ', (array)$xColumns);
+    $aColumn = is_array($xColumns) ? $xColumns : [(string)$xColumns];
+
+    if (count($aColumn) == 1 &&  $aColumn[0] == $sTable)
+    {
+      return $aColumn[0] . '.*';
+    }
+
+    return empty($aColumn) ? '*' : implode(', ', array_unique($aColumn));
   }
 
   /**
@@ -389,21 +391,6 @@ class Database extends \PDO
     parent::__construct($sDSN, $sUsername, $sPassword, $hOptions);
     $this->setAttribute(\PDO::ATTR_STATEMENT_CLASS, ['\Omniverse\DBResult', [$this]]);
     $this->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-  }
-
-  protected function setController(\Omniverse\Controller $oController)
-  {
-    $this->oController = $oController;
-  }
-
-  public function getController()
-  {
-    if (is_null($this->oController))
-    {
-      return \Omniverse\Controller::getDefault();
-    }
-
-    return $this->oController;
   }
 
   /**
@@ -663,14 +650,36 @@ class Database extends \PDO
     return empty($sIdColumn) ? self::makeIdColumn($sTable) : $sIdColumn;
   }
 
-  public function makeSearchQuery($sTable, $hWhere = [], $xOrder = null)
+  public function verifyColumns($sTable, $xColumns, $bPrependTable = false)
   {
-    $sOrder = self::makeOrder($xOrder);
-    $sWhere = '';
+    $aColumns = [];
 
-    if (is_array($hWhere) && count($hWhere) > 0)
+    if (!empty($xColumns))
     {
-      $aWhere = [];
+      $sTableName = (boolean)$bPrependTable ? "$sTable." : '';
+      $aTemp = is_array($xColumns) ? $xColumns : [(string)$xColumns];
+
+      foreach ($aTemp as $sColumn)
+      {
+        $sRealColumn = $this->hasColumn($sTable, $sColumn);
+
+        if ($sRealColumn)
+        {
+          $aColumns[] = $sTableName . $sRealColumn;
+        }
+      }
+    }
+
+    return (boolean)$bPrependTable && empty($aColumns) ? [$sTable] : $aColumns;
+  }
+
+  public function verifyWhere($sTable, array $hWhere = null, $bPrependTable = false)
+  {
+    $aWhere = [];
+
+    if (!empty($hWhere) || !is_array($hWhere))
+    {
+      $sTableName = (boolean)$bPrependTable ? "$sTable." : '';
       $hColumns = $this->getColumns($sTable);
 
       foreach ($hWhere as $sColumn => $xValue)
@@ -690,7 +699,7 @@ class Database extends \PDO
           }
 
           $sList = implode(', ', $xValue);
-          $aWhere[] = "$sRealColumn IN ($sList)";
+          $aWhere[] = "$sTableName$sRealColumn IN ($sList)";
         }
         else
         {
@@ -707,14 +716,60 @@ class Database extends \PDO
             $xValue = null;
           }
 
-          $aWhere[] = "$sRealColumn $sOperator " . self::prepareValue($hColumns[$sRealColumn], $xValue);
+          $aWhere[] = "$sTableName$sRealColumn $sOperator " . self::prepareValue($hColumns[$sRealColumn], $xValue);
         }
       }
-
-      $sWhere = count($aWhere) > 0 ? ' WHERE ' . implode(' AND ', $aWhere) : '';
     }
 
-    return "SELECT DISTINCT {$sTable}.* FROM $sTable$sWhere$sOrder";
+    return $aWhere;
+  }
+
+  public function verifyOrder($sTable, $xOrder, $bPrependTable = false)
+  {
+    $aOrder = [];
+
+    if (!empty($xOrder))
+    {
+      $sTableName = (boolean)$bPrependTable ? "$sTable." : '';
+      $aTemp = is_array($xOrder) ? $xOrder : [(string)$xOrder];
+
+      foreach ($aTemp as $sOrder)
+      {
+        $aOrderParts = explode(' ', $sOrder);
+        $sRealColumn = $this->hasColumn($sTable, $aOrderParts[0]);
+
+        if ($sRealColumn)
+        {
+          $sDirection = $aOrderParts[1] ?? 'ASC';
+          $aOrder[] = "$sTableName$sRealColumn $sDirection";
+        }
+      }
+    }
+
+    return $aOrder;
+  }
+
+  /**
+   * Generate and return an SQL select query based on the passed parameters
+   *
+   * @param string $sTable
+   * @param string|array $xColumns
+   * @param array $hWhere
+   * @param string|array $xOrder
+   * @return string
+   * @throws Exception
+   */
+  public function makeSearchQuery($sTable, $xColumns = null, $hWhere = [], $xOrder = null)
+  {
+    if (!$this->hasTable($sTable))
+    {
+      throw new \Exception("The table ($sTable) does not exist");
+    }
+
+    $sColumns = self::makeSelect($this->verifyColumns($sTable, $xColumns));
+    $sOrder = self::makeOrder($this->verifyOrder($sTable, $xOrder));
+    $sWhere = self::makeWhere($this->verifyWhere($sTable, $hWhere));
+    return "SELECT DISTINCT $sColumns FROM $sTable$sWhere$sOrder";
   }
 
   /**
@@ -753,7 +808,14 @@ class Database extends \PDO
 
     $sSQL = "INSERT INTO {$sTable} (" . implode(',', array_keys($hData)) . ") VALUES (" . implode(',', $aValue) . ")";
     $iRowsAffected = $this->exec($sSQL);
-    return empty($iRowsAffected) ? false : $this->lastInsertId();
+
+    if (empty($iRowsAffected))
+    {
+      $aError = $this->errorInfo();
+      throw new \Omniverse\Exception\DBResult("Data not inserted into $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
+    }
+
+    return $this->lastInsertId();
   }
 
   /**
@@ -786,8 +848,15 @@ class Database extends \PDO
     }
 
     $sSQL = "UPDATE {$sTable} SET " . implode(',', $aSet) . ' WHERE ' . $this->getIdColumn($sTable) ." = $iID";
-    $xSuccess = $this->exec($sSQL);
-    return empty($xSuccess) ? false : $iID;
+    $iRowsAffected = $this->exec($sSQL);
+
+    if (empty($iRowsAffected))
+    {
+      $aError = $this->errorInfo();
+      throw new \Omniverse\Exception\DBResult("Item #$iID not update in $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
+    }
+
+    return $iID;
   }
 
   /**
@@ -796,11 +865,20 @@ class Database extends \PDO
    * @param string $sTable
    * @param integer $iID
    * @return boolean
+   * @throws \Omniverse\Exception\DBResult
    */
   public function delete($sTable, $iID)
   {
     settype($iID, 'integer');
-    $xSuccess = $this->exec("DELETE FROM $sTable WHERE " . $this->getIdColumn($sTable) . " = $iID");
-    return !empty($xSuccess);
+    $sSQL = "DELETE FROM $sTable WHERE " . $this->getIdColumn($sTable) . " = $iID";
+    $iRowsAffected = $this->exec($sSQL);
+
+    if ($iRowsAffected === false)
+    {
+      $aError = $this->errorInfo();
+      throw new \Omniverse\Exception\DBResult("Item #$iID not deleted from $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
+    }
+
+    return true;
   }
 }

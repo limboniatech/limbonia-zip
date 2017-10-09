@@ -11,7 +11,7 @@ namespace Omniverse\Controller;
  * @version $Revision: 1.1 $
  * @package Omniverse
  */
-class Admin extends \Omniverse\Controller
+class Admin extends \Omniverse\Controller\Web
 {
   /**
    * The Twig object needed to process the templates
@@ -28,20 +28,6 @@ class Admin extends \Omniverse\Controller
   protected $hTemplateData = [];
 
   /**
-   * Should popups be used? (Instead of replacing each page)
-   *
-   * @var boolean
-   */
-  protected $bUsePopups = false;
-
-  /**
-   * The currently logged in user
-   *
-   * @var \Omniverse\Item\User
-   */
-  protected $oUser = null;
-
-  /**
    * List of configuration data
    *
    * @var array
@@ -52,7 +38,7 @@ class Admin extends \Omniverse\Controller
   ];
 
   /**
-   * Template stand-in function for PHP's preg_replace
+   * Template proxy function for PHP's preg_replace
    *
    * @param string $sText
    * @param string $sRegExpression
@@ -65,7 +51,7 @@ class Admin extends \Omniverse\Controller
   }
 
   /**
-   * Template stand-in function for PHP's preg_match
+   * Template proxy function for PHP's preg_match
    *
    * @param string $sText
    * @param string $sRegExpression
@@ -84,12 +70,6 @@ class Admin extends \Omniverse\Controller
   public function __construct(array $hConfig = [])
   {
     parent::__construct($hConfig);
-
-    if (empty($this->oDomain))
-    {
-      throw new \Exception('Domain not found');
-    }
-
     \Twig_autoloader::register();
     $this->templateData('controller', $this);
   }
@@ -122,16 +102,6 @@ class Admin extends \Omniverse\Controller
     return self::$oTemplateGenerator;
   }
 
-    /**
-   * Return the currently logged in user
-   *
-   * @return \Omniverse\Item\User
-   */
-  public function user()
-  {
-    return $this->oUser;
-  }
-
   /**
    * Add the specified data to the template under the specified name
    *
@@ -160,11 +130,119 @@ class Admin extends \Omniverse\Controller
   }
 
   /**
+   * Process and cache the module data
+   */
+  protected function processModules()
+  {
+    if (empty($_SESSION['ModuleList']))
+    {
+      $aTemp = [];
+
+      foreach (get_class_methods($this) as $sMethod)
+      {
+        if (preg_match("/^System(.+)/i", $sMethod, $aMatch))
+        {
+          $aTemp[] = $aMatch[1];
+        }
+      }
+
+      sort($aTemp);
+      reset($aTemp);
+
+      $_SESSION['ResourceList'] = ['System' => $aTemp];
+      $_SESSION['ModuleList'] = [];
+      $_SESSION['ModuleDirs'] = [];
+      $_SESSION['ModuleGroups'] = [];
+      $aBlackList = isset($this->hConfig['moduleblacklist']) ? $this->hConfig['moduleblacklist'] : [];
+
+      foreach (parent::getLibs() as $sLibDir)
+      {
+        foreach (glob("$sLibDir/Module/*.php") as $sModule)
+        {
+          if (in_array($sModule, $_SESSION['ModuleList']) || in_array($sModule, $aBlackList))
+          {
+            continue;
+          }
+
+          $sModuleName = basename($sModule, ".php");
+
+          try
+          {
+            $oModule = $this->moduleFactory($sModuleName);
+          }
+          catch (\Exception $e)
+          {
+            echo $e->getMessage();
+            continue;
+          }
+
+          $_SESSION['ModuleDirs'][] = "$sLibDir/Module/templates";
+          $hComponent = $oModule->getComponents();
+          ksort($hComponent);
+          reset($hComponent);
+          $_SESSION['ResourceList'][$oModule->getType()] = $hComponent;
+
+          if ($this->oUser->hasResource($oModule->getType()))
+          {
+            $_SESSION['ModuleList'][strtolower($oModule->getType())] = $oModule->getType();
+
+            if ($oModule->visibleInMenu())
+            {
+              $_SESSION['ModuleGroups'][$oModule->getGroup()][strtolower($oModule->getType())] = $oModule->getType();
+            }
+          }
+        }
+      }
+
+      $_SESSION['ModuleDirs'] = array_unique($_SESSION['ModuleDirs']);
+
+      if (isset($_SESSION['ModuleList']) && is_array($_SESSION['ModuleList']))
+      {
+        ksort($_SESSION['ModuleList']);
+        reset($_SESSION['ModuleList']);
+      }
+
+      ksort($_SESSION['ResourceList']);
+      reset($_SESSION['ResourceList']);
+
+      ksort($_SESSION['ModuleGroups']);
+
+      foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
+      {
+        ksort($_SESSION['ModuleGroups'][$sKey]);
+      }
+    }
+  }
+
+  /**
+   * Handle any Exceptions thrown while generating the current user
+   *
+   * @param \Exception $oException
+   */
+  protected function handleGenerateUserException(\Exception $oException)
+  {
+    $this->printPasswordForm($oException->getMessage());
+  }
+
+  /**
    * Run everything needed to react and display data in the way this controller is intended
    */
   public function run()
   {
-    $this->login();
+    parent::run();
+
+    if ($this->oUser->id == 0)
+    {
+      $this->printPasswordForm();
+    }
+    else
+    {
+      $_SESSION['LoggedInUser'] = $this->oUser->id;
+      $this->processModules();
+    }
+
+    $this->templateData('currentUser', $this->oUser);
+    $this->templateData('moduleGroups', $_SESSION['ModuleGroups']);
     $sModuleTemplate = null;
 
     if (!empty($_SESSION['ModuleList'][$this->oApi->module]))
@@ -194,164 +272,6 @@ class Admin extends \Omniverse\Controller
   }
 
   /**
-   * Figure out if there is a valid current user or if the login screen should be displayed
-   *
-   * @return boolean
-   * @throws \Exception
-   */
-  protected function login()
-  {
-    if ($this->oApi->module == 'logout')
-    {
-      $_SESSION = [];
-      session_destroy();
-      header('Location: ' . $this->baseUri);
-    }
-
-    $sEmail = $this->post['email'];
-    $sPassword = trim($this->post['password']);
-
-    try
-    {
-      if (isset($_SESSION['Email']))
-      {
-        try
-        {
-          //A Email stored in the session data shouldn't ever be NULL so we use === for the comparison...
-          if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $_SESSION['Email'] === $this->hConfig['master']['User'])
-          {
-            $oUserList = $this->itemSearch('User', ['Email' => 'MasterAdmin']);
-            $this->oUser = count($oUserList) == 0 ? false : $oUserList[0];
-          }
-          else
-          {
-            $this->oUser = \Omniverse\Item\User::getByEmail($_SESSION['Email'], $this->getDB());
-          }
-        }
-        catch (\Exception $e)
-        {
-          $_SESSION = [];
-          session_destroy();
-          throw $e;
-        }
-      }
-
-      elseif (!empty($sEmail) && !empty($sPassword))
-      {
-        //A Email and password submitted through post or get shouldn't ever be NULL so we use === for the comparison...
-        if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $sEmail === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && $sPassword === $this->hConfig['master']['Password'])
-        {
-          $oUserList = $this->itemSearch('User', ['Email' => 'MasterAdmin']);
-          $_SESSION['Email'] = $sEmail;
-          $this->oUser = count($oUserList) == 0 ? false : $oUserList[0];
-        }
-        else
-        {
-          $this->oUser = \Omniverse\Item\User::login($sEmail, $sPassword);
-        }
-      }
-
-      if ($this->oUser)
-      {
-        $this->templateData('currentUser', $this->oUser);
-
-        if (!empty($sEmail))
-        {
-          $_SESSION['Email'] = $sEmail;
-        }
-
-        if (empty($_SESSION['ModuleList']))
-        {
-          $aTemp = [];
-
-          foreach (get_class_methods($this) as $sMethod)
-          {
-            if (preg_match("/^System(.+)/i", $sMethod, $aMatch))
-            {
-              $aTemp[] = $aMatch[1];
-            }
-          }
-
-          sort($aTemp);
-          reset($aTemp);
-
-          $_SESSION['ResourceList'] = ['System' => $aTemp];
-          $_SESSION['ModuleList'] = [];
-          $_SESSION['ModuleDirs'] = [];
-          $_SESSION['ModuleGroups'] = [];
-          $aBlackList = isset($this->hConfig['moduleblacklist']) ? $this->hConfig['moduleblacklist'] : [];
-
-          foreach (parent::getLibs() as $sLibDir)
-          {
-            foreach (glob("$sLibDir/Module/*.php") as $sModule)
-            {
-              if (in_array($sModule, $_SESSION['ModuleList']) || in_array($sModule, $aBlackList))
-              {
-                continue;
-              }
-
-              $sModuleName = basename($sModule, ".php");
-
-              try
-              {
-                $oModule = $this->moduleFactory($sModuleName);
-              }
-              catch (\Exception $e)
-              {
-                echo $e->getMessage();
-                continue;
-              }
-
-              $_SESSION['ModuleDirs'][] = "$sLibDir/Module/templates";
-              $hComponent = $oModule->getComponents();
-              ksort($hComponent);
-              reset($hComponent);
-              $_SESSION['ResourceList'][$oModule->getType()] = $hComponent;
-
-              if ($this->oUser->hasResource($oModule->getType()))
-              {
-                $_SESSION['ModuleList'][strtolower($oModule->getType())] = $oModule->getType();
-
-                if ($oModule->visibleInMenu())
-                {
-                  $_SESSION['ModuleGroups'][$oModule->getGroup()][strtolower($oModule->getType())] = $oModule->getType();
-                }
-              }
-            }
-          }
-
-          $_SESSION['ModuleDirs'] = array_unique($_SESSION['ModuleDirs']);
-
-          if (isset($_SESSION['ModuleList']) && is_array($_SESSION['ModuleList']))
-          {
-            ksort($_SESSION['ModuleList']);
-            reset($_SESSION['ModuleList']);
-          }
-
-          ksort($_SESSION['ResourceList']);
-          reset($_SESSION['ResourceList']);
-
-          ksort($_SESSION['ModuleGroups']);
-
-          foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
-          {
-            ksort($_SESSION['ModuleGroups'][$sKey]);
-          }
-        }
-
-        $this->templateData('moduleGroups', $_SESSION['ModuleGroups']);
-        return true;
-      }
-    }
-    catch (\Exception $e)
-    {
-      $this->printPasswordForm($e->getMessage());
-    }
-
-    $this->printPasswordForm();
-  }
-
-  /**
    * Display the password form on the login page displaying the specified error, if there is one
    *
    * @param string $sError
@@ -359,10 +279,35 @@ class Admin extends \Omniverse\Controller
   protected function printPasswordForm($sError = '')
   {
     $sAction = empty($this->server['QUERY_STRING']) ? $this->server['request_uri'] : $this->server['request_uri'] . '?' . $this->server['QUERY_STRING'];
-    $this->templateData('action', $sAction);
-    $this->templateData('failure', $sError);
-    $this->templateDisplay('admin_login.html');
-    die();
+    $sFailure = empty($sError) ? '' : "  <h1>$sError</h1>\n";
+
+    foreach (self::getLibs() as $sLib)
+    {
+      if (is_file($sLib . '/Module/templates/admin_login.html'))
+      {
+        include $sLib . '/Module/templates/admin_login.html';
+        die();
+      }
+    }
+
+    //if no login page is found, then use the default version...
+    die("<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=\"UTF-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Omniverse Password Check</title>
+  <link rel=\"stylesheet\" type=\"text/css\" href=\"{$this->domain->uri}/" . $this->getDir('share') . "/login.css\" />
+</head>
+<body onLoad=\"document.passCheck.email.focus();\">
+$sFailure
+<form action=\"$sAction\" method=\"post\" name=\"passCheck\">
+    <div class=\"field\"><span class=\"name\">Email:</span><span class=\"value\"><input type=\"text\" name=\"email\"></span></div>
+    <div class=\"field\"><span class=\"name\">Password:</span><span class=\"value\"><input type=\"password\" name=\"password\"></span></div>
+    <div class=\"field\"><span class=\"name\"></span><span class=\"value\"><input type=\"submit\" name=\"submit\" value=\"Authorization\"></span></div>
+  </form>
+</body>
+</html>");
   }
 
   /**
@@ -388,7 +333,7 @@ class Admin extends \Omniverse\Controller
 
       $sMenu .= "<main class=\"content\">$sContent</main>\n";
 
-      if (!empty($Footer))
+      if (!empty($sFooter))
       {
         $sMenu .= "<footer>$sFooter</footer>\n";
       }

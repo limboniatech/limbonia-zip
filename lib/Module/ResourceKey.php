@@ -12,6 +12,8 @@ namespace Omniverse\Module;
  */
 class ResourceKey extends \Omniverse\Module
 {
+  use \Omniverse\Traits\ItemModule;
+
   /**
    * List of menu items that this module should display
    *

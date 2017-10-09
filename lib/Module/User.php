@@ -12,6 +12,12 @@ namespace Omniverse\Module;
  */
 class User extends \Omniverse\Module
 {
+  use \Omniverse\Traits\ItemModule
+  {
+    \Omniverse\Traits\ItemModule::processSearchGetData as originalProcessSearchGetData;
+    \Omniverse\Traits\ItemModule::processApiGetItem as originalprocessApiGetItem;
+  }
+
   /**
    * Lists of columns to ignore when filling template data
    *
@@ -60,12 +66,44 @@ class User extends \Omniverse\Module
   ];
 
   /**
+   * Generate and return the default item data, filtered by API controls
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiGetItem()
+  {
+    switch ($this->oController->api->action)
+    {
+      case 'resources':
+        $hResourceList = [];
+        $hKeys = $this->oItem->getResourceKeys();
+
+        foreach ($this->oItem->getResourceList() as $oResource)
+        {
+          $hResourceList[$oResource->id] = $oResource->getAll();
+          $hResourceList[$oResource->id]['Level'] = $hKeys[$oResource->id];
+        }
+
+        return $hResourceList;
+
+      case 'tickets':
+        return $this->oItem->getTickets();
+    }
+
+    return $this->originalProcessApiGetItem();
+  }
+
+  /**
    * List of actions that are allowed to run
    *
    * @var array
    */
   protected $aAllowedActions = ['search', 'create', 'editcolumn', 'edit', 'list', 'view', 'resources', 'resetpassword', 'tickets'];
 
+  /**
+   * Process the posted resource data and display the result
+   */
   protected function prepareTemplatePostResources()
   {
     try
@@ -88,6 +126,9 @@ class User extends \Omniverse\Module
     $this->sCurrentAction = 'view';
   }
 
+  /**
+   * Process the posted password reset data and display the result
+   */
   protected function prepareTemplatePostResetpassword()
   {
     try
@@ -137,7 +178,7 @@ class User extends \Omniverse\Module
       $hSearch['Email'] = '';
     }
 
-    return parent::processSearchGetData($hSearch);
+    return $this->originalProcessSearchGetData($hSearch);
   }
 
   /**

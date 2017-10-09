@@ -11,7 +11,7 @@ namespace Omniverse\Controller;
  * @version $Revision: 1.1 $
  * @package Omniverse
  */
-class Ajax extends \Omniverse\Controller
+class Ajax extends \Omniverse\Controller\Web
 {
   /**
    * Run everything needed to react and display data in the way this controller is intended
@@ -27,6 +27,7 @@ class Ajax extends \Omniverse\Controller
 
     try
     {
+      parent::run();
       $oRequest = new $sClass();
     }
     catch (\Omniverse\Exception\Object $oException)

@@ -21,6 +21,11 @@ class Api
    */
   protected static $oInstance = null;
 
+  /**
+   * List of controller types that are based on the web controller
+   *
+   * @var array
+   */
   protected static $aWebTypes =
   [
     'admin',
@@ -28,6 +33,13 @@ class Api
     'api',
     'web'
   ];
+
+  /**
+   * List of methods that should supply JSON data to process
+   *
+   * @var array
+   */
+  protected static $aJsonMethods = ['put', 'post'];
 
   protected $hData = [];
 
@@ -52,7 +64,89 @@ class Api
   protected function __construct()
   {
     $oServer = Input::singleton('server');
-    $this->hData['method'] = strtolower($oServer['request_method']);
+    $this->hData['method'] = isset($oServer['http_x_http_method_override']) ? strtolower($oServer['http_x_http_method_override']) : strtolower($oServer['request_method']);
+
+    if (isset($oServer['PHP_AUTH_USER']) && isset($oServer['PHP_AUTH_PW']))
+    {
+      $this->hData['user'] = $oServer['PHP_AUTH_USER'];
+      unset($oServer['PHP_AUTH_USER']);
+
+      $this->hData['pass'] = $oServer['PHP_AUTH_PW'];
+      unset($oServer['PHP_AUTH_PW']);
+    }
+    else
+    {
+      $oPost = Input::singleton('post');
+
+      if (isset($oPost['email']) && isset($oPost['password']))
+      {
+        $this->hData['user'] = $oPost['email'];
+        unset($oPost['email']);
+
+        $this->hData['pass'] = $oPost['password'];
+        unset($oPost['password']);
+      }
+    }
+
+    $oGet = Input::singleton('get');
+
+    if (isset($oGet['sort']))
+    {
+      $this->hData['sort'] = [];
+
+      foreach (explode(',', $oGet['sort']) as $sSort)
+      {
+        if (preg_match("/(-|\+)(.*)/", $sSort, $aMatch))
+        {
+          $this->hData['sort'][] = $aMatch[1] === '-' ? trim($aMatch[2]) . ' DESC' : trim($aMatch[2]) . ' ASC';
+        }
+        else
+        {
+          $this->hData['sort'][] = trim($sSort) . ' ASC';
+        }
+      }
+
+      unset($oGet['sort']);
+    }
+
+    if (isset($oGet['fields']))
+    {
+      $this->hData['fields'] = explode(',', $oGet['fields']);
+      unset($oGet['fields']);
+    }
+
+    if (isset($oGet['offset']))
+    {
+      $this->hData['offset'] = $oGet['offset'];
+      unset($oGet['offset']);
+    }
+
+    if (isset($oGet['limit']))
+    {
+      $this->hData['limit'] = $oGet['limit'];
+      unset($oGet['limit']);
+    }
+
+    if (count($oGet) > 0)
+    {
+      $this->hData['search'] = [];
+      $hTemp = $oGet->getRaw();
+
+      foreach ($hTemp as $sKey => $sValue)
+      {
+        if (preg_match("/,/", $sValue))
+        {
+          $this->hData['search'][$sKey] = explode(',', $sValue);
+        }
+        else
+        {
+          $this->hData['search'][$sKey] = $sValue;
+        }
+
+        unset($oGet[$sKey]);
+      }
+    }
+
     $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
     $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
     $this->hData['rawcall'] = explode('/', $this->hData['rawpath']);
@@ -112,7 +206,17 @@ class Api
    */
   public function __get($sName)
   {
-    return $this->hData[strtolower($sName)] ?? null;
+    $sLowerName = strtolower($sName);
+
+    if ($sLowerName == 'data')
+    {
+      if (in_array($this->hData['method'], self::$aJsonMethods))
+      {
+        $this->hData['data'] = json_decode(file_get_contents("php://input"), true);
+      }
+    }
+
+    return $this->hData[$sLowerName] ?? null;
   }
 
   /**
@@ -133,25 +237,5 @@ class Api
    */
   public function __unset($sName)
   {
-  }
-
-  /**
-   * Is this API call using GET?
-   *
-   * @return boolean
-   */
-  public function isGet()
-  {
-    return $this->method == 'get';
-  }
-
-  /**
-   * Is this API call using POST?
-   *
-   * @return boolean
-   */
-  public function isPost()
-  {
-    return $this->method == 'post';
   }
 }

@@ -2,9 +2,10 @@
 namespace Omniverse\Traits;
 
 /**
- * Omniverse Factory Trait
+ * Omniverse DriverList Trait
  *
- * This trait allows an inheriting class to add a factory method
+ * This trait allows an inheriting class to add a driver list to help with the
+ * implementation of a factory method in the receiving class.
  *
  * @author Lonnie Blansett <lonnie@omniverserpg.com>
  * @version $Revision: 1.1 $
@@ -12,6 +13,9 @@ namespace Omniverse\Traits;
  */
 trait DriverList
 {
+  /**
+   * Generate and cache the driver list for the current object type
+   */
   protected static function generateDriverList()
   {
     if (!isset($_SESSION['DriverList']))
@@ -35,15 +39,26 @@ trait DriverList
     }
   }
 
+  /**
+   * Return the driver list for the current object type
+   *
+   * @return array
+   */
   public static function driverList()
   {
     self::generateDriverList();
     return $_SESSION['DriverList'][__CLASS__];
   }
 
+  /**
+   *  Return the driver name for the specified name, if there is one
+   *
+   * @param string $sName
+   * @return string
+   */
   public static function driver(string $sName)
   {
     self::generateDriverList();
-    return $_SESSION['DriverList'][__CLASS__][strtolower($sName)] ?? $sName;
+    return $_SESSION['DriverList'][__CLASS__][strtolower($sName)] ?? '';
   }
 }

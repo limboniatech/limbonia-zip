@@ -1,3 +1,7 @@
+2017-10-09 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.4.0
+Feature #50: API - Implement Basic REST API (Lonnie Blansett)
+
 2017-09-28 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.3.1
 Crash #58: Base - Work around the INPUT_SERVER PHP bug (Lonnie Blansett)

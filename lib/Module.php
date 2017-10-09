@@ -13,27 +13,7 @@ namespace Omniverse;
 class Module
 {
   use \Omniverse\Traits\DriverList;
-
-  /**
-   * The controller for this module
-   *
-   * @var \Omniverse\Controller
-   */
-  protected $oController = null;
-
-  /**
-   * The type of module this is
-   *
-   * @var string
-   */
-  protected $sType = null;
-
-  /**
-   * The item object associated with this module
-   *
-   * @var \Omniverse\Item
-   */
-  protected $oItem = null;
+  use \Omniverse\Traits\HasController;
 
   /**
    * List of fields used by module settings
@@ -41,6 +21,28 @@ class Module
    * @var array
    */
   protected static $hSettingsFields = [];
+
+  /**
+   * List of valid HTTP methods
+   *
+   * @var array
+   */
+  protected static $hHttpMethods =
+  [
+    'head',
+    'get',
+    'post',
+    'put',
+    'delete',
+    'options'
+  ];
+
+  /**
+   * The type of module this is
+   *
+   * @var string
+   */
+  protected $sType = null;
 
   /**
    * A list of the actual module settings
@@ -203,7 +205,7 @@ class Module
 
     if (!class_exists($sTypeClass, true))
     {
-      throw new \Omniverse\Exception\Object("The driver for module type \"$sType\" does not exist!");
+      throw new \Omniverse\Exception\Object("No driver for module ($sType) exists!");
     }
 
     return new $sTypeClass($oController);
@@ -245,25 +247,7 @@ class Module
       }
     }
 
-    try
-    {
-      $this->oItem = $this->oController->itemFactory($this->sType);
-
-      if (isset($this->oController->api->id))
-      {
-        $this->oItem->load($this->oController->api->id);
-      }
-
-      if ($this->oItem->id > 0)
-      {
-        $this->hMenuItems['item'] = 'Item';
-        $this->aAllowedActions[] = 'item';
-      }
-    }
-    catch (\Exception $e)
-    {
-    }
-
+    $this->init();
     $this->sCurrentAction = in_array($oController->api->action, $this->aAllowedActions) ? $oController->api->action : $this->sDefaultAction;
   }
 
@@ -275,78 +259,159 @@ class Module
     $this->saveSettings();
   }
 
+  /**
+   * Initialize this module's custom data, if there is any
+   */
+  protected function init()
+  {
+  }
+
+  /**
+   * Remove any ignored fields of the specified type from the specified data then return it
+   *
+   * @param string $sIgnoreType
+   * @param array $hData
+   * @return array
+   */
+  protected function removeIgnoredFields($sIgnoreType, $hData)
+  {
+    if (empty($this->aIgnore[$sIgnoreType]))
+    {
+      return $hData;
+    }
+
+    foreach ($this->aIgnore[$sIgnoreType] as $sField)
+    {
+      if (isset($hData[$sField]))
+      {
+        unset($hData[$sField]);
+      }
+    }
+
+    return $hData;
+  }
+
+  /**
+   * Perform the base "GET" code then return null on success
+   *
+   * @return null
+   * @throws \Exception
+   */
+  protected function processApiHead()
+  {
+    throw new \Exception("Action (dispaly) not implemented by {$this->oController->api->module}", 404);
+  }
+
+  /**
+   * Perform and return the default "GET" code
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiGet()
+  {
+    throw new \Exception("Action (dispaly) not implemented by {$this->oController->api->module}", 404);
+  }
+
+  /**
+   * Run the default "PUT" code and return the updated data
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiPut()
+  {
+    throw new \Exception("Action (update) not implemented by {$this->oController->api->module}", 404);
+  }
+
+  /**
+   * Run the default "POST" code and return the created data
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiPost()
+  {
+    throw new \Exception("Action (create) not implemented by {$this->oController->api->module}", 404);
+  }
+
+  /**
+   * Run the default "DELETE" code and return true
+   *
+   * @return boolean - True on success
+   * @throws \Exception
+   */
+  protected function processApiDelete()
+  {
+    throw new \Exception("Action (delete) not implemented by {$this->oController->api->module}", 404);
+  }
+
+  /**
+   * Process the current API call and return the appropriate data
+   *
+   * @return mixed
+   * @throws \Exception
+   */
   public function processApi()
   {
+    http_response_code(200);
+
+    if (!in_array($this->oController->api->method, static::$hHttpMethods))
+    {
+      throw new \Exception("HTTP method ({$this->oController->api->method}) not allowed by {$this->oController->api->module}", 405);
+    }
+
     switch ($this->oController->api->method)
     {
+      case 'head':
+        if (!$this->allow('search'))
+        {
+          throw new \Exception("Action (dispaly) not allowed by {$this->oController->api->module}", 405);
+        }
+
+        return $this->processApiHead();
+
       case 'get':
         if (!$this->allow('search'))
         {
-          throw new \Exception("Action (dispaly) not allowed", 405);
+          throw new \Exception("Action (dispaly) not allowed by {$this->oController->api->module}", 405);
         }
 
-        if (is_null($this->oController->api->id))
-        {
-          $xSearch = $this->processSearchGetCriteria();
-
-          if (is_array($xSearch))
-          {
-            foreach (array_keys($xSearch) as $sKey)
-            {
-              $this->processSearchTerm($xSearch, $sKey);
-            }
-          }
-
-          $oData = $this->processSearchGetData($xSearch);
-          $aList = [];
-
-          foreach ($oData as $oItem)
-          {
-            $aList[] = $oItem->getAll(true);
-          }
-
-          return $aList;
-        }
-
-        if ($this->oItem->id == 0)
-        {
-          throw new \Exception($this->getType() . ' not found', 404);
-        }
-
-        return $this->oItem->getAll(true);
+        return $this->processApiGet();
 
       case 'put':
         if (!$this->allow('edit'))
         {
-          throw new \Exception("Action (update) not allowed", 405);
+          throw new \Exception("Action (update) not allowed by {$this->oController->api->module}", 405);
         }
 
-        return is_null($this->oController->api->id) ? 'list' : 'view';
+        return $this->processApiPut();
 
       case 'post':
         if (!$this->allow('create'))
         {
-          throw new \Exception("Action (create) not allowed", 405);
+          throw new \Exception("Action (create) not allowed by {$this->oController->api->module}", 405);
         }
 
-        if (is_null($this->oController->api->id))
-        {
-          //create new item
-        }
+        http_response_code(201);
+        return $this->processApiPost();
 
       case 'delete':
         if (!$this->allow('delete'))
         {
-          throw new \Exception("Action (delete) not allowed", 405);
+          throw new \Exception("Action (delete) not allowed by {$this->oController->api->module}", 405);
         }
 
-        if (is_null($this->oController->api->id))
-        {
-          throw new \Exception("Deleting multiple items is forbidden", 403);
-        }
+        http_response_code(204);
+        return $this->processApiDelete();
 
-        return is_null($this->oController->api->id) ? 'list' : 'view';
+      case 'options':
+        $sMethods = implode(',', static::$hHttpMethods);
+        header('Allow: ' . strtoupper($sMethods));
+        return null;
     }
+
+    throw new \Exception("HTTP method ({$this->oController->api->method}) not recognized by {$this->oController->api->module}", 405);
   }
 
   /**
@@ -357,17 +422,6 @@ class Module
   public function isSearch()
   {
     return in_array($this->oController->api->action, ['search', 'list']);
-  }
-
-  /**
-   * Return the parent admin object
-   *
-   * @return \Omniverse\Controller
-   * @throws \Exception
-   */
-  public function getController()
-  {
-    return $this->oController;
   }
 
   /**
@@ -436,6 +490,11 @@ class Module
     return $this->bVisibleInMenu;
   }
 
+  public function getHttpMethods()
+  {
+    return static::$hHttpMethods;
+  }
+
   /**
    * Generate and return the URI for the specified parameters
    *
@@ -448,152 +507,11 @@ class Module
     return $this->oController->generateUri(...$aParam);
   }
 
-  protected function prepareTemplateList()
-  {
-    $this->prepareTemplatePostSearch();
-  }
-
-  protected function prepareTemplateGetCreate()
-  {
-    $sIDColumn = $this->oItem->getIDColumn();
-    $hTemp = $this->oItem->getColumns();
-
-    if (isset($hTemp[$sIDColumn]))
-    {
-      unset($hTemp[$sIDColumn]);
-    }
-
-    $hColumn = [];
-
-    foreach ($hTemp as $sKey => $hValue)
-    {
-      if ((in_array($sKey, $this->aIgnore['create'])) || (isset($hValue['Key']) && preg_match("/Primary/", $hValue['Key'])))
-      {
-        continue;
-      }
-
-      $hColumn[preg_replace("/^.*?\./", "", $sKey)] = $hValue;
-    }
-
-    $this->oController->templateData('createColumns', $hColumn);
-  }
-
-  protected function prepareTemplateGetEdit()
-  {
-    if (!$this->allow('edit') || isset($this->oController->post['No']))
-    {
-      $this->oController->templateData('close', true);
-      return null;
-    }
-
-    $hTemp = $this->oItem->getColumns();
-    $aColumn = $this->getColumns('Edit');
-    $hColumn = [];
-
-    foreach ($aColumn as $sColumnName)
-    {
-      if (isset($hTemp[$sColumnName]))
-      {
-        $hColumn[$sColumnName] = $hTemp[$sColumnName];
-      }
-    }
-
-    $sIDColumn = preg_replace("/.*?\./", "", $this->oItem->getIDColumn());
-    $this->oController->templateData('idColumn', $sIDColumn);
-    $this->oController->templateData('noID', $this->oItem->id == 0);
-    $this->oController->templateData('editColumns', $hColumn);
-  }
-
-  protected function prepareTemplateGetSearch()
-  {
-    $hTemp = $this->oItem->getColumns();
-    $aColumn = $this->getColumns('search');
-    $hColumn = [];
-
-    foreach ($aColumn as $sColumnName)
-    {
-      if (isset($hTemp[$sColumnName]) && $hTemp[$sColumnName] != 'password')
-      {
-        $hColumn[$sColumnName] = $hTemp[$sColumnName];
-
-        if ($hColumn[$sColumnName]['Type'] == 'text')
-        {
-          $hColumn[$sColumnName]['Type'] = 'varchar';
-        }
-
-        if ($hColumn[$sColumnName]['Type'] == 'date')
-        {
-          $hColumn[$sColumnName]['Type'] = 'searchdate';
-        }
-      }
-    }
-
-    $this->oController->templateData('searchColumns', $hColumn);
-  }
-
-  protected function prepareTemplatePostCreate()
-  {
-    $this->oItem->setAll($this->processCreateGetData());
-    $this->oItem->save();
-  }
-
-  protected function prepareTemplatePostEdit()
-  {
-    $this->oItem->setAll($this->editGetData());
-
-    if ($this->oItem->save())
-    {
-      $this->oController->templateData('success', "This " . $this->getType() . " update has been successful.");
-    }
-    else
-    {
-      $this->oController->templateData('failure', "This " . $this->getType() . " update has failed.");
-    }
-
-    if (isset($_SESSION['EditData']))
-    {
-      unset($_SESSION['EditData']);
-    }
-
-    $this->sCurrentAction = 'view';
-  }
-
   /**
-   * Run the specified search and set
+   * Process the posted settings for this module ad save them
+   *
+   * @throws Exception
    */
-  protected function prepareTemplatePostSearch()
-  {
-    $xSearch = $this->processSearchGetCriteria();
-
-    if (is_array($xSearch))
-    {
-      foreach (array_keys($xSearch) as $sKey)
-      {
-        $this->processSearchTerm($xSearch, $sKey);
-      }
-    }
-
-    $oData = $this->processSearchGetData($xSearch);
-
-    if (isset($this->oController->api->subAction) && $this->oController->api->subAction == 'quick' && $oData->count() == 1)
-    {
-      $oItem = $oData[0];
-      header('Location: '. $this->generateUri($oItem->id));
-    }
-
-    $this->oController->templateData('data', $oData);
-    $this->oController->templateData('idColumn', preg_replace("/.*?\./", '', $this->oItem->getIDColumn()));
-    $hColumns = $this->getColumns('Search');
-
-    foreach (array_keys($hColumns) as $sKey)
-    {
-      $this->processSearchColumnHeader($hColumns, $sKey);
-    }
-
-    $this->oController->templateData('dataColumns', $hColumns);
-    $this->oController->templateData('table', $this->oController->widgetFactory('Table'));
-  }
-
   protected function prepareTemplatePostSettings()
   {
     if (!isset($this->oController->post[$this->sType]))
@@ -642,7 +560,6 @@ class Module
 
     $this->oController->templateData('module', $this);
     $this->oController->templateData('method', $this->sCurrentAction);
-    $this->oController->templateData('currentItem', $this->oItem);
   }
 
   /**
@@ -659,7 +576,7 @@ class Module
 
     $sModuleDir = strtolower($this->getType());
     $sActionTemplate = $this->sCurrentAction == 'list' ? 'search.html' : strtolower("{$this->sCurrentAction}.html");
-    $sMethod = $this->oController->api->isPost() || $this->sCurrentAction == 'list' ? 'process' : 'display';
+    $sMethod = $this->oController->api->method == 'post' || $this->sCurrentAction == 'list' ? 'process' : 'display';
     $sMethodTemplate = $sMethod . $sActionTemplate;
 
     foreach ($_SESSION['ModuleDirs'] as $sDir)
@@ -833,16 +750,6 @@ class Module
   }
 
   /**
-   * Return the name / title of this module's current item, if there is one
-   *
-   * @return string
-   */
-  public function getCurrentItemTitle()
-  {
-    return $this->oItem->name;
-  }
-
-  /**
    * Generate and return the title for this module
    *
    * @return string
@@ -850,64 +757,6 @@ class Module
   public function getTitle()
   {
     return ucwords(trim(preg_replace("/([A-Z])/", " $1", str_replace("_", " ", $this->sType))));
-  }
-
-  /**
-   * Generate and return a list of columns based on the specified type
-   *
-   * @param string $sType (optional)
-   * @return array
-   */
-  public function getColumns($sType = null)
-  {
-    $sLowerType = strtolower($sType);
-    $hColumn = $this->oItem->getColumns();
-    $sIDColumn = $this->oItem->getIDColumn();
-
-    //remove the id column
-    if (isset($hColumn[$sIDColumn]))
-    {
-      unset($hColumn[$sIDColumn]);
-    }
-
-    if (empty($sLowerType) || !isset($this->aIgnore[$sLowerType]))
-    {
-      return array_keys($hColumn);
-    }
-
-    //get the column names and remove the ignored columns
-    $aColumn = array_diff(array_keys($hColumn), $this->aIgnore[$sLowerType]);
-
-    //reorder the columns
-    return array_unique(array_merge($this->aColumnOrder, $aColumn));
-  }
-
-  /**
-   * Generate and return the data for the "Create" process
-   *
-   * @return array
-   */
-  protected function processCreateGetData()
-  {
-    $hData = isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : [];
-
-    foreach (array_keys($hData) as $sKey)
-    {
-      if (empty($hData[$sKey]))
-      {
-        unset($hData[$sKey]);
-      }
-    }
-
-    foreach ($this->oItem->getColumns() as $sName => $hColumnData)
-    {
-      if (strtolower($hColumnData['Type']) == 'tinyint(1)')
-      {
-        $hData[$sName] = isset($hData[$sName]);
-      }
-    }
-
-    return $hData;
   }
 
   /**
@@ -985,27 +834,6 @@ class Module
   {
     //unless overridden by a descendant form data will allways take precendence over URL data
     return isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : (isset($this->oController->get[$this->sType]) ? $this->oController->get[$this->sType] : null);
-  }
-
-  /**
-   * Return the name of the ID column to use in the search
-   *
-   * @return string
-   */
-  protected function processSearchGetSortColumn()
-  {
-    return $this->oItem->getIDColumn();
-  }
-
-  /**
-   * Perform the search based on the specified criteria and return the result
-   *
-   * @param string|array $xSearch
-   * @return \Omniverse\ItemList
-   */
-  protected function processSearchGetData($xSearch)
-  {
-    return $this->oController->itemSearch($this->oItem->getTable(), $xSearch, $this->processSearchGetSortColumn());
   }
 
   /**
@@ -1334,18 +1162,10 @@ class Module
     //if this is an ID column
     if (preg_match("/^(.+?)ID$/", $sColumn, $aMatch))
     {
-      try
-      {
-        //and there is an item type to match
-        Item::factory($aMatch[1]);
+      $sItemDriver = Item::driver($aMatch[1]);
 
-        //then make that the new column name
-        return $aMatch[1];
-      }
-      catch (\Exception $e)
-      {
-        return $sColumn;
-      }
+      //if there is a driver, then use the match otherwise use the original column
+      return empty($sItemDriver) ? $sColumn : $aMatch[1];
     }
 
     return preg_replace("/([A-Z])/", " $1", $sColumn);
@@ -1422,146 +1242,5 @@ class Module
     $sContent .= "<input type=\"submit\" name=\"$sButtonName\" value=\"Yes\">&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"submit\" name=\"No\" value=\"No\">";
     $sContent .= "</form>\n";
     return \Omniverse\Controller\Admin::getMenu($sContent, $this->getTitle() . " :: $sVerb");
-  }
-
-  /**
-   * Generate and return the HTML displayed after the edit has finished
-   *
-   * @param string $sType
-   * @param string $sText
-   * @param boolean $bReload
-   * @return string
-   */
-  protected function editFinish($sType, $sText, $bReload=false)
-  {
-    $sURL = $this->oItem->id > 0 ? $this->generateUri($this->oItem->id, 'view') : $this->generateUri('list');
-
-    if (isset($_SESSION['EditData']))
-    {
-      unset($_SESSION['EditData']);
-    }
-
-    return "<center><h1>$sText</h1> Click <a href=\"$sURL\">here</a> to continue.</center>";
-  }
-
-  /**
-   * Generate and return the HTML for dealing with updates to rows of data
-   *
-   * @param string $sType
-   * @return string
-   */
-  public function editColumn($sType)
-  {
-    if (!$this->allow('Edit') || isset($this->oController->post['No']))
-    {
-      if (isset($_SESSION['EditData']))
-      {
-        unset($_SESSION['EditData']);
-      }
-
-      $sJSCommand = $sType == 'Popup' ? 'window.close();' : 'history.go(-2);';
-      return "<script type=\"text/javascript\" language=\"javascript\">$sJSCommand</script>";
-    }
-
-    $sFullIDColumn = $this->oItem->getIDColumn();
-    $sIDColumn = preg_replace("/.*?\./", "", $sFullIDColumn);
-
-    if (isset($this->oController->post[$sIDColumn]))
-    {
-      $_SESSION['EditData'][$sIDColumn] = $this->oController->post[$sIDColumn];
-    }
-
-    if (isset($this->oController->post['Delete']))
-    {
-      $_SESSION['EditData']['Delete'] = $this->oController->post['Delete'];
-    }
-
-    if (isset($this->oController->post['All']))
-    {
-      $_SESSION['EditData']['All'] = $this->oController->post['All'];
-    }
-
-    if (isset($this->oController->post['Column']))
-    {
-      $_SESSION['EditData']['Column'] = $this->oController->post['Column'];
-    }
-
-    if (!isset($_SESSION['EditData'][$sIDColumn]) && !isset($_SESSION['EditData']['All']))
-    {
-      $sUse = isset($_SESSION['EditData']['Delete']) ? 'delete' : 'edit';
-      //for now we are going to fail insted of asking to use all items...
-      //return $this->editDialog($sType, "No IDs were checked!  Did you want to $sUse all of them?<br />\n", 'All');
-      return $this->editFinish($sType, "No IDs were checked, $sUse has failed.  Please check some items and try again!<br />\n", false);
-    }
-
-    if (isset($_SESSION['EditData']['Delete']))
-    {
-      if (!isset($this->oController->post['Check']))
-      {
-        return $this->editDialog($sType, "Once deleted these items can <b>not</b> restored!  Continue anyway?\n", 'Check');
-      }
-
-      $bSuccess = false;
-
-      $hWhere = isset($_SESSION['EditData']['All']) ? [] : [$sFullIDColumn => array_keys($_SESSION['EditData'][$sIDColumn])];
-      $oItemList = \Omniverse\Item::search($this->getType(), $hWhere);
-
-      if (isset($oItemList))
-      {
-        foreach ($oItemList as $oItem)
-        {
-          $oItem->delete();
-        }
-
-        $bSuccess = true;
-      }
-
-      $sSuccess = $bSuccess ? 'complete' : 'failed';
-      return $this->editFinish($sType, "Deletion $sSuccess!", $bSuccess);
-    }
-
-    if (!$sFullColumn = $_SESSION['EditData']['Column'])
-    {
-      return $this->editFinish($sType, "The column \"{$_SESSION['EditData']['Column']}\" does not exist!");
-    }
-
-    if (!isset($this->oController->post['Update']))
-    {
-      $hColumn = $this->oItem->getColumn($sFullColumn);
-      return $this->editDialog($sType, $this->getFormFields([$_SESSION['EditData']['Column'] => $hColumn]), 'Update');
-    }
-
-    //the first item in the _POST array will be our data
-    $sData = array_shift($this->oController->post);
-
-    foreach ($_SESSION['EditData']['AdList'] as $oItem)
-    {
-      $oItem->setAll($sData);
-      $oItem->save();
-    }
-
-    return $this->editFinish($sType, "Update complete!", true);
-  }
-
-  /**
-   * Return the appropriate data for the current edit
-   *
-   * @return array
-   */
-  protected function editGetData()
-  {
-    $hPost = isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : $this->oController->post->getRaw();
-    $hTemp = $this->oItem->getColumns();
-    $aIgnore = isset($this->aIgnore['boolean']) ? $this->aIgnore['boolean'] : [];
-
-    foreach ($hTemp as $sName => $hColumnData)
-    {
-      if (!in_array($sName, $aIgnore) && strtolower($hColumnData['Type']) == 'tinyint(1)')
-      {
-        $hPost[$sName] = isset($hPost[$sName]);
-      }
-    }
-
-    return $hPost;
   }
 }

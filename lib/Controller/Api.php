@@ -11,38 +11,16 @@ namespace Omniverse\Controller;
  * @version $Revision: 1.1 $
  * @package Omniverse
  */
-class Api extends \Omniverse\Controller
+class Api extends \Omniverse\Controller\Web
 {
   /**
-   * The logged in user
+   * Handle any Exceptions thrown while generating the current user
    *
-   * @var \Omniverse\Item\User
+   * @param \Exception $oException
    */
-  protected $oUser = null;
-
-  /**
-   * The controller constructor
-   *
-   * @param array $hConfig - A hash of configuration data
-   */
-  public function __construct(array $hConfig = [])
+  protected function handleGenerateUserException(\Exception $oException)
   {
-    parent::__construct($hConfig);
-
-    if (empty($this->oDomain))
-    {
-      throw new \Exception('Domain not found');
-    }
-  }
-
-  /**
-   * Return the currently logged in user
-   *
-   * @return \Omniverse\Item\User
-   */
-  public function user()
-  {
-    return $this->oUser;
+    throw new \Exception($oException->getMessage(), 401);
   }
 
   /**
@@ -50,14 +28,19 @@ class Api extends \Omniverse\Controller
    */
   public function run()
   {
-    header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
-    header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+    header("Cache-Control: no-cache, must-revalidate");
+    header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
     header("Content-Type: application/json");
 
     ob_start();
     try
     {
-      $this->login();
+      parent::run();
+
+      if ($this->oUser->id == 0)
+      {
+        throw new \Exception('Authentication failed', 401);
+      }
 
       if (is_null($this->api->module))
       {
@@ -67,60 +50,40 @@ class Api extends \Omniverse\Controller
       $oModule = $this->moduleFactory($this->api->module);
 
       ob_end_clean();
-      http_response_code(200);
-      die(json_encode($oModule->processApi()));
+      $xResult = $oModule->processApi();
+
+      if (is_null($xResult))
+      {
+        die();
+      }
+
+      if ($xResult instanceof \Omniverse\ItemList)
+      {
+        $hList = [];
+
+        foreach ($xResult as $oItem)
+        {
+          $hList[$oItem->id] = $oItem->getAll();
+        }
+
+        die(json_encode($hList));
+      }
+
+      if ($xResult instanceof \Omniverse\Item)
+      {
+        die(json_encode($xResult->getAll()));
+      }
+
+      die(json_encode($xResult));
     }
     catch (\Exception $e)
     {
-      http_response_code($e->getCode());
-      ob_end_clean();
+      $iExceptionCode = $e->getCode();
+
+      //if the exception didn't have numeric code or at least 400, then use 400 instead...
+      $iResponseCode = empty($iExceptionCode) || !is_numeric($iExceptionCode) || $iExceptionCode < 400 ? 400 : $iExceptionCode;
+      http_response_code($iResponseCode);
       die(json_encode($e->getMessage()));
-    }
-  }
-
-  /**
-   * Figure out if there is a valid current user or if the login screen should be displayed
-   *
-   * @return boolean
-   * @throws \Exception
-   */
-  protected function login()
-  {
-    if ($this->oApi->module == 'logout')
-    {
-      $_SESSION = [];
-      session_destroy();
-      header('Location: ' . $this->baseUri);
-    }
-
-    if (!isset($_SESSION['Email']))
-    {
-      throw new \Exception('Current login not found', 401);
-    }
-
-    try
-    {
-      //A Email stored in the session data shouldn't ever be NULL so we use === for the comparison...
-      if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $_SESSION['Email'] === $this->hConfig['master']['User'])
-      {
-        $oUserList = $this->itemSearch('User', ['Email' => 'MasterAdmin']);
-        $this->oUser = count($oUserList) == 0 ? false : $oUserList[0];
-      }
-      else
-      {
-        $this->oUser = \Omniverse\Item\User::getByEmail($_SESSION['Email'], $this->getDB());
-      }
-
-      if (empty($this->oUser))
-      {
-        throw new \Exception("User ({$_SESSION['Email']}) not found");
-      }
-    }
-    catch (\Exception $e)
-    {
-      $_SESSION = [];
-      session_destroy();
-      throw new \Exception($e->getMessage(), 401);
     }
   }
 }

@@ -193,6 +193,11 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
     }
   }
 
+  public function __toString()
+  {
+    return $this->getAll();
+  }
+
   /**
    * Return the database object that the data for this object was generated from
    *
@@ -274,8 +279,10 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
 
     foreach (array_keys($hLowerItem) as $sName)
     {
-      //if the column exists the processit
-      if ($sRealName = $this->hasColumn($sName))
+      //if the column exists the process it
+      $sRealName = $this->hasColumn($sName);
+
+      if ($sRealName)
       {
         //don't do the id column until last
         if ($sRealName == $this->sIdColumn)
@@ -291,8 +298,8 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
       }
     }
 
-    //finally do the id column
-    if (!is_null($iID))
+    //finally do the id column, but only if it not is already set...
+    if (!is_null($iID) && !$this->isCreated())
     {
       $this->__set($this->sIdColumn, $iID);
     }
@@ -560,7 +567,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   }
 
   /**
-   * Generate and return an SQL query for this object's table based on the specified crieria
+   * Generate and return an SQL query for this object's table based on the specified criteria
    *
    * @param array $hWhere
    * @param string|array $xOrder
@@ -568,7 +575,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function makeSearchQuery($hWhere = [], $xOrder = null)
   {
-    return $this->getDB()->makeSearchQuery($this->sTable, $hWhere, $xOrder);
+    return $this->getDB()->makeSearchQuery($this->sTable, null, $hWhere, $xOrder);
   }
 
   /**
@@ -658,10 +665,11 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * Delete the row representing this object from the database
    *
    * @return boolean
+   * @throws \Omniverse\Exception\DBResult
    */
   public function delete()
   {
-    if (!$this->IsCreated())
+    if (!$this->isCreated())
     {
       return true;
     }

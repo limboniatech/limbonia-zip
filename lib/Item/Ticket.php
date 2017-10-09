@@ -56,7 +56,7 @@ class Ticket extends \Omniverse\Item
     'release' => 'SoftwareRelease'
   ];
 
-    /**
+  /**
    * List of names and their associated methods, used by __get to generate data
    *
    * @var array
@@ -76,7 +76,7 @@ class Ticket extends \Omniverse\Item
   ];
 
   /**
-   * The list od columns in the TicketContent table
+   * The list of columns in the TicketContent table
    *
    * @var array
    */
@@ -272,6 +272,7 @@ class Ticket extends \Omniverse\Item
    */
   protected function create()
   {
+    parent::__set('CreatorID', $this->oDatabase->getController()->user()->id);
     parent::__set('CreateTime', 'now');
     parent::__set('LastUpdate', 'now');
     return parent::create();
@@ -554,7 +555,7 @@ class Ticket extends \Omniverse\Item
   }
 
   /**
-   * Remove the specified watcher from this ticet
+   * Remove the specified watcher from this ticket
    *
    * @param integer|\Omniverse\Item\User $xUser Either the userID or a User object
    * @return boolean

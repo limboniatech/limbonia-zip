@@ -50,11 +50,70 @@ class Cache extends \Omniverse\Module
    */
   protected $aAllowedActions = ['reset'];
 
+  /**
+   * List of valid HTTP methods
+   *
+   * @var array
+   */
+  protected static $hHttpMethods =
+  [
+    'head',
+    'get',
+    'delete',
+    'options'
+  ];
+
+  /**
+   * Perform the base "GET" code then return null on success
+   *
+   * @return null
+   * @throws \Exception
+   */
+  protected function processApiHead()
+  {
+    if (!is_dir($this->oController->cacheDir) || !is_readable($this->oController->cacheDir) || !is_writable($this->oController->cacheDir))
+    {
+      throw new \Exception('Valid cache director not found');
+    }
+
+    return null;
+  }
+
+  /**
+   * Perform and return the default "GET" code
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiGet()
+  {
+    $oCache = $this->oController->cacheFactory();
+    return $oCache->files();
+  }
+
+  /**
+   * Run the default "DELETE" code and return true
+   *
+   * @return boolean - True on success
+   * @throws \Exception
+   */
+  protected function processApiDelete()
+  {
+    if ($this->oController->user()->hasResource('Site', 'Reset'))
+    {
+      $oCache = $this->oController->cacheFactory();
+      $oCache->clear();
+    }
+  }
+
+  /**
+   * Run the reset code and display the results
+   */
   protected function prepareTemplatePostReset()
   {
     if ($this->oController->user()->hasResource('Site', 'Reset'))
     {
-      $oCache = \Omniverse\Cache::factory();
+      $oCache = $this->oController->cacheFactory();
       $this->oController->templateData('success', $oCache->clear());
     }
   }

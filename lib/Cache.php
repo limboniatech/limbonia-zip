@@ -34,11 +34,6 @@ class Cache
    */
   public static function factory($sCacheDir = NULL)
   {
-    if (empty($sCacheDir))
-    {
-      $sCacheDir = \Omniverse\Controller::getDefault()->getDir('cache');
-    }
-
     if (!isset(self::$hObject[$sCacheDir]))
     {
       self::$hObject[$sCacheDir] = new self($sCacheDir);
@@ -55,6 +50,11 @@ class Cache
    */
   protected function __construct($sCacheDir)
   {
+    if (empty($sCacheDir))
+    {
+      throw new Exception\Object("Valid cache directory not specified", E_NOTICE);
+    }
+
     if (!is_writeable($sCacheDir))
     {
       throw new Exception\Object("Can't write to $sCacheDir!", E_NOTICE);
@@ -166,5 +166,32 @@ class Cache
       chdir($sCurrentDir);
       throw $e;
     }
+  }
+
+  /**
+   * Generate and return a list of files in the cache directory
+   *
+   * @return array
+   */
+  public function files()
+  {
+    $oDirIterator = new \RecursiveDirectoryIterator($this->sCacheDir);
+    $oIterator = new \RecursiveIteratorIterator($oDirIterator, \RecursiveIteratorIterator::SELF_FIRST);
+    $aFile = [];
+
+    foreach ($oIterator as $oFile)
+    {
+      if ($oFile->isFile())
+      {
+        $aFile[] =
+        [
+          'name' => $oFile->getPathname(),
+          'size' => $oFile->getSize(),
+          'modified' => date('Y-m-d', $oFile->getMTime())
+        ];
+      }
+    }
+
+    return $aFile;
   }
 }

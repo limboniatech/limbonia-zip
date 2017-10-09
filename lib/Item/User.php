@@ -52,7 +52,13 @@ class User extends \Omniverse\Item
   {
     \Omniverse\Email::validate($sEmail, false);
     $oUserList = parent::search('User', ['Email' => $sEmail], null, $oDatabase);
-    return count($oUserList) == 0 ? false : $oUserList[0];
+
+    if (count($oUserList) == 0)
+    {
+      throw new \Exception("Invalid user/password");
+    }
+
+    return  $oUserList[0];
   }
 
   /**
@@ -69,37 +75,6 @@ class User extends \Omniverse\Item
     {
       throw new \Exception('Empty password.');
     }
-  }
-
-  /**
-   * Generate and return a valid user from the specified email and password
-   *
-   * @param string $sEmail
-   * @param string $sPassword
-   * @return \Omniverse\Item\User
-   * @throws \Exception
-   */
-  public static function login($sEmail, $sPassword)
-  {
-    self::validatePassword($sPassword);
-    $oUser = self::getByEmail($sEmail);
-
-    if ($oUser == false)
-    {
-      throw new \Exception("Invalid user/password");
-    }
-
-    if (!$oUser->active)
-    {
-      throw new \Exception("Invalid user/password");
-    }
-
-    if (!password_verify($sPassword, $oUser->password))
-    {
-      throw new \Exception("Invalid user/password");
-    }
-
-    return $oUser;
   }
 
   /**
@@ -140,6 +115,11 @@ class User extends \Omniverse\Item
    */
   protected function generateResourceList()
   {
+    if (!is_null($this->hResource) || $this->bAdmin)
+    {
+      return true;
+    }
+
     $oResult = $this->getDB()->prepare("SELECT COUNT(1) FROM User_Key uk NATURAL JOIN ResourceKey rk WHERE rk.Name='Admin' AND uk.Level = 1000 AND uk.UserID = :UserID");
     $oResult->execute([':UserID' => $this->hData['UserID']]);
     $iAdminCount = $oResult->fetchOne();
@@ -172,11 +152,7 @@ class User extends \Omniverse\Item
    */
   public function isAdmin()
   {
-    if (is_null($this->hResource) && !$this->bAdmin)
-    {
-      $this->generateResourceList();
-    }
-
+    $this->generateResourceList();
     return $this->bAdmin;
   }
 
@@ -189,6 +165,8 @@ class User extends \Omniverse\Item
    */
   public function hasResource($sResource, $sComponent = null)
   {
+    $this->generateResourceList();
+
     if ($this->isAdmin())
     {
       return true;
@@ -246,7 +224,7 @@ class User extends \Omniverse\Item
   /**
    * Format the specified value to valid input using type data from the specified column
    *
-   * @param string $sColumn
+   * @param string $sName
    * @param mixed $xValue
    * @return mixed
    */
@@ -299,6 +277,11 @@ class User extends \Omniverse\Item
     return parent::__isset($sName);
   }
 
+  /**
+   * Return the list of open tickets owned by this user
+   *
+   * @return \Omniverse\ItemList
+   */
   public function getTickets()
   {
     return parent::search('Ticket', ['OwnerID' => $this->id, 'Status' => '!=:closed'], ['Priority', 'DueDate DESC'], $this->getDB());

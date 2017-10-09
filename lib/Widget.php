@@ -13,6 +13,7 @@ namespace Omniverse;
 class Widget extends Tag
 {
   use \Omniverse\Traits\DriverList;
+  use \Omniverse\Traits\HasController;
 
   /**
    * @var integer $iCount - number of existing widgets.
@@ -97,13 +98,6 @@ class Widget extends Tag
    * @var string
    */
   protected $sWebShareDir = '';
-
-  /**
-   * The parent controller
-   *
-   * @var \Omniverse\Controller
-   */
-  protected $oController = null;
 
   /**
    * Factory method that creates an instance of a specific type of widget.
@@ -248,21 +242,6 @@ class Widget extends Tag
   }
 
   /**
-   * Return the controller that owns this widget
-   *
-   * @return \Omniverse\Controller
-   */
-  public function getController()
-  {
-    if ($this->oController instanceof \Omniverse\Controller)
-    {
-      return $this->oController;
-    }
-
-    return \Omniverse\Controller::getDefault();
-  }
-
-  /**
    * Is this widget cachable?
    *
    * @return boolean
@@ -368,7 +347,7 @@ class Widget extends Tag
   {
     if (isset($this->hParam['component']))
     {
-      $sComponent = 'Component_' . $this->hParam['component'];
+      $sComponent = 'component' . $this->hParam['component'];
 
       if (method_exists($this, $sComponent))
       {

@@ -28,7 +28,7 @@ class ZipCode extends \Omniverse\Item
       return [];
     }
 
-    $oZipList = parent::search('ZipCode', ['Distance' => "<:$iMiles"], ['*', "truncate((degrees(acos(sin(radians(Latitude)) * sin(radians($oCenter->latitude)) + cos(radians(latitude)) * cos( radians($oCenter->latitude)) * cos(radians(longitude - {$hCenter['Longitude']})))) * 69.09), 1) AS Distance"], 'Distance', $this->getDB());
+    $oZipList = parent::search('ZipCode', ['Distance' => "<:$iMiles"], ['*', "truncate((degrees(acos(sin(radians(Latitude)) * sin(radians($oCenter->latitude)) + cos(radians(latitude)) * cos( radians($oCenter->latitude)) * cos(radians(longitude - {$oCenter->longitude})))) * 69.09), 1) AS Distance"], 'Distance', $this->getDB());
 
     if ($oZipList->count() == 0)
     {

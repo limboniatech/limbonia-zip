@@ -12,4 +12,5 @@ namespace Omniverse\Module;
  */
 class TicketCategory extends \Omniverse\Module
 {
+  use \Omniverse\Traits\ItemModule;
 }
