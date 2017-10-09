@@ -677,7 +677,7 @@ class Database extends \PDO
   {
     $aWhere = [];
 
-    if (!empty($hWhere) || !is_array($hWhere))
+    if (!empty($hWhere) && is_array($hWhere))
     {
       $sTableName = (boolean)$bPrependTable ? "$sTable." : '';
       $hColumns = $this->getColumns($sTable);

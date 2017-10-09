@@ -155,6 +155,7 @@ class Software extends \Omniverse\Module
 
       case 'changelog':
         header('Location: ' . $this->generateUri($this->oItem->id, 'releases') . '?ststus=closed&sort=-major,-minor,-patch');
+        die();
 
       case 'roadmap':
         throw new \Exception('Roadmap is not yet, available', 404);
