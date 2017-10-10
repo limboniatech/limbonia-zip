@@ -1,5 +1,5 @@
 <?php
-namespace Omniverse\Widget\Window;
+namespace Omniverse\Widget;
 
 /**
  * Omniverse Calendar Widget

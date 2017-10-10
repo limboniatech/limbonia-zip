@@ -1123,7 +1123,7 @@ class Module
       case 'date':
       case 'searchdate':
         $sSearchDate = $sType == 'searchdate' ? "<select name=\"{$sName}Operator\"><option> < </option><option selected> = </option><option> > </option></select>\n" : '';
-        $oDate = $this->oController->widgetFactory('Window\Calendar', "$this->sType[$sName]");
+        $oDate = $this->oController->widgetFactory('Calendar', "$this->sType[$sName]");
         $oDate->button('Change');
 
         if (!empty($sValue))
