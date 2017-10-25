@@ -127,6 +127,12 @@ class Api
       unset($oGet['limit']);
     }
 
+    if (isset($oGet['ajax']))
+    {
+      $this->hData['ajax'] = $oGet['ajax'];
+      unset($oGet['ajax']);
+    }
+
     if (count($oGet) > 0)
     {
       $this->hData['search'] = [];

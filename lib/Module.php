@@ -101,13 +101,6 @@ class Module
   protected $sGroup = 'Admin';
 
   /**
-   * Should this module's name appear in the menu?
-   *
-   * @var boolean
-   */
-  protected $bVisibleInMenu = true;
-
-  /**
    * List of column names that should remain static
    *
    * @var array
@@ -191,6 +184,64 @@ class Module
    * @var boolean
    */
   protected $bCityStateZipDone = false;
+
+  /**
+   * Generate and cache the driver list for the current object type
+   */
+  public static function overrideDriverList(\Omniverse\Controller $oController, \Omniverse\Item\User $oUser)
+  {
+    if (!isset($_SESSION['DriverList']))
+    {
+      $_SESSION['DriverList'] = [];
+    }
+
+    $_SESSION['ResourceList'] = [];
+    $_SESSION['ModuleGroups'] = [];
+    $_SESSION['DriverList'][__CLASS__] = [];
+    $sClassDir = preg_replace("#\\\#", '/', preg_replace("#Omniverse\\\\#", '', __CLASS__));
+    $aBlackList = $oController->moduleBlackList ?? [];
+
+    foreach (\Omniverse\Controller::getLibs() as $sLib)
+    {
+      foreach (glob("$sLib/$sClassDir/*.php") as $sClassFile)
+      {
+        $sClasseName = basename($sClassFile, ".php");
+
+        if (isset($_SESSION['DriverList'][__CLASS__][strtolower($sClasseName)]) || in_array($sClasseName, $aBlackList) || !$oUser->hasResource($sClasseName))
+        {
+          continue;
+        }
+
+        $sTypeClass = __CLASS__ . '\\' . $sClasseName;
+
+        if (!class_exists($sTypeClass, true))
+        {
+          continue;
+        }
+
+        $oModule =  new $sTypeClass($oController);
+        $hComponent = $oModule->getComponents();
+        ksort($hComponent);
+        reset($hComponent);
+        $_SESSION['ResourceList'][$oModule->getType()] = $hComponent;
+        $_SESSION['ModuleGroups'][$oModule->getGroup()][strtolower($oModule->getType())] = $oModule->getType();
+        $_SESSION['DriverList'][__CLASS__][strtolower($sClasseName)] = $sClasseName;
+      }
+    }
+
+    ksort($_SESSION['DriverList'][__CLASS__]);
+    reset($_SESSION['DriverList'][__CLASS__]);
+
+    ksort($_SESSION['ResourceList']);
+    reset($_SESSION['ResourceList']);
+
+    ksort($_SESSION['ModuleGroups']);
+
+    foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
+    {
+      ksort($_SESSION['ModuleGroups'][$sKey]);
+    }
+  }
 
   /**
    * Module Factory
@@ -480,16 +531,6 @@ class Module
     return $this->sGroup;
   }
 
-  /**
-   * Is this module visible in the menu?
-   *
-   * @return boolean
-   */
-  public function visibleInMenu()
-  {
-    return $this->bVisibleInMenu;
-  }
-
   public function getHttpMethods()
   {
     return static::$hHttpMethods;
@@ -575,34 +616,29 @@ class Module
     }
 
     $sModuleDir = strtolower($this->getType());
-    $sActionTemplate = $this->sCurrentAction == 'list' ? 'search.html' : strtolower("{$this->sCurrentAction}.html");
+    $sActionTemplate = $this->sCurrentAction == 'list' ? 'search' : strtolower("{$this->sCurrentAction}");
     $sMethod = $this->oController->api->method == 'post' || $this->sCurrentAction == 'list' ? 'process' : 'display';
-    $sMethodTemplate = $sMethod . $sActionTemplate;
+    $aTemplates =
+    [
+      $sModuleDir . '/' . $sActionTemplate,
+      $sModuleDir . '/' . $sMethod . $sActionTemplate,
+      $sActionTemplate,
+      $sMethod . $sActionTemplate,
+    ];
 
-    foreach ($_SESSION['ModuleDirs'] as $sDir)
+    foreach ($aTemplates as $sTemplateName)
     {
-      if (is_readable("$sDir/$sModuleDir/$sActionTemplate"))
+      $sTemplateFile = $this->oController->templateFile($sTemplateName);
+
+      if (empty($sTemplateFile))
       {
-        return "$sModuleDir/$sActionTemplate";
+        continue;
       }
 
-      if (is_readable("$sDir/$sModuleDir/$sMethodTemplate"))
-      {
-        return "$sModuleDir/$sMethodTemplate";
-      }
-
-      if (is_readable("$sDir/$sActionTemplate"))
-      {
-        return $sActionTemplate;
-      }
-
-      if (is_readable("$sDir/$sMethodTemplate"))
-      {
-        return $sMethodTemplate;
-      }
+      return preg_match("/\.php$/", $sTemplateFile) ? $sTemplateFile : preg_replace("#^.*/templates/#", '', $sTemplateFile);
     }
 
-    throw new Exception("The action \"{$this->sCurrentAction}\" does *not* exist in {$this->sType}!!!");
+    throw new \Exception("The action \"{$this->sCurrentAction}\" does *not* exist in {$this->sType}!!!");
   }
 
   /**
@@ -651,7 +687,7 @@ class Module
    * @param string $sName
    * @return mixed
    */
-  protected function getSetting($sName=null)
+  public function getSetting($sName=null)
   {
     if (count($this->hSettings) == 0)
     {
@@ -742,10 +778,26 @@ class Module
   /**
    * Return this module's list of sub-menu items
    *
+   * @param boolean $bOnlyUserAllowed (optional) - Should the returned array only contain items that the current user has access to?
    * @return array
    */
-  public function getSubMenuItems()
+  public function getSubMenuItems($bOnlyUserAllowed = false)
   {
+    if ($bOnlyUserAllowed)
+    {
+      $hSubMenuItems = [];
+
+      foreach ($this->hSubMenuItems as $sMenuAction => $sMenuTitle)
+      {
+        if ($this->allow($sMenuAction))
+        {
+          $hSubMenuItems[$sMenuAction] = $sMenuTitle;
+        }
+      }
+
+      return $hSubMenuItems;
+    }
+
     return $this->hSubMenuItems;
   }
 
@@ -757,6 +809,11 @@ class Module
   public function getTitle()
   {
     return ucwords(trim(preg_replace("/([A-Z])/", " $1", str_replace("_", " ", $this->sType))));
+  }
+
+  public function getCurrentAction()
+  {
+    return $this->sCurrentAction;
   }
 
   /**
@@ -805,7 +862,7 @@ class Module
 
       if (in_array($sColumn, $this->aEditColumn))
       {
-        $sDisplay .= "<span class=\"OmnisysSortGridEdit\" onClick=\"" . (self::$oOwner->usePopups() ? 'showOmnisys_Popup();' : '') . "document.getElementById('Omnisys_SortGrid_Edit').value='$sColumn'; document.getElementById('EditColumn').submit();\">[Edit]</span>";
+        $sDisplay .= "<span class=\"OmnisysSortGridEdit\" onClick=\"document.getElementById('Omnisys_SortGrid_Edit').value='$sColumn'; document.getElementById('EditColumn').submit();\">[Edit]</span>";
       }
 
       $oSortGrid->addCell($sDisplay);
@@ -821,8 +878,8 @@ class Module
    */
   public function processSearchGridRowControl($sIDColumn, $iID)
   {
-    $sURL = $this->oController->baseUri . '/' . strtolower($this->sType) . "/$iID";
-    return "<input type=\"checkbox\" class=\"OmnisysSortGridCellCheckbox\" name=\"{$sIDColumn}[$iID]\" id=\"{$sIDColumn}[$iID]\" value=\"1\"> [<a href=\"$sURL\">View</a>]";
+    $sURL = $this->generateUri($iID);
+    return "<input type=\"checkbox\" class=\"OmnisysSortGridCellCheckbox\" name=\"{$sIDColumn}[$iID]\" id=\"{$sIDColumn}[$iID]\" value=\"1\"> [<a class=\"item\" href=\"$sURL\">View</a>]";
   }
 
   /**
@@ -1036,8 +1093,6 @@ class Module
             $oSelect->addOption($oTempItem->name, $oTempItem->id);
           }
 
-          $oSelect->addArray($hElements);
-
           if (!empty($sValue))
           {
             $oSelect->setSelected($sValue);
@@ -1209,18 +1264,18 @@ class Module
    * @param array $hValues (optional) - List of field data, if there is any
    * @return string
    */
-  protected function getFormFields($hFields, $hValues = [])
+  public function getFormFields($hFields, $hValues = [])
   {
     if (!is_array($hFields))
     {
-      return null;
+      return '';
     }
 
     $sFormFields = '';
 
     foreach ($hFields as $sName => $hData)
     {
-      $sValue = isset($hValues[$sName]) ? $hValues[$sName] : null;
+      $sValue = $hValues[$sName] ?? null;
       $sFormFields .= $this->getFormField($sName, $sValue, $hData);
     }
 
@@ -1228,18 +1283,35 @@ class Module
   }
 
   /**
+   * Echo the form generated by the specified data
    *
-   * @param type $sType
+   * @param string $sType
+   * @param array $hFields
+   * @param array $hValues
+   */
+  public function getForm($sType, $hFields, $hValues)
+  {
+    $sButtonValue = ucwords($sType);
+    $sType = preg_replace('/ /', '', $sType);
+    return "<form name=\"$sType\" action=\"" . $this->generateUri($sType) . "\" method=\"post\">
+" . $this->getFormFields($hFields, $hValues) . "
+<div class=\"field\"><span class=\"blankLabel\"></span><span><button type=\"submit\">$sButtonValue</button></span></div>
+</form>\n";
+  }
+
+  /**
+   * Return the HTML needed to display the specified edit dialog box
+   *
    * @param type $sText
    * @param type $sButtonName
    * @return string
    */
-  protected function editDialog($sType, $sText, $sButtonName)
+  protected function editDialog($sText, $sButtonName)
   {
     $sVerb = isset($_SESSION['EditData']['Delete']) ? 'Delete' : 'Edit Column';
     $sContent = "<form name=\"EditColumn\" action=\"" . $this->generateUri('editcolumn') . "\" method=\"post\">\n";
     $sContent .= $sText;
-    $sContent .= "<input type=\"submit\" name=\"$sButtonName\" value=\"Yes\">&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"submit\" name=\"No\" value=\"No\">";
+    $sContent .= "<button type=\"submit\" name=\"$sButtonName\">Yes</button>&nbsp;&nbsp;&nbsp;&nbsp;<button type=\"submit\" name=\"No\">No</button>";
     $sContent .= "</form>\n";
     return \Omniverse\Controller\Admin::getMenu($sContent, $this->getTitle() . " :: $sVerb");
   }

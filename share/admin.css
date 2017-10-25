@@ -1,8 +1,14 @@
 body
 {
   font-family: Verdana, Arial, Helvetica, sans-serif;
-  font-size: 16px;
-  width: 98%;
+  font-size: 10px;
+}
+
+button,
+input,
+select
+{
+  font-size: inherit;
 }
 
 a
@@ -25,6 +31,21 @@ a:focus
 form
 {
   margin: 0;
+}
+
+.sorttable_sort_anchor,
+.OmnisysSortGridDelete,
+.OmnisysSortGridEdit
+{
+  cursor: pointer;
+  display: block;
+  width: 100%;
+}
+
+.OmnisysSortGridDelete,
+.OmnisysSortGridEdit
+{
+  display: none;
 }
 
 header
@@ -59,17 +80,16 @@ header a
 #admin > nav
 {
   float: left;
-  width: 15%;
+  width: 15em;
   vertical-align: top;
   font-weight: normal;
   text-align: left;
   margin-left: 0.5em;
+  padding-top: 1em;
 }
 
 #admin > #content
 {
-  float: right;
-  width: 82%;
   background-color: #ddddff;
   padding: 1em;
   vertical-align: top;
@@ -80,7 +100,8 @@ header a
   font-weight: bold;
   border-width: 0.1em;
   border-style: none none solid none;
-  margin: 0.3em 0.3em 0.5em 0;
+  margin: 0.2em 0.3em 0.5em 0;
+  text-align: center;
 }
 
 #admin > nav > a
@@ -131,7 +152,7 @@ header a
 #admin > nav > .module > form > input
 {
   display: block;
-  width: 95%;
+  width: 6em;
 }
 
 #admin > #content .tabSet
@@ -191,55 +212,55 @@ header a
   color: white;
 }
 
-#admin > #content > #item
+#admin > #content > #moduleOutput > #item
 {
   min-width: 70%;
   max-width: 100%;
 }
 
-#admin > #content > #item > .title
+#admin > #content > #moduleOutput > #item > .title
 {
   font-weight: bold;
   font-variant: small-caps;
   margin-left: 0.5em;
 }
 
-#admin > #content > #item > .tabSet
+#admin > #content > #moduleOutput > #item > .tabSet
 {
   border-bottom-color: #bbbb99;
   margin: 0;
 }
 
-#admin > #content > #item > .tabSet > .current.tab
+#admin > #content > #moduleOutput > #item > .tabSet > .current.tab
 {
   border-color: #bbbb99 #bbbb99 #fffffc #bbbb99;
   background-color: #fffffc;
 }
 
-#admin > #content > #item > .tabSet > a.current.tab
+#admin > #content > #moduleOutput > #item > .tabSet > a.current.tab
 {
 }
 
-#admin > #content > #item > .tabSet > a.tab
+#admin > #content > #moduleOutput > #item > .tabSet > a.tab
 {
   border-color: #bbbb99;
 }
 
-#admin > #content > #item > .tabSet > a.tab:link,
-#admin > #content > #item > .tabSet > a.tab:active,
-#admin > #content > #item > .tabSet > a.tab:visited
+#admin > #content > #moduleOutput > #item > .tabSet > a.tab:link,
+#admin > #content > #moduleOutput > #item > .tabSet > a.tab:active,
+#admin > #content > #moduleOutput > #item > .tabSet > a.tab:visited
 {
   color: #5555ff;
 }
 
-#admin > #content > #item > .tabSet > a.current.tab:hover,
-#admin > #content > #item > .tabSet > a.tab:hover
+#admin > #content > #moduleOutput > #item > .tabSet > a.current.tab:hover,
+#admin > #content > #moduleOutput > #item > .tabSet > a.tab:hover
 {
   background-color: #5555ff;
   color: white;
 }
 
-#admin > #content > #item > #page
+#admin > #content > #moduleOutput > #item > #page
 {
   border-style: solid;
   border-color: #bbbb99;
@@ -249,12 +270,12 @@ header a
   padding: 1em 0.5em 0.5em 0.5em;
 }
 
-#admin > #content > #item > #page .sortGrid
+#admin > #content > #moduleOutput > #item > #page .sortGrid
 {
   background-color: #ddddff;
 }
 
-#admin > #content > #item > #page > .field
+#admin > #content > #moduleOutput > #item > #page > .field
 {
   margin: 0.5em;
 }
@@ -503,4 +524,137 @@ header a
 {
   float: none;
   padding: 0;
+}
+
+.overlay
+{
+  position: absolute;
+  background: black;
+  margin: 0;
+  opacity: 0.4;
+  position: absolute;
+  z-index: 1000;
+}
+
+#item > #page > .overlay
+{
+  border-style: solid;
+  border-color: black;
+  border-width: 0 0.1em 0.1em 0.1em;
+  padding: 1em 0.5em 0.5em 0.5em;
+}
+
+.slideout-menu
+{
+  top: 0;
+  bottom: 0;
+  min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  z-index: 0;
+  display: none;
+}
+
+.slideout-menu-left
+{
+  left: 0;
+}
+
+.slideout-menu-right
+{
+  right: 0;
+}
+
+.slideout-panel
+{
+  position: relative;
+  z-index: 1;
+  will-change: transform;
+  background-color: #ffffff; /* A background-color is required */
+  min-height: 100vh;
+}
+
+.slideout-open,
+.slideout-open body,
+.slideout-open .slideout-panel
+{
+  overflow: hidden;
+}
+
+.slideout-open .slideout-menu
+{
+  display: block;
+}
+
+.hamburger
+{
+  display: block;
+  cursor: pointer;
+}
+
+/* Phone only */
+@media (max-width: 599px)
+{
+}
+
+/* Tablet portrait only */
+@media screen and (min-width: 600px) and (max-width: 899px)
+{
+}
+
+/* Tablet portrait and up */
+@media screen and (min-width: 600px)
+{
+  body
+  {
+    font-size: 12px;
+  }
+}
+
+/* Tablet landscap only */
+@media screen and (min-width: 900px) and (max-width: 1199px)
+{
+}
+
+/* Tablet landscap and up */
+@media screen and (min-width: 900px)
+{
+  body
+  {
+    font-size: 14px;
+  }
+}
+
+/* Desktop only */
+@media screen and (min-width: 1200px) and (max-width: 1799px)
+{
+}
+
+/* Desktop and up */
+@media screen and (min-width: 1200px)
+{
+  body
+  {
+    font-size: 16px;
+  }
+
+  .slideout-panel
+  {
+    margin-left: 15.5em;
+  }
+
+  .slideout-menu
+  {
+    display: block;
+  }
+
+  .hamburger
+  {
+    display: none;
+  }
+}
+
+/* Big Desktop and up */
+@media screen and (min-width: 1800px)
+{
 }

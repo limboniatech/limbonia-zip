@@ -81,7 +81,7 @@ class Widget extends Tag
   protected static $bAjaxDebug = false;
 
   /**
-   * @var array $aAjaxFunction - list of registerd AJAX functions
+   * @var array $aAjaxFunction - list of registered AJAX functions
    */
   protected static $aAjaxFunction = [];
 
@@ -98,6 +98,8 @@ class Widget extends Tag
    * @var string
    */
   protected $sWebShareDir = '';
+
+  protected $bUseControllerHtmlHeader = false;
 
   /**
    * Factory method that creates an instance of a specific type of widget.
@@ -230,6 +232,12 @@ class Widget extends Tag
 
     if ($oController instanceof \Omniverse\Controller)
     {
+/*
+      if ($oController instanceof \Omniverse\Controller\Web)
+      {
+        If it's a web type then allow scripts to be placed in the head instead of the body?
+      }
+*/
       $this->oController = $oController;
     }
 
@@ -462,7 +470,7 @@ class Widget extends Tag
   {
     if (array_search($sScript, self::$aIncludedScript) === false)
     {
-      echo "\n<script type=\"text/JavaScript\" language=\"JavaScript\" src=\"$sScript\"></script>\n";
+      echo "\n<script type=\"text/javascript\" src=\"$sScript\"></script>\n";
       self::$aIncludedScript[] = $sScript;
     }
   }
@@ -477,7 +485,7 @@ class Widget extends Tag
   {
     if ($this->bInit)
     {
-      echo "\n<script type=\"text/JavaScript\" language=\"JavaScript\">$sCommand</script>\n";
+      echo "\n<script type=\"text/javascript\">$sCommand</script>\n";
     }
     else
     {
@@ -593,7 +601,7 @@ class Widget extends Tag
       $sDebug = self::$bAjaxDebug === true ? 'true' : 'false';
       $sBaseUrl = "'" . $this->getController()->domain->url . '/ajax' ."'";
 
-      $sJavascript =  "\n<script type=\"text/JavaScript\" language=\"JavaScript\">function $sAjaxFunction(){Omniverse_HttpRequest('$sClassName', '$sFunction', arguments, $sReportStatus, $sDebug, $sBaseUrl);}</script>\n";
+      $sJavascript =  "\n<script type=\"text/javascript\">function $sAjaxFunction(){Omniverse_HttpRequest('$sClassName', '$sFunction', arguments, $sReportStatus, $sDebug, $sBaseUrl);}</script>\n";
       $this->write($sJavascript);
       self::$aAjaxFunction[] = $sAjaxFunction;
     }

@@ -33,7 +33,7 @@ trait ItemModule
 
     $this->oItem = $this->oController->itemFactory($this->sType);
 
-    if (isset($this->oController->api->id))
+    if (isset($this->oController->api->id) && strtolower($this->sType) == $this->oController->api->module)
     {
       $this->oItem->load($this->oController->api->id);
     }
@@ -43,6 +43,11 @@ trait ItemModule
       $this->hMenuItems['item'] = 'Item';
       $this->aAllowedActions[] = 'item';
     }
+  }
+
+  public function getItem()
+  {
+    return $this->oItem;
   }
 
   /**
@@ -566,10 +571,23 @@ trait ItemModule
 
     $oData = $this->processSearchGetData($xSearch);
 
-    if (isset($this->oController->api->subAction) && $this->oController->api->subAction == 'quick' && $oData->count() == 1)
+    if ($oData->count() == 1)
     {
-      $oItem = $oData[0];
-      header('Location: '. $this->generateUri($oItem->id));
+      if (isset($this->oController->api->ajax))
+      {
+        $this->oItem = $oData[0];
+        $this->oController->templateData('currentItem', $this->oItem);
+        $this->hMenuItems['item'] = 'Item';
+        $this->aAllowedActions[] = 'item';
+        $this->sCurrentAction = 'view';
+        return true;
+      }
+
+      if (isset($this->oController->api->subAction) && $this->oController->api->subAction == 'quick')
+      {
+        $oItem = $oData[0];
+        header('Location: '. $this->generateUri($oItem->id));
+      }
     }
 
     $this->oController->templateData('data', $oData);
@@ -601,7 +619,7 @@ trait ItemModule
    */
   public function getCurrentItemTitle()
   {
-    return $this->oItem->name;
+    return isset($this->oItem->name) ? $this->oItem->name : '';
   }
 
   /**
@@ -686,30 +704,37 @@ trait ItemModule
   /**
    * Generate and return the HTML displayed after the edit has finished
    *
-   * @param string $sType
    * @param string $sText
    * @param boolean $bReload
    * @return string
    */
-  protected function editFinish($sType, $sText, $bReload=false)
+  public function editFinish($sText)
   {
-    $sURL = $this->oItem->id > 0 ? $this->generateUri($this->oItem->id, 'view') : $this->generateUri('list');
+    if ($this->oItem->id > 0)
+    {
+      $sURL = $this->generateUri($this->oItem->id, 'view');
+      $sClass = ' class="item"';
+    }
+    else
+    {
+      $sURL = $this->generateUri('list');
+      $sClass = ' class="module"';
+    }
 
     if (isset($_SESSION['EditData']))
     {
       unset($_SESSION['EditData']);
     }
 
-    return "<center><h1>$sText</h1> Click <a href=\"$sURL\">here</a> to continue.</center>";
+    return "<center><h1>$sText</h1> Click <a$sClass href=\"$sURL\">here</a> to continue.</center>";
   }
 
   /**
    * Generate and return the HTML for dealing with updates to rows of data
    *
-   * @param string $sType
    * @return string
    */
-  public function editColumn($sType)
+  public function editColumn()
   {
     if (!$this->allow('Edit') || isset($this->oController->post['No']))
     {
@@ -718,8 +743,7 @@ trait ItemModule
         unset($_SESSION['EditData']);
       }
 
-      $sJSCommand = $sType == 'Popup' ? 'window.close();' : 'history.go(-2);';
-      return "<script type=\"text/javascript\" language=\"javascript\">$sJSCommand</script>";
+      return "<script type=\"text/javascript\" language=\"javascript\">history.go(-2);</script>";
     }
 
     $sFullIDColumn = $this->oItem->getIDColumn();
@@ -749,15 +773,15 @@ trait ItemModule
     {
       $sUse = isset($_SESSION['EditData']['Delete']) ? 'delete' : 'edit';
       //for now we are going to fail insted of asking to use all items...
-      //return $this->editDialog($sType, "No IDs were checked!  Did you want to $sUse all of them?<br />\n", 'All');
-      return $this->editFinish($sType, "No IDs were checked, $sUse has failed.  Please check some items and try again!<br />\n", false);
+      //return $this->editDialog("No IDs were checked!  Did you want to $sUse all of them?<br />\n", 'All');
+      return $this->editFinish("No IDs were checked, $sUse has failed.  Please check some items and try again!<br />\n");
     }
 
     if (isset($_SESSION['EditData']['Delete']))
     {
       if (!isset($this->oController->post['Check']))
       {
-        return $this->editDialog($sType, "Once deleted these items can <b>not</b> restored!  Continue anyway?\n", 'Check');
+        return $this->editDialog("Once deleted these items can <b>not</b> restored!  Continue anyway?\n", 'Check');
       }
 
       $bSuccess = false;
@@ -776,18 +800,18 @@ trait ItemModule
       }
 
       $sSuccess = $bSuccess ? 'complete' : 'failed';
-      return $this->editFinish($sType, "Deletion $sSuccess!", $bSuccess);
+      return $this->editFinish("Deletion $sSuccess!");
     }
 
     if (!$sFullColumn = $_SESSION['EditData']['Column'])
     {
-      return $this->editFinish($sType, "The column \"{$_SESSION['EditData']['Column']}\" does not exist!");
+      return $this->editFinish("The column \"{$_SESSION['EditData']['Column']}\" does not exist!");
     }
 
     if (!isset($this->oController->post['Update']))
     {
       $hColumn = $this->oItem->getColumn($sFullColumn);
-      return $this->editDialog($sType, $this->getFormFields([$_SESSION['EditData']['Column'] => $hColumn]), 'Update');
+      return $this->editDialog($this->getFormFields([$_SESSION['EditData']['Column'] => $hColumn]), 'Update');
     }
 
     //the first item in the _POST array will be our data
@@ -799,7 +823,7 @@ trait ItemModule
       $oItem->save();
     }
 
-    return $this->editFinish($sType, "Update complete!", true);
+    return $this->editFinish("Update complete!");
   }
 
   /**

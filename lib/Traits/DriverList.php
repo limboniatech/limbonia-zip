@@ -33,7 +33,11 @@ trait DriverList
         foreach (glob("$sLib/$sClassDir/*.php") as $sClassFile)
         {
           $sClasseName = basename($sClassFile, ".php");
-          $_SESSION['DriverList'][__CLASS__][strtolower($sClasseName)] = $sClasseName;
+
+          if (!isset($_SESSION['DriverList'][__CLASS__][strtolower($sClasseName)]))
+          {
+            $_SESSION['DriverList'][__CLASS__][strtolower($sClasseName)] = $sClasseName;
+          }
         }
       }
     }

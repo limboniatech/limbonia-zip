@@ -41,7 +41,7 @@ sorttable = {
     }
 
     sorttable.DATE_RE = /^(\d\d?)[\/\.-](\d\d?)[\/\.-]((\d\d)?\d\d)$/;
-    
+
     forEach(document.getElementsByTagName('table'), function(table)
     {
       if (table.className.search(/\bsortable\b/) != -1)
@@ -49,9 +49,9 @@ sorttable = {
         sorttable.makeSortable(table);
       }
     });
-    
+
   },
-  
+
   makeSortable: function(table)
   {
     if (table.getElementsByTagName('thead').length == 0)
@@ -62,7 +62,7 @@ sorttable = {
       the.appendChild(table.rows[0]);
       table.insertBefore(the,table.firstChild);
     }
-    
+
     // Safari doesn't support table.tHead, sigh
     if (table.tHead == null)
     {
@@ -121,29 +121,31 @@ sorttable = {
 
           if (columnHeader.className.search(/\bsorttable_sorted\b/) != -1)
           {
-            // if we're already sorted by this column, just 
+            // if we're already sorted by this column, just
             // reverse the table, which is quicker
             sorttable.reverse(this.sorttable_tbody);
+            var anchor = columnHeader.getElementsByClassName('sorttable_sort_anchor')[0];
             columnHeader.className = columnHeader.className.replace('sorttable_sorted', 'sorttable_sorted_reverse');
-            columnHeader.removeChild(document.getElementById('sorttable_sortfwdind'));
+            anchor.removeChild(anchor.lastChild);
             sortrevind = document.createElement('span');
             sortrevind.id = "sorttable_sortrevind";
             sortrevind.innerHTML = stIsIE ? '&nbsp<font face="webdings">5</font>' : '&nbsp;&#x25B4;';
-            columnHeader.appendChild(sortrevind);
+            anchor.appendChild(sortrevind);
             return;
           }
 
           if (columnHeader.className.search(/\bsorttable_sorted_reverse\b/) != -1)
           {
-            // if we're already sorted by this column in reverse, just 
+            // if we're already sorted by this column in reverse, just
             // re-reverse the table, which is quicker
             sorttable.reverse(this.sorttable_tbody);
+            var anchor = columnHeader.getElementsByClassName('sorttable_sort_anchor')[0];
             columnHeader.className = columnHeader.className.replace('sorttable_sorted_reverse', 'sorttable_sorted');
-            columnHeader.removeChild(document.getElementById('sorttable_sortrevind'));
+            anchor.removeChild(anchor.lastChild);
             sortfwdind = document.createElement('span');
             sortfwdind.id = "sorttable_sortfwdind";
             sortfwdind.innerHTML = stIsIE ? '&nbsp<font face="webdings">6</font>' : '&nbsp;&#x25BE;';
-            columnHeader.appendChild(sortfwdind);
+            anchor.appendChild(sortfwdind);
             return;
           }
 
@@ -173,10 +175,11 @@ sorttable = {
           }
 
           columnHeader.className += ' sorttable_sorted';
+          var anchor = columnHeader.getElementsByClassName('sorttable_sort_anchor')[0];
           sortfwdind = document.createElement('span');
           sortfwdind.id = "sorttable_sortfwdind";
           sortfwdind.innerHTML = stIsIE ? '&nbsp<font face="webdings">6</font>' : '&nbsp;&#x25BE;';
-          columnHeader.appendChild(sortfwdind);
+          anchor.appendChild(sortfwdind);
 
           // build an array to sort. This is a Schwartzian transform thing,
           // i.e., we "decorate" each row with the actual sort key,
@@ -212,7 +215,7 @@ sorttable = {
   {
     // guess the type of a column based on its first non-blank row
     sortfn = sorttable.sort_alpha;
-    
+
     for (var i=0; i<table.tBodies[0].rows.length; i++)
     {
       text = sorttable.getInnerText(table.tBodies[0].rows[i].cells[column]);
@@ -252,7 +255,7 @@ sorttable = {
         }
       }
     }
-    
+
     return sortfn;
   },
 
@@ -313,7 +316,7 @@ sorttable = {
   {
     // reverse the rows in a tbody
     newrows = [];
-    
+
     for (var i=0; i<tbody.rows.length; i++)
     {
       newrows[newrows.length] = tbody.rows[i];
@@ -341,7 +344,7 @@ sorttable = {
       aa = 0;
     }
 
-    bb = parseFloat(b[0].replace(/[^0-9.-]/g,'')); 
+    bb = parseFloat(b[0].replace(/[^0-9.-]/g,''));
     if (isNaN(bb))
     {
       bb = 0;
@@ -369,7 +372,7 @@ sorttable = {
   {
     mtch = a[0].match(sorttable.DATE_RE);
     y = mtch[3]; m = mtch[2]; d = mtch[1];
-    
+
     if (m.length == 1)
     {
       m = '0'+m;
@@ -452,7 +455,7 @@ sorttable = {
 
     return 1;
   },
-  
+
   shaker_sort: function(list, comp_func)
   {
     // A stable sort function to allow multi-level sorting of data
@@ -493,7 +496,7 @@ sorttable = {
 
       b++;
     } // while(swap)
-  }  
+  }
 }
 
 /* ******************************************************************
@@ -694,7 +697,7 @@ var forEach = function(object, block, context)
       // the object is array-like
       resolve = Array;
     }
-    
+
     resolve.forEach(object, block, context);
   }
 };

@@ -634,7 +634,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * @param integer $iItemID
    * @throws Exception
    */
-  public function load(int $iItemID)
+  public function load($iItemID)
   {
     if (!isset(self::$hStatement[$this->sTable]['load']))
     {

@@ -19,7 +19,7 @@ class Profile extends \Omniverse\Module
    *
    * @var string
    */
-  protected $sGroup = 'System';
+  protected $sGroup = 'Hidden';
 
   /**
    * The item object associated with this module
@@ -27,13 +27,6 @@ class Profile extends \Omniverse\Module
    * @var \Omniverse\Item
    */
   protected $oItem = null;
-
-  /**
-   * Should this module's name appear in the menu?
-   *
-   * @var boolean
-   */
-  protected $bVisibleInMenu = false;
 
   /**
    * The type of module this is

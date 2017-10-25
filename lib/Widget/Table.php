@@ -112,6 +112,8 @@ class Table extends \Omniverse\Widget
   {
     \Omniverse\Widget::includeScript($this->sWebShareDir . "/sorttable.js");
     $this->addClass('sortable');
+    $this->addClass('sortGrid');
+    $this->writeJavascript('sorttable.init();');
   }
 
   /**
@@ -125,7 +127,7 @@ class Table extends \Omniverse\Widget
   }
 
   /**
-   * Start a new row of the specified type for this table abd return the row object
+   * Start a new row of the specified type for this table and return the row object
    *
    * @param string $sType
    * @return \Omniverse\Tag

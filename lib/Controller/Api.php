@@ -28,10 +28,6 @@ class Api extends \Omniverse\Controller\Web
    */
   public function run()
   {
-    header("Cache-Control: no-cache, must-revalidate");
-    header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
-    header("Content-Type: application/json");
-
     ob_start();
     try
     {
@@ -66,12 +62,13 @@ class Api extends \Omniverse\Controller\Web
           $hList[$oItem->id] = $oItem->getAll();
         }
 
-        die(json_encode($hList));
+
+        parent::outputJson($hList);
       }
 
       if ($xResult instanceof \Omniverse\Item)
       {
-        die(json_encode($xResult->getAll()));
+        parent::outputJson($xResult->getAll());
       }
 
       die(json_encode($xResult));
@@ -83,7 +80,7 @@ class Api extends \Omniverse\Controller\Web
       //if the exception didn't have numeric code or at least 400, then use 400 instead...
       $iResponseCode = empty($iExceptionCode) || !is_numeric($iExceptionCode) || $iExceptionCode < 400 ? 400 : $iExceptionCode;
       http_response_code($iResponseCode);
-      die(json_encode($e->getMessage()));
+      parent::outputJson($e->getMessage());
     }
   }
 }

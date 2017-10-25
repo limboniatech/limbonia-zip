@@ -139,4 +139,14 @@ class ResourceLock extends \Omniverse\Module
 
     return parent::getColumnValue($oItem, $sColumn);
   }
+
+  /**
+   * Return the subject of this module's current ticket, if there is one
+   *
+   * @return string
+   */
+  public function getCurrentItemTitle()
+  {
+    return $this->oItem->resource . " :: " . $this->oItem->component;
+  }
 }

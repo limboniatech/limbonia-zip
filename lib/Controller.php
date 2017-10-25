@@ -51,6 +51,13 @@ abstract class Controller
   protected static $aAutoInput = ['get', 'post', 'server'];
 
   /**
+   * List of currently instantiated modules
+   *
+   * @var array
+   */
+  protected static $hModuleList = [];
+
+  /**
    * @var \Omniverse\Domain - The default domain for this controller instance
    */
   protected $oDomain = null;
@@ -355,6 +362,11 @@ abstract class Controller
       unset($hLowerConfig['database']);
     }
 
+    if (isset($hLowerConfig['moduleblacklist']) && is_array($hLowerConfig['moduleblacklist']))
+    {
+      \Omniverse\Module::generateDriverList($hLowerConfig['moduleblacklist']);
+    }
+
     $this->hConfig = array_merge($this->hConfig, $hLowerConfig);
 
     if (\is_null(self::$oDefaultController))
@@ -628,14 +640,21 @@ abstract class Controller
   }
 
   /**
-   * Generate and return a module of the specified type
+   * Generate and return the module of the specified type
    *
    * @param string $sType
    * @return \Omniverse\Module
    */
   public function moduleFactory($sType)
   {
-    return Module::factory($sType, $this);
+    $sDriver = Module::driver($sType);
+
+    if (!isset(self::$hModuleList[$sDriver]))
+    {
+      self::$hModuleList[$sDriver] = Module::factory($sType, $this);
+    }
+
+    return self::$hModuleList[$sDriver];
   }
 
   /**

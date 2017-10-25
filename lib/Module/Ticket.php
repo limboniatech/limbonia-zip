@@ -123,6 +123,21 @@ class Ticket extends \Omniverse\Module
   protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'attachments', 'relationships', 'watchers'];
 
   /**
+   * List of column names that are allowed to generate "edit" links
+   *
+   * @var array
+   */
+  protected $aEditColumn =
+  [
+    'Status',
+    'Priority',
+    'Owner',
+    'Category',
+    'DueDate',
+    'StartDate'
+  ];
+
+  /**
    * Generate and return the default item data, filtered by API controls
    *
    * @return array
@@ -334,17 +349,17 @@ class Ticket extends \Omniverse\Module
   {
     if ($sColumn == 'ReleaseID')
     {
-      return $oItem->releaseId == 0 ? 'None' : '<a target="_blank" href="' . $this->oController->generateUri('software', $oItem->softwareId, 'roadmap', '#' . $oItem->release->version) . '">' . $oItem->release->version . '</a>';
+      return $oItem->releaseId == 0 ? 'None' : '<a class="item" href="' . $this->oController->generateUri('software', $oItem->softwareId, 'roadmap', '#' . $oItem->release->version) . '">' . $oItem->release->version . '</a>';
     }
 
     if ($sColumn == 'CreatorID')
     {
-      return $oItem->creatorId == 0 ? 'None' : '<a target="_blank" href="' . $this->oController->generateUri('user', $oItem->creatorId) . '">' . $oItem->creator->name . '</a>';
+      return $oItem->creatorId == 0 ? 'None' : '<a class="item" href="' . $this->oController->generateUri('user', $oItem->creatorId) . '">' . $oItem->creator->name . '</a>';
     }
 
     if ($sColumn == 'OwnerID')
     {
-      return $oItem->ownerId == 0 ? 'None' : '<a target="_blank" href="' . $this->oController->generateUri('user', $oItem->ownerId) . '">' . $oItem->owner->name . '</a>';
+      return $oItem->ownerId == 0 ? 'None' : '<a class="item" href="' . $this->oController->generateUri('user', $oItem->ownerId) . '">' . $oItem->owner->name . '</a>';
     }
 
     if (in_array($sColumn, ['Type', 'Status', 'Priority', 'Severity', 'Projection', 'DevStatus', 'QualityStatus']))
@@ -586,7 +601,7 @@ class Ticket extends \Omniverse\Module
           $bCurrentlyWatching = true;
         }
 
-        $aWatcher[] = "<a href=\"" . $this->oController->generateUri('user', $oWatcher->id) . "\">$oWatcher->name</a>";
+        $aWatcher[] = "<a class=\"item\" href=\"" . $this->oController->generateUri('user', $oWatcher->id) . "\">$oWatcher->name</a>";
       }
 
       $sWatcherList = count($aWatcher) == 0 ? 'None' : implode(', ', $aWatcher);

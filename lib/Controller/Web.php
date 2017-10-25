@@ -14,6 +14,26 @@ namespace Omniverse\Controller;
 class Web extends \Omniverse\Controller
 {
   /**
+   * Data to be appended to the HTML header before display
+   *
+   * @var string
+   */
+  protected $sHtmlHeader = '';
+
+  /**
+   * Output the specified data as JSON
+   *
+   * @param type $xData
+   */
+  protected static function outputJson($xData)
+  {
+    header("Cache-Control: no-cache, must-revalidate");
+    header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
+    header("Content-Type: application/json");
+    die(json_encode($xData));
+  }
+
+  /**
    * The controller constructor
    *
    * NOTE: This constructor should only be used by the factory and *never* directly
@@ -46,6 +66,11 @@ class Web extends \Omniverse\Controller
     }
 
     $this->oApi = \Omniverse\Api::singleton();
+  }
+
+  public function addToHtmlHeader($xData)
+  {
+    $this->sHtmlHeader .= $xData;
   }
 
   /**
@@ -97,7 +122,7 @@ class Web extends \Omniverse\Controller
 
   /**
    * Handle any Exceptions thrown while generating the current user
-   * 
+   *
    * @param \Exception $oException
    */
   protected function handleGenerateUserException(\Exception $oException)

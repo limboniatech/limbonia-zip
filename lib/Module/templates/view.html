@@ -1,4 +1,0 @@
-{% import 'macros.html' as macros %}{% if success %}<div class="methodSuccess">{{success}}</div>{% endif %}{% if failure %}<div class="methodFailure">{{failure}}</div>{% endif %}
-{% for columnName in module.getColumns('view') %}
-{{macros.dataField(module.getColumnTitle(columnName), module.getColumnValue(currentItem, columnName))}}
-{% endfor %}

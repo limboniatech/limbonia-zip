@@ -37,69 +37,38 @@ class Admin extends \Omniverse\Controller\Web
     'defaulttemplate' => 'default.template'
   ];
 
-  /**
-   * Template proxy function for PHP's preg_replace
-   *
-   * @param string $sText
-   * @param string $sRegExpression
-   * @param string $sValue
-   * @return string
-   */
-  public static function replace($sText, $sRegExpression, $sValue)
+  public static function templateDirs()
   {
-    return preg_replace($sRegExpression, $sValue, $sText);
-  }
-
-  /**
-   * Template proxy function for PHP's preg_match
-   *
-   * @param string $sText
-   * @param string $sRegExpression
-   * @return boolean
-   */
-  public static function match($sText, $sRegExpression)
-  {
-    return preg_match($sRegExpression, $sText);
-  }
-
-  /**
-   * The controller constructor
-   *
-   * @param array $hConfig - A hash of configuration data
-   */
-  public function __construct(array $hConfig = [])
-  {
-    parent::__construct($hConfig);
-    \Twig_autoloader::register();
-    $this->templateData('controller', $this);
-  }
-
-  /**
-   * Generate and return the Twig Template generator object
-   *
-   * @return \Twig_Environment
-   */
-  protected function getTemplateGenerator()
-  {
-    if (is_null(self::$oTemplateGenerator))
+    if (!isset($_SESSION['TemplateDirs']))
     {
-      if (!isset($_SESSION['ModuleDirs']))
-      {
-        $_SESSION['ModuleDirs'] = [];
+      $_SESSION['TemplateDirs'] = [];
 
-        foreach (parent::getLibs() as $sLibDir)
+      foreach (parent::getLibs() as $sLibDir)
+      {
+        $sTemplateDir = "$sLibDir/Module/templates";
+
+        if (is_readable($sTemplateDir))
         {
-          $_SESSION['ModuleDirs'][] = "$sLibDir/Module/templates";
+          $_SESSION['TemplateDirs'][] = $sTemplateDir;
         }
       }
-
-      $oLoader = new \Twig_Loader_Filesystem($_SESSION['ModuleDirs']);
-      self::$oTemplateGenerator = new \Twig_Environment($oLoader, ['trim_blocks' => true, 'cache' => $this->cacheDir, 'auto_reload' => true, 'autoescape' => false]);
-      self::$oTemplateGenerator->addFilter('replace', new \Twig_Filter_Function('\Omniverse\Controller\Admin::replace'));
-      self::$oTemplateGenerator->addFilter('match', new \Twig_Filter_Function('\Omniverse\Controller\Admin::match'));
     }
 
-    return self::$oTemplateGenerator;
+    return $_SESSION['TemplateDirs'];
+  }
+
+  /**
+   * Echo the data field generated from the specified data
+   *
+   * @param string $sLabel
+   * @param string $sValue
+   */
+  public function dataField($sLabel, $sValue)
+  {
+    return "        <div class=\"field\">
+              <span class=\"label\">$sLabel</span>
+              <span class=\"data\">$sValue</span>
+            </div>\n";
   }
 
   /**
@@ -114,103 +83,79 @@ class Admin extends \Omniverse\Controller\Web
   }
 
   /**
-   * Display the specified template
+   * Render and return specified template
    *
    * @param string $sTemplateName
-   * @param array $hData (optional)
+   * @return string The rendered template
    */
-  public function templateDisplay($sTemplateName, $hData = null)
+  public function templateRender($sTemplateName)
   {
-    if (!empty($sTemplateName))
+    $sTemplateFile = $this->templateFile($sTemplateName);
+
+    if (empty($sTemplateFile))
     {
-      $oTemplate = $this->getTemplateGenerator()->loadTemplate($sTemplateName);
-      $hTemplateData = is_null($hData) ? $this->hTemplateData : $hData;
-      $oTemplate->display($hTemplateData);
+      return '';
     }
+
+    ob_start();
+    $this->templateInclude($sTemplateFile);
+    return ob_get_clean();
   }
 
   /**
-   * Process and cache the module data
+   * Return the full file path of the specified template, if it exists
+   *
+   * @param string $sTemplateName
+   * @return string
    */
-  protected function processModules()
+  public function templateFile($sTemplateName)
   {
-    if (empty($_SESSION['ModuleList']))
+    if (empty($sTemplateName))
     {
-      $aTemp = [];
+      return '';
+    }
 
-      foreach (get_class_methods($this) as $sMethod)
+    if (is_readable($sTemplateName))
+    {
+      return $sTemplateName;
+    }
+
+    foreach (self::templateDirs() as $sLib)
+    {
+      $sFilePath = $sLib . '/' .$sTemplateName;
+
+      if (is_readable($sFilePath))
       {
-        if (preg_match("/^System(.+)/i", $sMethod, $aMatch))
-        {
-          $aTemp[] = $aMatch[1];
-        }
+        return $sFilePath;
       }
 
-      sort($aTemp);
-      reset($aTemp);
-
-      $_SESSION['ResourceList'] = ['System' => $aTemp];
-      $_SESSION['ModuleList'] = [];
-      $_SESSION['ModuleDirs'] = [];
-      $_SESSION['ModuleGroups'] = [];
-      $aBlackList = isset($this->hConfig['moduleblacklist']) ? $this->hConfig['moduleblacklist'] : [];
-
-      foreach (parent::getLibs() as $sLibDir)
+      if (is_readable("$sFilePath.php"))
       {
-        foreach (glob("$sLibDir/Module/*.php") as $sModule)
-        {
-          if (in_array($sModule, $_SESSION['ModuleList']) || in_array($sModule, $aBlackList))
-          {
-            continue;
-          }
-
-          $sModuleName = basename($sModule, ".php");
-
-          try
-          {
-            $oModule = $this->moduleFactory($sModuleName);
-          }
-          catch (\Exception $e)
-          {
-            echo $e->getMessage();
-            continue;
-          }
-
-          $_SESSION['ModuleDirs'][] = "$sLibDir/Module/templates";
-          $hComponent = $oModule->getComponents();
-          ksort($hComponent);
-          reset($hComponent);
-          $_SESSION['ResourceList'][$oModule->getType()] = $hComponent;
-
-          if ($this->oUser->hasResource($oModule->getType()))
-          {
-            $_SESSION['ModuleList'][strtolower($oModule->getType())] = $oModule->getType();
-
-            if ($oModule->visibleInMenu())
-            {
-              $_SESSION['ModuleGroups'][$oModule->getGroup()][strtolower($oModule->getType())] = $oModule->getType();
-            }
-          }
-        }
+        return "$sFilePath.php";
       }
 
-      $_SESSION['ModuleDirs'] = array_unique($_SESSION['ModuleDirs']);
-
-      if (isset($_SESSION['ModuleList']) && is_array($_SESSION['ModuleList']))
+      if (is_readable("$sFilePath.html"))
       {
-        ksort($_SESSION['ModuleList']);
-        reset($_SESSION['ModuleList']);
+        return "$sFilePath.html";
       }
+    }
 
-      ksort($_SESSION['ResourceList']);
-      reset($_SESSION['ResourceList']);
+    return '';
+  }
 
-      ksort($_SESSION['ModuleGroups']);
+  /**
+   * Find then include the specified template if it's found
+   *
+   * @param srtring $sTemplateName
+   */
+  protected function templateInclude($sTemplateName)
+  {
+    $sTemplateFile = $this->templateFile($sTemplateName);
 
-      foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
-      {
-        ksort($_SESSION['ModuleGroups'][$sKey]);
-      }
+    if ($sTemplateFile)
+    {
+      extract($this->hTemplateData);
+      include $sTemplateFile;
     }
   }
 
@@ -231,44 +176,85 @@ class Admin extends \Omniverse\Controller\Web
   {
     parent::run();
 
-    if ($this->oUser->id == 0)
-    {
-      $this->printPasswordForm();
-    }
-    else
-    {
-      $_SESSION['LoggedInUser'] = $this->oUser->id;
-      $this->processModules();
-    }
-
+    $this->templateData('controller', $this);
     $this->templateData('currentUser', $this->oUser);
-    $this->templateData('moduleGroups', $_SESSION['ModuleGroups']);
-    $sModuleTemplate = null;
+    $sModuleDriver = isset($this->oApi->module) ? \Omniverse\Module::driver($this->oApi->module) : '';
 
-    if (!empty($_SESSION['ModuleList'][$this->oApi->module]))
+    if (!empty($sModuleDriver))
     {
       try
       {
-        $sModuleTemplate = 'error.html';
-        $oCurrentModule = $this->moduleFactory($_SESSION['ModuleList'][$this->oApi->module]);
+        $oCurrentModule = $this->moduleFactory($sModuleDriver);
         $oCurrentModule->prepareTemplate();
         $sModuleTemplate = $oCurrentModule->getTemplate();
-      }
-      catch (\Omniverse\Exception\Object $e)
-      {
-        $this->templateData('failure', "The module {$this->oApi->module} could not be instaniated!!!<br />");
+
+        if (isset($this->oApi->ajax))
+        {
+          if (isset($this->hTemplateData['currentItem']))
+          {
+            parent::outputJson
+            ([
+              'moduleType' => $oCurrentModule->getType(),
+              'moduleOutput' => $this->templateRender($sModuleTemplate),
+              'action' => $oCurrentModule->getCurrentAction(),
+              'itemTitle' => $oCurrentModule->getCurrentItemTitle(),
+              'subMenu' => $oCurrentModule->getSubMenuItems(true),
+              'id' => $this->hTemplateData['currentItem']->id,
+              'itemUri' => $oCurrentModule->generateUri($this->hTemplateData['currentItem']->id)
+            ]);
+          }
+
+          parent::outputJson
+          ([
+            'moduleType' => $oCurrentModule->getType(),
+            'moduleOutput' => $this->templateRender($sModuleTemplate),
+            'action' => $oCurrentModule->getCurrentAction()
+          ]);
+        }
+
+        $this->templateData('moduleOutput', $this->templateRender($sModuleTemplate));
       }
       catch (\Exception $e)
       {
-        $this->templateData('failure', $e->getMessage());
+        $this->templateData('failure', "The module {$this->oApi->module} could not be instaniated: " . $e->getMessage());
+
+        if (isset($this->oApi->search['click']))
+        {
+          parent::outputJson
+          ([
+            'error' => $this->templateRender('error'),
+          ]);
+        }
+
+        die($this->templateRender('error'));
       }
     }
 
-    ob_start();
-    $this->templateDisplay('admin-top.html');
-    $this->templateDisplay($sModuleTemplate);
-    $this->templateDisplay('admin-bottom.html');
-    die(ob_get_clean());
+    die($this->templateRender('admin'));
+  }
+
+  /**
+   * Generate and return the current user
+   *
+   * @return \Omniverse\Item\User
+   * @throws \Exception
+   */
+  protected function generateUser()
+  {
+    $oUser = parent::generateUser();
+
+    if ($oUser->id == 0)
+    {
+      $this->printPasswordForm();
+    }
+
+    if (!isset($_SESSION['LoggedInUser']))
+    {
+      $_SESSION['LoggedInUser'] = $oUser->id;
+      \Omniverse\Module::overrideDriverList($this, $oUser);
+    }
+
+    return $oUser;
   }
 
   /**
@@ -278,36 +264,27 @@ class Admin extends \Omniverse\Controller\Web
    */
   protected function printPasswordForm($sError = '')
   {
-    $sAction = empty($this->server['QUERY_STRING']) ? $this->server['request_uri'] : $this->server['request_uri'] . '?' . $this->server['QUERY_STRING'];
     $sFailure = empty($sError) ? '' : "  <h1>$sError</h1>\n";
+    $this->templateData('sFailure', $sFailure);
+    $sLogin = $this->templateRender('login');
 
-    foreach (self::getLibs() as $sLib)
+    if (empty($sLogin))
     {
-      if (is_file($sLib . '/Module/templates/admin_login.html'))
-      {
-        include $sLib . '/Module/templates/admin_login.html';
-        die();
-      }
+      $sLogin = 'Login page not found';
     }
 
-    //if no login page is found, then use the default version...
-    die("<!DOCTYPE html>
-<html>
-<head>
-  <meta charset=\"UTF-8\">
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-  <title>Omniverse Password Check</title>
-  <link rel=\"stylesheet\" type=\"text/css\" href=\"{$this->domain->uri}/" . $this->getDir('share') . "/login.css\" />
-</head>
-<body onLoad=\"document.passCheck.email.focus();\">
-$sFailure
-<form action=\"$sAction\" method=\"post\" name=\"passCheck\">
-    <div class=\"field\"><span class=\"name\">Email:</span><span class=\"value\"><input type=\"text\" name=\"email\"></span></div>
-    <div class=\"field\"><span class=\"name\">Password:</span><span class=\"value\"><input type=\"password\" name=\"password\"></span></div>
-    <div class=\"field\"><span class=\"name\"></span><span class=\"value\"><input type=\"submit\" name=\"submit\" value=\"Authorization\"></span></div>
-  </form>
-</body>
-</html>");
+    if (isset($this->oApi->ajax))
+    {
+      header("Cache-Control: no-cache, must-revalidate");
+      header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
+      header("Content-Type: application/json");
+      die(json_encode
+      ([
+        'replacePage' => $sLogin
+      ]));
+    }
+
+    die($sLogin);
   }
 
   /**

@@ -284,7 +284,7 @@ class Ticket extends \Omniverse\Item
    * @param integer $iItemID
    * @throws Exception
    */
-  public function load(int $iItemID)
+  public function load($iItemID)
   {
     parent::load($iItemID);
     $this->aHistory = [];

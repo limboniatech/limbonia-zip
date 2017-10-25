@@ -1,5 +1,0 @@
-{% import 'macros.html' as macros %}
-<form name="Edit" action="{{module.generateUri(currentItem.id, 'edit')}}" method="post">
-{{macros.getFormFields(module, editColumns, currentItem.getAll)}}
-<div class="field"><span class="blankLabel"></span><span class="data"><input type="submit" name="Update" value="Update">&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" name="No" value="No" onclick="parent.location='{{module.generateUri(currentItem.id)}}'"></span></div>
-</form>
