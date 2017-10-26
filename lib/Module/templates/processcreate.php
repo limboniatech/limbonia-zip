@@ -1,5 +1,5 @@
 <?php
-if ($failure)
+if (isset($failure))
 {
   echo "<h3>Failed creating new " . $module->getType() . ": $failure</h3>";
 }

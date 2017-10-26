@@ -1,7 +1,7 @@
 <?php
-if ($failure)
+if (isset($failure))
 {
-  echo "$failure";
+  echo $failure;
 }
 else
 {

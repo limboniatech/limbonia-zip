@@ -117,6 +117,7 @@ function updateNav(sUrl, sType, sFormData)
   var sOverlayTarget = sType === 'item' && $('#item > #page').length ? '#item > #page' : '#moduleOutput';
 
   history.pushState(null, '', sUrl);
+  sUrlJoinCharacter = sUrl.match(/\?/) ? '&' : '?';
 
   var hAjaxConfig =
   {
@@ -128,7 +129,7 @@ function updateNav(sUrl, sType, sFormData)
     },
     method: 'GET',
     dataType: 'json',
-    url: sUrl + '?ajax=click'
+    url: sUrl + sUrlJoinCharacter + 'ajax=click'
   };
 
   if (sFormData)
