@@ -1,5 +1,5 @@
 <?php
-echo "    <form name=\"Edit\" action=\"$module->generateUri($currentItem->id, method);\" method=\"post\">\n";
+echo "    <form name=\"Edit\" action=\"" . $module->generateUri($currentItem->id, $method) . "\" method=\"post\">\n";
 echo $module->getFormField('Status', $currentItem->status, $editColumns['Status'], false);
 echo $module->getFormField('Priority', $currentItem->priority, $editColumns['Priority'], false);
 echo $module->getFormField('OwnerID', $currentItem->ownerID, $editColumns['OwnerID'], false);

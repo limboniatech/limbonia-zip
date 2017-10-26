@@ -64,11 +64,9 @@ if (isset($moduleOutput))
   if (isset($currentItem) && $currentItem->id > 0)
   {
     $sTemp = $moduleOutput;
-
     $sJsonData = json_encode
     ([
       'moduleType' => $module->getType(),
-      'moduleOutput' => $sTemp,
       'itemTitle' => $module->getCurrentItemTitle(),
       'action' => $method,
       'subMenu' => $module->getSubMenuItems(true),
@@ -78,13 +76,17 @@ if (isset($moduleOutput))
     $moduleOutput = "<script type=\"text/javascript\">
    updateAdminNav('" . $module->getType() . "');
    buildItem($sJsonData);
-  $('#item > #page').html(" . json_encode($sTemp) . ");
+   $('#item > #page').html(" . json_encode($sTemp) . ");
 </script>\n";
   }
   else
   {
     $moduleOutput .= "<script type=\"text/javascript\">updateAdminNav('" . $module->getType() . "');</script>\n";
   }
+}
+else
+{
+  $moduleOutput = '';
 }
 ?>
 <!DOCTYPE html>

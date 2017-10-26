@@ -16,7 +16,7 @@ trait DriverList
   /**
    * Generate and cache the driver list for the current object type
    */
-  protected static function generateDriverList()
+  public static function generateDriverList()
   {
     if (!isset($_SESSION['DriverList']))
     {
