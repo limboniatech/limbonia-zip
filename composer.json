@@ -1,0 +1,12 @@
+{
+    "name": "omniverse/omniverse",
+    "description": "This is the Omniverse Code Library",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Lonnie Blansett",
+            "email": "lonnie@omniverserpg.com"
+        }
+    ],
+    "require": {}
+}

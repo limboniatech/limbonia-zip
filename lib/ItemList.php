@@ -13,7 +13,9 @@ namespace Omniverse;
  */
 class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 {
-	/**
+  use \Omniverse\Traits\HasController;
+
+  /**
    * Name of the table that the list items come from
    *
 	 * @var string
@@ -47,7 +49,19 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 	 */
 	protected function getItem(array $hItem = [])
 	{
-		return empty($hItem) ? null : Item::fromArray($this->sTable, $hItem, $this->oResult->getDatabase());
+    if (empty($hItem))
+    {
+      return null;
+    }
+
+		$oItem = Item::fromArray($this->sTable, $hItem, $this->oResult->getDatabase());
+
+    if ($this->oController instanceof \Omniverse\Controller)
+    {
+      $oItem->setController($this->oController);
+    }
+
+    return $oItem;
 	}
 
   /**
@@ -177,8 +191,8 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
    * @param mixed $xKey
    * @throws OutOfBoundsException
    */
-		public function seek($iRow)
+		public function seek($xKey)
 	{
-		$this->oResult->seek($iRow);
+		$this->oResult->seek($xKey);
 	}
 }

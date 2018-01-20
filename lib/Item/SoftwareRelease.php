@@ -50,7 +50,7 @@ class SoftwareRelease extends \Omniverse\Item
   {
     $sLowerName = strtolower($sName);
 
-   if ($sLowerName == 'version')
+    if ($sLowerName == 'version')
     {
       return "$this->major.$this->minor.$this->patch";
     }

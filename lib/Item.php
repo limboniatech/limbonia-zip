@@ -14,6 +14,7 @@ namespace Omniverse;
 class Item implements \ArrayAccess, \Countable, \SeekableIterator
 {
   use \Omniverse\Traits\DriverList;
+  use \Omniverse\Traits\HasController;
 
   /**
    * The prepared statements that represent various item queries
@@ -211,6 +212,21 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
     }
 
     return \Omniverse\Controller::getDefault()->getDB();
+  }
+
+  /**
+   * Return this object's controller
+   *
+   * @return \Omniverse\Controller
+   */
+  public function getController(): \Omniverse\Controller
+  {
+    if (is_null($this->oController))
+    {
+      return $this->getDB()->getController();
+    }
+
+    return $this->oController;
   }
 
   /**

@@ -13,20 +13,6 @@ namespace Omniverse\Widget;
 class Editor extends \Omniverse\Widget
 {
   /**
-   * The minimum version of Mozilla that this code will work with
-   *
-   * @var integer
-   */
-  protected static $iMinMoz = 20030210;
-
-  /**
-   * The minimum version of IE that this code will work with
-   *
-   * @var float
-   */
-  protected static $fMinIE = 5.5;
-
-  /**
    * The CSS width of this widget
    *
    * @var string
@@ -41,7 +27,7 @@ class Editor extends \Omniverse\Widget
   protected $sHeight = '200';
 
   /**
-   * The name of the toolset that the the editor will use
+   * The name of the tool set that the the editor will use
    *
    * @var string
    */
@@ -73,7 +59,7 @@ class Editor extends \Omniverse\Widget
   public function __construct($sName = null, \Omniverse\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
-    $this->hConfig['customconfigurationspath'] = $this->sWebShareDir . '/WebEditConfig.js';
+    $this->aScript[] = $this->sWebShareDir . '/ckeditor/ckeditor.js';
   }
 
   /**
@@ -83,14 +69,14 @@ class Editor extends \Omniverse\Widget
    */
   protected function init()
   {
-    $sConfig = NULL;
-    $bFirst = TRUE;
+    $sConfig = null;
+    $bFirst = true;
 
     foreach ($this->hConfig as $sKey => $xValue)
     {
       if ($bFirst)
       {
-        $bFirst = FALSE;
+        $bFirst = false;
       }
       else
       {
@@ -100,62 +86,14 @@ class Editor extends \Omniverse\Widget
       $sConfig .= $this->encode($sKey) . '=' . $this->encode($xValue);
     }
 
+    $sWidth = $this->sWidth . ((strpos($this->sWidth, '%') === false) ? 'px' : null);
+    $sHeight = $this->sHeight . ((strpos($this->sHeight, '%') === false) ? 'px' : null);
     $sValue = htmlspecialchars($this->sValue);
-    $this->sPreScript = "<div>\n";
-
-    if ($this->IsCompatible())
-    {
-      $sLink = $this->sWebShareDir . "/WebEdit/editor/fckeditor.html?InstanceName=$this->sName";
-
-      if (!empty($this->sToolbarSet))
-      {
-        $sLink .= "&amp;Toolbar=$this->sToolbarSet";
-      }
-
-      // Render the linked hidden field.
-      $this->sPreScript .= "  <input type=\"hidden\" id=\"$this->sName\" name=\"$this->sName\" value=\"$sValue\" />\n";
-
-      // Render the configurations hidden field.
-      $this->sPreScript .= "  <input type=\"hidden\" id=\"{$this->sName}___Config\" value=\"$sConfig\" />\n";
-
-      // Render the editor IFRAME.
-      $this->sPreScript .= "  <iframe id=\"{$this->sName}___Frame\" src=\"$sLink\" width=\"$this->sWidth\" height=\"$this->sHeight\" frameborder=\"no\" scrolling=\"no\"></iframe>\n";
-    }
-    else
-    {
-      $sWidth = $this->sWidth . ((strpos($this->sWidth, '%') === FALSE) ? 'px' : NULL);
-      $sHeight = $this->sHeight . ((strpos($this->sHeight, '%') === FALSE) ? 'px' : NULL);
-      $this->sPreScript .= "  <textarea name=\"$this->sName\" rows=\"4\" cols=\"40\" style=\"width: $sWidth; height: $sHeight\" wrap=\"virtual\">{$sValue}</textarea>\n";
-    }
-
-    $this->sPreScript .= "</div>\n";
-    return TRUE;
+    $this->sPreScript = "<div>\n  <textarea name=\"$this->sName\" id=\"$this->sName\" rows=\"4\" cols=\"40\" style=\"width: $sWidth; height: $sHeight\" wrap=\"virtual\">{$sValue}</textarea>\n</div>\n";
+    $this->sScript = "CKEDITOR.replace('$this->sName');";
+    return true;
   }
 
-  /**
-   * Is the browser that is currently running compatible with this editor?
-   *
-   * @return boolean
-   */
-  function isCompatible()
-  {
-    $sUserAgent = $this->getController()->server['HTTP_USER_AGENT'];
-    $iIEPos = strpos($sUserAgent, 'MSIE');
-
-    if ($iIEPos !== false && strpos($sUserAgent, 'mac') === FALSE && strpos($sUserAgent, 'Opera') === FALSE)
-    {
-      return (float)substr($sUserAgent, $iIEPos + 5, 3) >= self::$fMinIE;
-    }
-
-    $iMozPos = strpos($sUserAgent, 'Gecko/');
-
-    if ($iMozPos !== false)
-    {
-      return (int)substr($sUserAgent, $iMozPos + 6, 8) >= self::$iMinMoz;
-    }
-
-    return false;
-  }
 
   /**
    * Set the text for the editor

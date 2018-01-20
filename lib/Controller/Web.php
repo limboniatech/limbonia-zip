@@ -14,6 +14,13 @@ namespace Omniverse\Controller;
 class Web extends \Omniverse\Controller
 {
   /**
+   * All the data that will be used by the templates
+   *
+   * @var array
+   */
+  protected $hTemplateData = [];
+
+  /**
    * Data to be appended to the HTML header before display
    *
    * @var string
@@ -31,6 +38,26 @@ class Web extends \Omniverse\Controller
     header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
     header("Content-Type: application/json");
     die(json_encode($xData));
+  }
+
+  public static function templateDirs()
+  {
+    if (!isset($_SESSION['TemplateDirs']))
+    {
+      $_SESSION['TemplateDirs'] = [];
+
+      foreach (parent::getLibs() as $sLibDir)
+      {
+        $sTemplateDir = "$sLibDir/Template";
+
+        if (is_readable($sTemplateDir))
+        {
+          $_SESSION['TemplateDirs'][] = $sTemplateDir;
+        }
+      }
+    }
+
+    return $_SESSION['TemplateDirs'];
   }
 
   /**
@@ -68,6 +95,94 @@ class Web extends \Omniverse\Controller
     $this->oApi = \Omniverse\Api::singleton();
   }
 
+  /**
+   * Add the specified data to the template under the specified name
+   *
+   * @param string $sName
+   * @param mixed $xValue
+   */
+  public function templateData($sName, $xValue)
+  {
+    $this->hTemplateData[$sName] = $xValue;
+  }
+
+  /**
+   * Render and return specified template
+   *
+   * @param string $sTemplateName
+   * @return string The rendered template
+   */
+  public function templateRender($sTemplateName)
+  {
+    $sTemplateFile = $this->templateFile($sTemplateName);
+
+    if (empty($sTemplateFile))
+    {
+      return '';
+    }
+
+    ob_start();
+    $this->templateInclude($sTemplateFile);
+    return ob_get_clean();
+  }
+
+  /**
+   * Return the full file path of the specified template, if it exists
+   *
+   * @param string $sTemplateName
+   * @return string
+   */
+  public function templateFile($sTemplateName)
+  {
+    if (empty($sTemplateName))
+    {
+      return '';
+    }
+
+    if (is_readable($sTemplateName))
+    {
+      return $sTemplateName;
+    }
+
+    foreach (self::templateDirs() as $sLib)
+    {
+      $sFilePath = $sLib . '/' . $this->oApi->controller . '/' .$sTemplateName;
+
+      if (is_readable($sFilePath))
+      {
+        return $sFilePath;
+      }
+
+      if (is_readable("$sFilePath.php"))
+      {
+        return "$sFilePath.php";
+      }
+
+      if (is_readable("$sFilePath.html"))
+      {
+        return "$sFilePath.html";
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Find then include the specified template if it's found
+   *
+   * @param srtring $sTemplateName
+   */
+  protected function templateInclude($sTemplateName)
+  {
+    $sTemplateFile = $this->templateFile($sTemplateName);
+
+    if ($sTemplateFile)
+    {
+      extract($this->hTemplateData);
+      include $sTemplateFile;
+    }
+  }
+
   public function addToHtmlHeader($xData)
   {
     $this->sHtmlHeader .= $xData;
@@ -90,34 +205,32 @@ class Web extends \Omniverse\Controller
    */
   protected function generateUser()
   {
-    if (isset($_SESSION['LoggedInUser']))
+    try
     {
-      return $this->itemFromId('user', $_SESSION['LoggedInUser']);
-    }
+      if (isset($_SESSION['LoggedInUser']))
+      {
+        return $this->itemFromId('user', $_SESSION['LoggedInUser']);
+      }
 
-    if (!isset($this->oApi->user) || !isset($this->oApi->pass))
+      if (!isset($this->oApi->user) || !isset($this->oApi->pass))
+      {
+        return $this->itemFactory('user');
+      }
+
+      if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $this->oApi->user === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && $this->oApi->pass === $this->hConfig['master']['Password'])
+      {
+        return parent::generateUser();
+      }
+
+      $oUser = \Omniverse\Item\User::getByEmail($this->oApi->user, $this->getDB());
+      $oUser->setController($this);
+      $oUser->authenticate($this->oApi->pass);
+      return $oUser;
+    }
+    catch (\Exception $e)
     {
-      return $this->itemFactory('user');
+      throw new \Exception('Invalid Login:  ' . $e->getMessage(), null, $e);
     }
-
-    if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $this->oApi->user === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && $this->oApi->pass === $this->hConfig['master']['Password'])
-    {
-      return parent::generateUser();
-    }
-
-    $oUser = \Omniverse\Item\User::getByEmail($this->oApi->user, $this->getDB());
-
-    if (!$oUser->active)
-    {
-      throw new \Exception("Invalid user/password");
-    }
-
-    if (!password_verify($this->oApi->pass, $oUser->password))
-    {
-      throw new \Exception("Invalid user/password");
-    }
-
-    return $oUser;
   }
 
   /**
@@ -128,6 +241,44 @@ class Web extends \Omniverse\Controller
   protected function handleGenerateUserException(\Exception $oException)
   {
     echo $oException->getMessage();
+  }
+
+  protected function renderPage()
+  {
+    $sTemplate = $this->templateFile($this->oApi->module);
+
+    if (!empty($sTemplate))
+    {
+      try
+      {
+        if (isset($this->oApi->ajax))
+        {
+          self::outputJson
+          ([
+            'pageTitle' => '???',
+            'main' => $this->templateRender($sTemplate)
+          ]);
+        }
+
+        $this->templateData('main', $this->templateRender($sTemplate));
+      }
+      catch (Exception $e)
+      {
+        $this->templateData('failure', 'Failed to generate the requested data: ' . $e->getMessage());
+
+        if (isset($this->oApi->search['click']))
+        {
+          self::outputJson
+          ([
+            'error' => $this->templateRender('error'),
+          ]);
+        }
+
+        die($this->templateRender('error'));
+      }
+    }
+
+    die($this->templateRender('index'));
   }
 
   /**
@@ -141,9 +292,13 @@ class Web extends \Omniverse\Controller
       header('Location: ' . $this->baseUri);
     }
 
+    $this->templateData('controller', $this);
+
     try
     {
-      $this->oUser = $this->generateUser();
+      \Omniverse\Controller::run();
+      $this->templateData('currentUser', $this->oUser);
+      $this->renderPage();
     }
     catch (\Exception $e)
     {

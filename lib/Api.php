@@ -155,8 +155,9 @@ class Api
 
     $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
     $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
+    $this->hData['path'] = strtolower($this->hData['rawpath']);
     $this->hData['rawcall'] = explode('/', $this->hData['rawpath']);
-    $aCall = explode('/', strtolower($this->hData['rawpath']));
+    $aCall = explode('/', $this->hData['path']);
 
     if (isset($aCall[0]) && in_array($aCall[0], self::$aWebTypes))
     {

@@ -162,15 +162,12 @@ class Email
       }
     }
 
-    //this filter doesn't seem to work well at this time...
-//    if (!filter_var($sDomain, FILTER_VALIDATE_URL))
-//    {
-//      throw new \Exception("The 'domain' part ($sDomain) of the email address is invalid");
-//    }
-
-    if (!checkdnsrr($sDomain, "MX") && !checkdnsrr($sDomain, "A"))
+    if ($bUseDNS)
     {
-      throw new \Exception("The 'domain' part of the email address has no valid DNS");
+      if (!checkdnsrr($sDomain, "MX") && !checkdnsrr($sDomain, "A"))
+      {
+        throw new \Exception("The 'domain' part of the email address has no valid DNS");
+      }
     }
   }
 

@@ -45,6 +45,8 @@ function buildItem(oData)
 {
   var sLowerModule = oData.moduleType.toLowerCase();
   var sItemNav = '';
+  var sPageTitle = oData.moduleType + ' #' + oData.id + ' > ' + oData.itemTitle + ' > ' + oData.action.charAt(0).toUpperCase() + oData.action.slice(1);
+  $(document).prop('title', sPageTitle);
 
   for (var sAction in oData.subMenu)
   {
@@ -96,11 +98,13 @@ function updateAdminNav(sModuleName)
  * @param {String} sUrl - The URL to generate and insert data from
  * @param {String} sType (optional) - The type of data being inserted (defaults to 'module')
  * @param {String} sFormData (optional) - The form data to submit
+ * @param {Boolean} bHasFiles (optional) - The form data contains files to upload...
  */
-function updateNav(sUrl, sType, sFormData)
+function updateNav(sUrl, sType, sFormData, bHasFiles)
 {
   if (arguments.length < 2) { sType = 'module'; }
   if (arguments.length < 3) { sFormData = false; }
+  if (arguments.length < 4) { bHasFiles = false; }
 
   var sUrlModule = urlModule(sUrl);
 
@@ -136,6 +140,13 @@ function updateNav(sUrl, sType, sFormData)
   {
     hAjaxConfig['method'] = 'POST';
     hAjaxConfig['data'] = sFormData;
+
+    if (bHasFiles)
+    {
+      hAjaxConfig['cache'] = false;
+      hAjaxConfig['contentType'] = false;
+      hAjaxConfig['processData'] = false;
+    }
   }
 
   $.ajax(hAjaxConfig)
@@ -178,6 +189,9 @@ function updateNav(sUrl, sType, sFormData)
           break;
 
         default:
+          var sPageTitle = oData.moduleType + ' > ' + oData.action.charAt(0).toUpperCase() + oData.action.slice(1);
+          $(document).prop('title', sPageTitle);
+
           $('#moduleOutput').html(oData.moduleOutput);
           $('#content > .tabSet > span').remove();
           $('#content > .tabSet > a.' + oData.moduleType.toLowerCase() + '.' + oData.action).addClass('current').siblings().removeClass('current');
@@ -255,7 +269,35 @@ $(function()
   {
     var sUri = $(this).prop('action');
     var sType = urlItemId(sUri) > 0 ? 'item' : 'module';
-    updateNav(sUri, sType, $(this).serialize());
+    var oFormData = null;
+    var bHasFiles = false;
+
+    //Look for file input fields
+    var aFileInput = $(this).children('input[type=file]');
+
+    //if there any file input fields
+    if (aFileInput.length > 0)
+    {
+      //if the FormData class doesn't exist
+      if (!window.FormData)
+      {
+        //then do nothing else and process this post normally instead of using AJAX
+        return;
+      }
+
+      //get the form object
+      var oForm = $(this);
+
+      //use the form object to generate the the FormData object
+      oFormData = new FormData(oForm[0]);
+      bHasFiles = true;
+    }
+    else
+    {
+      oFormData = $(this).serialize();
+    }
+
+    updateNav(sUri, sType, oFormData, bHasFiles);
     e.preventDefault();
   });
 });

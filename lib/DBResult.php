@@ -67,7 +67,7 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
   }
 
   /**
-   * Returnn the parent database object
+   * Return the parent database object
    *
    * @return \Omniverse\Database
    */
@@ -220,7 +220,7 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
    *
    * @note This is an implementation detail of the SeekableIterator Interface
    *
-   * @param mixed $xKey
+   * @param mixed $iRow
    * @throws OutOfBoundsException
    */
   public function seek($iRow)

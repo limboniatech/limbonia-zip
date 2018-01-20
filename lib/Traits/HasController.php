@@ -24,7 +24,7 @@ trait HasController
    *
    * @param \Omniverse\Controller $oController
    */
-  protected function setController(\Omniverse\Controller $oController)
+  public function setController(\Omniverse\Controller $oController)
   {
     $this->oController = $oController;
   }
@@ -34,7 +34,7 @@ trait HasController
    *
    * @return \Omniverse\Controller
    */
-  public function getController()
+  public function getController(): \Omniverse\Controller
   {
     if (is_null($this->oController))
     {

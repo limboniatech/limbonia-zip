@@ -1,3 +1,17 @@
+2018-01-19 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.6.0
+Feature #34: Admin - Change the page title to better reflect the page contents (Lonnie Blansett)
+Change #67: Admin - Update Editor widget to use new CKEditor (Lonnie Blansett)
+Change #68: Base - Overhaul the external library system (Lonnie Blansett)
+Feature #69: Base - Add Controller data to the base Item (Lonnie Blansett)
+Feature #70: Admin - Change template system (Lonnie Blansett)
+Change #72: User - Move user authentication to the User Item (Lonnie Blansett)
+Feature #73: Base - Add some LDAP components (Lonnie Blansett)
+
+2017-12-28 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.5.0
+Feature #62: Admin - Make the admin more responsive and mobile friendly (Lonnie Blansett)
+
 2017-10-09 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.4.0
 Feature #50: API - Implement Basic REST API (Lonnie Blansett)

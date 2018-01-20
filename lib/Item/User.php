@@ -50,12 +50,11 @@ class User extends \Omniverse\Item
    */
   public static function getByEmail($sEmail, \Omniverse\Database $oDatabase = null)
   {
-    \Omniverse\Email::validate($sEmail, false);
     $oUserList = parent::search('User', ['Email' => $sEmail], null, $oDatabase);
 
     if (count($oUserList) == 0)
     {
-      throw new \Exception("Invalid user/password");
+      throw new \Exception('Unkown user');
     }
 
     return  $oUserList[0];
@@ -98,6 +97,25 @@ class User extends \Omniverse\Item
   }
 
   /**
+   * Authenticate the current user using what ever method they require
+   *
+   * @param string $sPassword
+   * @throws \Exception
+   */
+  public function authenticate(string $sPassword)
+  {
+    if (!$this->active)
+    {
+      throw new \Exception('User not active');
+    }
+
+    if (!password_verify($sPassword, $this->password))
+    {
+      throw new \Exception('Invalid password');
+    }
+  }
+
+  /**
    * Reset this user's password to something random and return that password
    *
    * @return string
@@ -131,7 +149,7 @@ class User extends \Omniverse\Item
     }
     else
     {
-      $oResult = $this->getDB()->prepare("SELECT rl.Resource, rl.Component, rk.Name, uk.Level FROM ResourceLock rl, User_Key uk, ResourceKey rk WHERE rk.KeyID=uk.KeyID AND (rl.KeyID=uk.KeyID OR rk.Name='Admin') AND rl.MinKey <= uk.Level AND uk.UserID = :UserID");
+      $oResult = $this->getDB()->prepare("SELECT rl.Resource, rl.Component, rk.Name, uk.Level FROM ResourceLock rl, User_Key uk, ResourceKey rk WHERE rk.KeyID = uk.KeyID AND (rl.KeyID = uk.KeyID OR rk.Name = 'Admin') AND rl.MinKey <= uk.Level AND uk.UserID = :UserID");
       $bSuccess = $oResult->execute([':UserID' => $this->hData['UserID']]);
       $this->hResource = [];
 

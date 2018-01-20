@@ -27,7 +27,7 @@ class Ajax extends \Omniverse\Controller\Web
 
     try
     {
-      parent::run();
+      \Omniverse\Controller::run();
       $oRequest = new $sClass();
     }
     catch (\Omniverse\Exception\Object $oException)

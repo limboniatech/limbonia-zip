@@ -128,7 +128,7 @@ abstract class Controller
 
       if (is_file($sVersionFile))
       {
-        self::$iBuildDate = new \DateTime('@' . filemtime($sVersionFile));
+        self::$oBuildDate = new \DateTime('@' . filemtime($sVersionFile));
         self::$sBuildVersion = trim(file_get_contents($sVersionFile));
       }
     }
@@ -263,7 +263,7 @@ abstract class Controller
   {
     if (is_dir($sLibDir) && !in_array($sLibDir, self::$aLibList))
     {
-      self::$aLibList[] = $sLibDir;
+      array_unshift(self::$aLibList, $sLibDir);
     }
   }
 
@@ -573,9 +573,11 @@ abstract class Controller
    * @param string $sTable
    * @return \Omniverse\Item
    */
-  public function itemFactory($sTable)
+  public function itemFactory($sTable): \Omniverse\Item
   {
-    return Item::factory($sTable, $this->getDB());
+    $oItem = Item::factory($sTable, $this->getDB());
+    $oItem->setController($this);
+    return $oItem;
   }
 
   /**
@@ -585,9 +587,11 @@ abstract class Controller
    * @param integer $iItem
    * @return \Omniverse\Item
    */
-  public function itemFromId($sTable, $iItem)
+  public function itemFromId($sTable, $iItem): \Omniverse\Item
   {
-    return Item::fromId($sTable, $iItem, $this->getDB());
+    $oItem = Item::fromId($sTable, $iItem, $this->getDB());
+    $oItem->setController($this);
+    return $oItem;
   }
 
   /**
@@ -597,9 +601,11 @@ abstract class Controller
    * @param array $hItem
    * @return \Omniverse\Item
    */
-  public function itemFromArray($sTable, $hItem)
+  public function itemFromArray($sTable, $hItem): \Omniverse\Item
   {
-    return Item::fromArray($sTable, $hItem, $this->getDB());
+    $oItem = Item::fromArray($sTable, $hItem, $this->getDB());
+    $oItem->setController($this);
+    return $oItem;
   }
 
   /**
@@ -609,9 +615,11 @@ abstract class Controller
    * @param string $sQuery
    * @return \Omniverse\ItemList
    */
-  public function itemList($sType, $sQuery)
+  public function itemList($sType, $sQuery): \Omniverse\ItemList
   {
-    return Item::getList($sType, $sQuery, $this->getDB());
+    $oList = Item::getList($sType, $sQuery, $this->getDB());
+    $oList->setController($this);
+    return $oList;
   }
 
   /**
@@ -624,7 +632,9 @@ abstract class Controller
    */
   public function itemSearch($sType, $hWhere = null, $xOrder = null)
   {
-    return Item::search($sType, $hWhere, $xOrder, $this->getDB());
+    $oList = Item::search($sType, $hWhere, $xOrder, $this->getDB());
+    $oList->setController($this);
+    return $oList;
   }
 
   /**
@@ -682,7 +692,9 @@ abstract class Controller
       throw new \Exception('Master user not found!');
     }
 
-    return $oUserList[0];
+    $oUser = $oUserList[0];
+    $oUser->setController($this);
+    return $oUser;
   }
 
   /**

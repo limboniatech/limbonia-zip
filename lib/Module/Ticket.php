@@ -242,7 +242,7 @@ class Ticket extends \Omniverse\Module
     }
     else
     {
-      $this->oController->templateData('failure', "Uploade attachment not found.");
+      $this->oController->templateData('failure', "Uploaded attachment not found.");
     }
   }
 

@@ -129,7 +129,7 @@ class Module
   protected $hComponent =
   [
     'search' => 'This is the ability to search and display data.',
-    'edit' => '"The ability to edit existing data.',
+    'edit' => 'The ability to edit existing data.',
     'create' => 'The ability to create new data.',
     'delete' => 'The ability to delete existing data.'
   ];

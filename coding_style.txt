@@ -25,6 +25,7 @@ o         object (any type)
 r         resource (open file, database, etc...)
 s         string
 x         mixed / unknown
+c         callable
 
 Here is a short example displaying most features described above:
 <?php

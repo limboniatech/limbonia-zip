@@ -834,6 +834,12 @@ trait ItemModule
   protected function editGetData()
   {
     $hPost = isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : $this->oController->post->getRaw();
+
+    if (empty($hPost))
+    {
+      throw new \Exception('No POST data found');
+    }
+
     $hTemp = $this->oItem->getColumns();
     $aIgnore = isset($this->aIgnore['boolean']) ? $this->aIgnore['boolean'] : [];
 
