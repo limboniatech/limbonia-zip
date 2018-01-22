@@ -27,6 +27,21 @@ class TicketContent extends \Omniverse\Item
   protected static $aHistoryColumns = null;
 
   /**
+   * List of names and their associated methods, used by __get to generate data
+   *
+   * @var array
+   */
+  protected $hAutoGetter =
+  [
+    'all' => 'getAll',
+    'columns' => 'getColumns',
+    'columnlist' => 'getColumnNames',
+    'idcolumn' => 'getIDColumn',
+    'table' => 'getTable',
+    'history' => 'getHistory'
+  ];
+
+  /**
    * Either create or update this object depending on if it's already been created or not
    *
    * @return integer The ID of this content object on success or false on failure
@@ -42,12 +57,12 @@ class TicketContent extends \Omniverse\Item
 
     if (!is_null($this->aHistory))
     {
-      $this->getDB()->exec('DELETE FROM TicketHistory WHERE ContentID = ' . $this->id);
+      $this->getDatabase()->exec('DELETE FROM TicketHistory WHERE ContentID = ' . $this->id);
 
       foreach ($this->aHistory as $hHistory)
       {
         $hHistory['ContentID'] = $this->id;
-        $this->getDB()->insert('TicketHistory', $hHistory);
+        $this->getDatabase()->insert('TicketHistory', $hHistory);
       }
     }
 
@@ -64,7 +79,7 @@ class TicketContent extends \Omniverse\Item
   {
     if (is_null(self::$aHistoryColumns))
     {
-      $oHistory = parent::factory('TicketHistory', $this->getDB());
+      $oHistory = parent::factory('TicketHistory', $this->getDatabase());
       self::$aHistoryColumns = $oHistory->columnList;
     }
 
@@ -101,12 +116,12 @@ class TicketContent extends \Omniverse\Item
   {
     if (count($this->aHistory) == 0)
     {
-      $oResult = $this->getDB()->query('SELECT * FROM TicketHistory WHERE ContentID = ' . $this->id);
+      $oResult = $this->getDatabase()->query('SELECT * FROM TicketHistory WHERE ContentID = ' . $this->id);
       $aHistory = $oResult->fetchAll();
       $this->setHistory($aHistory);
     }
 
-    return $this->aHistory;
+    return new \Omniverse\ItemList('TicketHistory', new \Omniverse\ArrayResult($this->aHistory));
   }
 
   /**

@@ -15,6 +15,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
 {
   use \Omniverse\Traits\DriverList;
   use \Omniverse\Traits\HasController;
+  use \Omniverse\Traits\HasDatabase;
 
   /**
    * The prepared statements that represent various item queries
@@ -36,13 +37,6 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * @var array
    */
   protected $aNoUpdate = [];
-
-  /**
-   * The stored database object
-   *
-   * @var Database;
-   */
-  protected $oDatabase = null;
 
   /**
    * The table that this object is referencing
@@ -146,7 +140,9 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   public static function getList($sType, $sQuery, Database $oDatabase = null)
   {
     $oDatabase = $oDatabase instanceof \Omniverse\Database ? $oDatabase : \Omniverse\Controller::getDefault()->getDB();
-    return new ItemList($sType, $oDatabase->query($sQuery));
+    $oList = new ItemList($sType, $oDatabase->query($sQuery));
+    $oList->setDatabase($oDatabase);
+    return $oList;
   }
 
   /**
@@ -171,10 +167,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function __construct($sType = null, \Omniverse\Database $oDatabase = null)
   {
-    if ($oDatabase instanceof \Omniverse\Database)
-    {
-      $this->oDatabase = $oDatabase;
-    }
+    $this->setDatabase($oDatabase);
 
     if (empty($this->sTable))
     {
@@ -200,21 +193,6 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   }
 
   /**
-   * Return the database object that the data for this object was generated from
-   *
-   * @return \Omniverse\Database
-   */
-  public function getDB()
-  {
-    if (!\is_null($this->oDatabase))
-    {
-      return $this->oDatabase;
-    }
-
-    return \Omniverse\Controller::getDefault()->getDB();
-  }
-
-  /**
    * Return this object's controller
    *
    * @return \Omniverse\Controller
@@ -223,7 +201,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   {
     if (is_null($this->oController))
     {
-      return $this->getDB()->getController();
+      return $this->getDatabase()->getController();
     }
 
     return $this->oController;
@@ -236,7 +214,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function getColumns()
   {
-      return $this->getDB()->getColumns($this->sTable);
+      return $this->getDatabase()->getColumns($this->sTable);
   }
 
   /**
@@ -257,7 +235,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function getColumn($sColumn)
   {
-    return $this->getDB()->getColumnData($this->sTable, $sColumn);
+    return $this->getDatabase()->getColumnData($this->sTable, $sColumn);
   }
 
   /**
@@ -507,11 +485,11 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
 
         try
         {
-          $this->hItemObjects[$sLowerName] = self::fromId($sType, $this->__get($sIDType), $this->getDB());
+          $this->hItemObjects[$sLowerName] = self::fromId($sType, $this->__get($sIDType), $this->getDatabase());
         }
         catch (\Exception $e)
         {
-          $this->hItemObjects[$sLowerName] = self::factory($sType, $this->getDB());
+          $this->hItemObjects[$sLowerName] = self::factory($sType, $this->getDatabase());
         }
       }
 
@@ -535,7 +513,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function hasColumn($sColumn)
   {
-    return $this->getDB()->hasColumn($this->sTable, $sColumn);
+    return $this->getDatabase()->hasColumn($this->sTable, $sColumn);
   }
 
   /**
@@ -591,7 +569,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function makeSearchQuery($hWhere = [], $xOrder = null)
   {
-    return $this->getDB()->makeSearchQuery($this->sTable, null, $hWhere, $xOrder);
+    return $this->getDatabase()->makeSearchQuery($this->sTable, null, $hWhere, $xOrder);
   }
 
   /**
@@ -613,7 +591,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   {
     $hData = $this->hData;
     unset($hData[$this->sIdColumn]);
-    $iID = $this->getDB()->insert($this->sTable, $hData);
+    $iID = $this->getDatabase()->insert($this->sTable, $hData);
 
     if (empty($iID))
     {
@@ -631,7 +609,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   protected function update()
   {
-    return $this->getDB()->update($this->sTable, $this->id, $this->hData);
+    return $this->getDatabase()->update($this->sTable, $this->id, $this->hData);
   }
 
   /**
@@ -654,7 +632,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   {
     if (!isset(self::$hStatement[$this->sTable]['load']))
     {
-      self::$hStatement[$this->sTable]['load'] = $this->getDB()->prepare("SELECT * FROM $this->sTable WHERE $this->sIdColumn = :ItemId LIMIT 1");
+      self::$hStatement[$this->sTable]['load'] = $this->getDatabase()->prepare("SELECT * FROM $this->sTable WHERE $this->sIdColumn = :ItemId LIMIT 1");
     }
 
     settype($iItemID, 'integer');
@@ -690,7 +668,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
       return true;
     }
 
-    return $this->getDB()->delete($this->sTable, $this->id);
+    return $this->getDatabase()->delete($this->sTable, $this->id);
   }
 
   /**

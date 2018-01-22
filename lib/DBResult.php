@@ -10,28 +10,16 @@ namespace Omniverse;
  * @version $Revision: 1.1 $
  * @package Omniverse
  */
-class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
+class DBResult extends \PDOStatement implements \Omniverse\Interfaces\Result, \ArrayAccess, \Countable
 {
-  /**
-   * The current row of the result set
-   *
-   * @var integer
-   */
-  protected $iCurrentRow = 0;
-
-  /**
-   * The number of results in the set
-   *
-   * @var integer
-   */
-  protected $iRowCount = false;
-
-  /**
-   * An array of the data from the results
-   *
-   * @var array
-   */
-  protected $aData = null;
+  use \Omniverse\Traits\Result
+  {
+    \Omniverse\Traits\Result::offsetExists as originalOffsetExists;
+    \Omniverse\Traits\Result::offsetGet as originaloffsetGet;
+    \Omniverse\Traits\Result::seek as originalSeek;
+    \Omniverse\Traits\Result::next as originalNext;
+    \Omniverse\Traits\Result::valid as originalValid;
+  }
 
   /**
    * The parent database object
@@ -56,11 +44,11 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
    *
    * @return array on success or false on failure
    */
-  protected function getAllAssoc()
+  public function getData()
   {
     if (\is_null($this->aData))
     {
-      $this->aData = $this->fetchAll();
+      $this->setData($this->fetchAll());
     }
 
     return $this->aData;
@@ -141,38 +129,10 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
     if ($this->iRowCount === false)
     {
       //I'm not working with large data sets, so this should be fine for now...
-      $this->getAllAssoc();
-      $this->iRowCount = \count($this->aData);
+      $this->getData();
     }
 
     return $this->iRowCount;
-  }
-
-  /**
-   * Set the specified array offset with the specified value
-   *
-   * @note This is an implementation detail of the ArrayAccess Interface
-   *
-   * @param mixed $xOffset
-   * @param mixed $xValue
-   */
-  public function offsetSet($xOffset, $xValue)
-  {
-    //nothing happens because you are not allowed to change the data here,
-    //this function exists only to satisfy the interface...
-  }
-
-  /**
-   * Unset the specified array offset
-   *
-   * @note This is an implementation detail of the ArrayAccess Interface
-   *
-   * @param mixed $xOffset
-   */
-  public function offsetUnset($xOffset)
-  {
-    //nothing happens because you are not allowed to change the data here,
-    //this function exists only to satisfy the interface...
   }
 
   /**
@@ -185,8 +145,8 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
    */
   public function offsetExists($xOffset)
   {
-    $this->getAllAssoc();
-    return \is_array($this->aData) && isset($this->aData[$xOffset]);
+    $this->getData();
+    return $this->originalOffsetExists($xOffset);
   }
 
   /**
@@ -199,8 +159,8 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
    */
   public function offsetGet($xOffset)
   {
-    $this->getAllAssoc();
-    return \is_array($this->aData) && isset($this->aData[$xOffset]) ? $this->aData[$xOffset] : false;
+    $this->getData();
+    return $this->originalOffsetGet($xOffset);
   }
 
   /**
@@ -212,7 +172,8 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
    */
   public function count()
   {
-    return $this->rowCount();
+    $this->getData();
+    return $this->iRowCount;
   }
 
   /**
@@ -225,38 +186,8 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
    */
   public function seek($iRow)
   {
-    $this->getAllAssoc();
-
-    if (!isset($this->aData[$iRow]))
-    {
-      throw new OutOfBoundsException("Invalid seek position ($iRow)");
-    }
-
-    $this->iCurrentRow = $iRow;
-  }
-
-  /**
-   * Return the current row of data from the result set
-   *
-   * @note This is an implementation detail of the SeekableIterator Interface
-   *
-   * @return type
-   */
-  public function current()
-  {
-    return $this->offsetGet($this->iCurrentRow);
-  }
-
-  /**
-   * Return the current internal index of the result set
-   *
-   * @note This is an implementation detail of the SeekableIterator Interface
-   *
-   * @return integer
-   */
-  public function key()
-  {
-    return $this->iCurrentRow;
+    $this->getData();
+    $this->originalSeek($iRow);
   }
 
   /**
@@ -268,19 +199,8 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
    */
   public function next()
   {
-    $this->getAllAssoc();
-    $this->iCurrentRow++;
-    return $this->current();
-  }
-
-  /**
-   * Rewind the internal index of the result set back to the begining
-   *
-   * @note This is an implementation detail of the SeekableIterator Interface
-   */
-  public function rewind()
-  {
-    $this->iCurrentRow = 0;
+    $this->getData();
+    return $this->originalNext();
   }
 
   /**
@@ -292,7 +212,7 @@ class DBResult extends \PDOStatement implements \ArrayAccess, \Countable
    */
   public function valid()
   {
-    $this->getAllAssoc();
-    return isset($this->aData[$this->iCurrentRow]);
+    $this->getData();
+    return $this->originalValid();
   }
 }

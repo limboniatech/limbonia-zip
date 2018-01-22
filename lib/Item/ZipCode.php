@@ -21,14 +21,14 @@ class ZipCode extends \Omniverse\Item
    */
   public function getZipFromProximity($iZip, $iMiles)
   {
-    $oCenter = parent::fromId('ZipCode', $iZip, $this->getDB());
+    $oCenter = parent::fromId('ZipCode', $iZip, $this->getDatabase());
 
     if ($oCenter->id == 0)
     {
       return [];
     }
 
-    $oZipList = parent::search('ZipCode', ['Distance' => "<:$iMiles"], ['*', "truncate((degrees(acos(sin(radians(Latitude)) * sin(radians($oCenter->latitude)) + cos(radians(latitude)) * cos( radians($oCenter->latitude)) * cos(radians(longitude - {$oCenter->longitude})))) * 69.09), 1) AS Distance"], 'Distance', $this->getDB());
+    $oZipList = parent::search('ZipCode', ['Distance' => "<:$iMiles"], ['*', "truncate((degrees(acos(sin(radians(Latitude)) * sin(radians($oCenter->latitude)) + cos(radians(latitude)) * cos( radians($oCenter->latitude)) * cos(radians(longitude - {$oCenter->longitude})))) * 69.09), 1) AS Distance"], 'Distance', $this->getDatabase());
 
     if ($oZipList->count() == 0)
     {
@@ -53,7 +53,7 @@ class ZipCode extends \Omniverse\Item
    */
   public function getCitiesByState($sState)
   {
-    $oResult = $this->getDB()->prepare("SELECT DISTINCT City FROM ZipCode WHERE State = :State ORDER BY City");
+    $oResult = $this->getDatabase()->prepare("SELECT DISTINCT City FROM ZipCode WHERE State = :State ORDER BY City");
     return $oResult->execute([':State' => $sState]) ? $oResult->fetchAll() : [];
   }
 
@@ -66,7 +66,7 @@ class ZipCode extends \Omniverse\Item
    */
   public function getZipsByCity($sCity, $sState)
   {
-    $oResult = $this->getDB()->prepare("SELECT DISTINCT Zip FROM ZipCode WHERE City = :City AND State = :State ORDER BY Zip");
+    $oResult = $this->getDatabase()->prepare("SELECT DISTINCT Zip FROM ZipCode WHERE City = :City AND State = :State ORDER BY Zip");
     return $oResult->execute([':City' => $sCity, ':State' => $sState]) ? $oResult->fetchAll() : [];
   }
 

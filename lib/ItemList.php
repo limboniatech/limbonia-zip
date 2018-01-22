@@ -14,6 +14,7 @@ namespace Omniverse;
 class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 {
   use \Omniverse\Traits\HasController;
+  use \Omniverse\Traits\HasDatabase;
 
   /**
    * Name of the table that the list items come from
@@ -25,7 +26,7 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 	/**
    * The database result object that contain the items
    *
-	 * @var DBResult
+	 * @var \Omniverse\Interfaces\Result
 	 */
 	protected $oResult = null;
 
@@ -33,9 +34,9 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 	 * Constructor
 	 *
 	 * @param string $sTable - the name of the table that the list items come from.
-	 * @param DBResult $oResult - the database result object that contain the items
+	 * @param \Omniverse\Interfaces\Result $oResult - the database result object that contain the items
 	 */
-	public function __construct($sTable, DBResult $oResult)
+	public function __construct($sTable, \Omniverse\Interfaces\Result $oResult)
 	{
 		$this->sTable = $sTable;
 		$this->oResult = $oResult;
@@ -54,7 +55,7 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
       return null;
     }
 
-		$oItem = Item::fromArray($this->sTable, $hItem, $this->oResult->getDatabase());
+		$oItem = Item::fromArray($this->sTable, $hItem, $this->getDatabase());
 
     if ($this->oController instanceof \Omniverse\Controller)
     {

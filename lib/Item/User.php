@@ -138,7 +138,7 @@ class User extends \Omniverse\Item
       return true;
     }
 
-    $oResult = $this->getDB()->prepare("SELECT COUNT(1) FROM User_Key uk NATURAL JOIN ResourceKey rk WHERE rk.Name='Admin' AND uk.Level = 1000 AND uk.UserID = :UserID");
+    $oResult = $this->getDatabase()->prepare("SELECT COUNT(1) FROM User_Key uk NATURAL JOIN ResourceKey rk WHERE rk.Name='Admin' AND uk.Level = 1000 AND uk.UserID = :UserID");
     $oResult->execute([':UserID' => $this->hData['UserID']]);
     $iAdminCount = $oResult->fetchOne();
     $this->bAdmin = $iAdminCount > 0;
@@ -149,7 +149,7 @@ class User extends \Omniverse\Item
     }
     else
     {
-      $oResult = $this->getDB()->prepare("SELECT rl.Resource, rl.Component, rk.Name, uk.Level FROM ResourceLock rl, User_Key uk, ResourceKey rk WHERE rk.KeyID = uk.KeyID AND (rl.KeyID = uk.KeyID OR rk.Name = 'Admin') AND rl.MinKey <= uk.Level AND uk.UserID = :UserID");
+      $oResult = $this->getDatabase()->prepare("SELECT rl.Resource, rl.Component, rk.Name, uk.Level FROM ResourceLock rl, User_Key uk, ResourceKey rk WHERE rk.KeyID = uk.KeyID AND (rl.KeyID = uk.KeyID OR rk.Name = 'Admin') AND rl.MinKey <= uk.Level AND uk.UserID = :UserID");
       $bSuccess = $oResult->execute([':UserID' => $this->hData['UserID']]);
       $this->hResource = [];
 
@@ -205,7 +205,7 @@ class User extends \Omniverse\Item
    */
   public function getResourceKeys()
   {
-    $oResult = $this->getDB()->query("SELECT KeyID, Level FROM User_Key WHERE UserID = $this->id");
+    $oResult = $this->getDatabase()->query("SELECT KeyID, Level FROM User_Key WHERE UserID = $this->id");
     return $oResult->fetchAssoc();
   }
 
@@ -216,7 +216,7 @@ class User extends \Omniverse\Item
    */
   public function getResourceList()
   {
-    return parent::search('ResourceKey', null, 'Name', $this->getDB());
+    return parent::search('ResourceKey', null, 'Name', $this->getDatabase());
   }
 
   /**
@@ -226,11 +226,11 @@ class User extends \Omniverse\Item
    */
   public function setResourceKeys($hResource)
   {
-    $this->getDB()->exec('DELETE FROM User_Key WHERE UserID = ' . $this->id);
+    $this->getDatabase()->exec('DELETE FROM User_Key WHERE UserID = ' . $this->id);
 
     if (count($hResource) > 0)
     {
-      $oResult = $this->getDB()->prepare("INSERT INTO User_Key VALUES ($this->id, :Key, :Level)");
+      $oResult = $this->getDatabase()->prepare("INSERT INTO User_Key VALUES ($this->id, :Key, :Level)");
 
       foreach ($hResource as $iKey => $iLevel)
       {
@@ -302,6 +302,6 @@ class User extends \Omniverse\Item
    */
   public function getTickets()
   {
-    return parent::search('Ticket', ['OwnerID' => $this->id, 'Status' => '!=:closed'], ['Priority', 'DueDate DESC'], $this->getDB());
+    return parent::search('Ticket', ['OwnerID' => $this->id, 'Status' => '!=:closed'], ['Priority', 'DueDate DESC'], $this->getDatabase());
   }
 }

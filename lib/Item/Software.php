@@ -35,22 +35,22 @@ class Software extends \Omniverse\Item
     if ($sLowerType == 'changelog')
     {
       $sSQL = "SELECT DISTINCT R.* FROM SoftwareRelease R, Ticket T WHERE R.TicketID = T.TicketID AND T.Status = 'closed' AND R.SoftwareID = $this->id ORDER BY R.Major DESC, R.Minor DESC, R.Patch DESC";
-      return parent::getList('SoftwareRelease', $sSQL, $this->getDB());
+      return parent::getList('SoftwareRelease', $sSQL, $this->getDatabase());
     }
 
     if ($sLowerType == 'roadmap')
     {
       $sSQL = "SELECT DISTINCT R.* FROM SoftwareRelease R, Ticket T WHERE R.TicketID = T.TicketID AND T.Status != 'closed' AND R.SoftwareID = $this->id ORDER BY R.Major ASC, R.Minor ASC, R.Patch ASC";
-      return parent::getList('SoftwareRelease', $sSQL, $this->getDB());
+      return parent::getList('SoftwareRelease', $sSQL, $this->getDatabase());
     }
 
     if ($sLowerType == 'active')
     {
       $sSQL = "SELECT R.* from SoftwareRelease AS R, Ticket AS T WHERE R.TicketID = T.TicketID AND T.Status != 'closed' AND R.SoftwareID = $this->id ORDER BY Major, Minor, Patch";
-      return parent::getList('SoftwareRelease', $sSQL, $this->getDB());
+      return parent::getList('SoftwareRelease', $sSQL, $this->getDatabase());
     }
 
-    return parent::search('SoftwareRelease', ['SoftwareID' => $this->id], ['Major', 'Minor', 'Patch'], $this->getDB());
+    return parent::search('SoftwareRelease', ['SoftwareID' => $this->id], ['Major', 'Minor', 'Patch'], $this->getDatabase());
   }
 
   /**
@@ -69,7 +69,7 @@ class Software extends \Omniverse\Item
       'Note' => trim((string)$sNote)
     ];
 
-    $oRelease = parent::fromArray('SoftwareRelease', $hRelease, $this->getDB());
+    $oRelease = parent::fromArray('SoftwareRelease', $hRelease, $this->getDatabase());
     return $oRelease->save();
   }
 
@@ -81,7 +81,7 @@ class Software extends \Omniverse\Item
    */
   public function removeRelease($iRelease)
   {
-    $oRelease = parent::fromId('SoftwareRelease', $iRelease, $this->getDB());
+    $oRelease = parent::fromId('SoftwareRelease', $iRelease, $this->getDatabase());
     return $oRelease->delete();
   }
 
@@ -92,7 +92,7 @@ class Software extends \Omniverse\Item
    */
   public function getElementList()
   {
-    return parent::search('SoftwareElement', ['SoftwareID' => $this->id], ['Name'], $this->getDB());
+    return parent::search('SoftwareElement', ['SoftwareID' => $this->id], ['Name'], $this->getDatabase());
   }
 
   /**
@@ -111,7 +111,7 @@ class Software extends \Omniverse\Item
       'UserID' => empty($iUser) ? 0 : $iUser
     ];
 
-    $oElement = parent::fromArray('SoftwareElement', $hElement, $this->getDB());
+    $oElement = parent::fromArray('SoftwareElement', $hElement, $this->getDatabase());
     return $oElement->save();
   }
 
@@ -123,7 +123,7 @@ class Software extends \Omniverse\Item
    */
   public function removeElement($iElement)
   {
-    $oElement = parent::fromId('SoftwareElement', $iElement, $this->getDB());
+    $oElement = parent::fromId('SoftwareElement', $iElement, $this->getDatabase());
     return $oElement->delete();
   }
 
@@ -134,6 +134,6 @@ class Software extends \Omniverse\Item
    */
   public function getUnversionedTikets()
   {
-    return parent::getList('Ticket', "SELECT * FROM Ticket WHERE SoftwareID = $this->softwareId AND (ReleaseID IS NULL OR ReleaseID = 0) ORDER BY Priority, CreateTime", $this->getDB());
+    return parent::getList('Ticket', "SELECT * FROM Ticket WHERE Status != 'closed' AND SoftwareID = $this->softwareId AND (ReleaseID IS NULL OR ReleaseID = 0) ORDER BY Priority, CreateTime", $this->getDatabase());
   }
 }

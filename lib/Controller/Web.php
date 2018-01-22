@@ -296,7 +296,7 @@ class Web extends \Omniverse\Controller
 
     try
     {
-      \Omniverse\Controller::run();
+      $this->oUser = $this->generateUser();
       $this->templateData('currentUser', $this->oUser);
       $this->renderPage();
     }

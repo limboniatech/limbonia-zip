@@ -121,7 +121,7 @@ class SoftwareRelease extends \Omniverse\Item
       'Subject' => "Software release: {$this->software->name}  {$this->version}"
     ];
 
-    $oTicket = parent::fromArray('Ticket', $hTicket, $this->getDB());
+    $oTicket = parent::fromArray('Ticket', $hTicket, $this->getDatabase());
     $this->ticketId = $oTicket->save();
 
     try
@@ -181,7 +181,7 @@ class SoftwareRelease extends \Omniverse\Item
     if ($sLowerType == 'complete')
     {
       $sSQL = "SELECT DISTINCT Ticket.* FROM Ticket WHERE Type = 'software' AND SoftwareID = $this->softwareId AND ReleaseID = $this->id AND (DevStatus = 'complete' OR Status = 'closed')";
-      return parent::getList('Ticket', $sSQL, $this->getDB());
+      return parent::getList('Ticket', $sSQL, $this->getDatabase());
     }
 
     $hCriteria =
@@ -195,18 +195,18 @@ class SoftwareRelease extends \Omniverse\Item
     {
       $hCriteria['DevStatus'] = "!=:complete";
       $hCriteria['Status'] = '!=:closed';
-      $oTicket = parent::factory('Ticket', $this->getDB());
+      $oTicket = parent::factory('Ticket', $this->getDatabase());
       $hIncomplete = [];
 
       foreach ($oTicket->priorityList as $sPriority)
       {
         $hCriteria['Priority'] = $sPriority;
-        $hIncomplete[$sPriority] = parent::search('Ticket', $hCriteria, null, $this->getDB());
+        $hIncomplete[$sPriority] = parent::search('Ticket', $hCriteria, null, $this->getDatabase());
       }
 
       return $hIncomplete;
     }
 
-    return parent::search('Ticket', $hCriteria, null, $this->getDB());
+    return parent::search('Ticket', $hCriteria, null, $this->getDatabase());
   }
 }

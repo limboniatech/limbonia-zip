@@ -94,7 +94,7 @@ class Ticket extends \Omniverse\Item
 
     if (empty(self::$aContentColumns))
     {
-      self::$aContentColumns = \array_keys(\array_change_key_case($this->getDB()->getColumns('TicketContent'), CASE_LOWER));
+      self::$aContentColumns = \array_keys(\array_change_key_case($this->getDatabase()->getColumns('TicketContent'), CASE_LOWER));
     }
   }
 
@@ -148,7 +148,7 @@ class Ticket extends \Omniverse\Item
 
           try
           {
-            $oPrevious = parent::fromId($sType, $xPrevious, $this->getDB());
+            $oPrevious = parent::fromId($sType, $xPrevious, $this->getDatabase());
 
             if ($sRealName == 'ReleaseID')
             {
@@ -166,7 +166,7 @@ class Ticket extends \Omniverse\Item
 
           try
           {
-            $oCurrent = parent::fromId($sType, $xCurrent, $this->getDB());
+            $oCurrent = parent::fromId($sType, $xCurrent, $this->getDatabase());
 
             if ($sRealName == 'ReleaseID')
             {
@@ -298,7 +298,7 @@ class Ticket extends \Omniverse\Item
    */
   protected function getPotentialOwnerList()
   {
-    $oResult = $this->getDB()->prepare("SELECT U.UserID FROM User U, User_Key K WHERE U.Active = 1 AND U.Type = 'internal' AND U.UserID = K.UserID AND K.Level >= ? AND K.KeyID = ?");
+    $oResult = $this->getDatabase()->prepare("SELECT U.UserID FROM User U, User_Key K WHERE U.Active = 1 AND U.Type = 'internal' AND U.UserID = K.UserID AND K.Level >= ? AND K.KeyID = ?");
     $bSuccess = $oResult->execute([$this->category->level, $this->category->keyId]);
 
     if (!$bSuccess)
@@ -367,7 +367,7 @@ class Ticket extends \Omniverse\Item
 
         //get the id of the user that most recently got a ticket in the same category as this ticket
         $sUserList = implode(', ', $aUserList);
-        $oResult = $this->getDB()->prepare("SELECT UserID FROM Ticket WHERE UserID IN ($sUserList) AND CategoryID = ? ORDER BY TicketID DESC LIMIT 1");
+        $oResult = $this->getDatabase()->prepare("SELECT UserID FROM Ticket WHERE UserID IN ($sUserList) AND CategoryID = ? ORDER BY TicketID DESC LIMIT 1");
         $oResult->execute([$this->hData['CategoryID']]);
         $hTicket = $oResult-fetchOne();
 
@@ -400,7 +400,7 @@ class Ticket extends \Omniverse\Item
         }
 
         $hUserWeights = [];
-        $oResult = $this->getDB()->prepare("SELECT Priority, COUNT(1) FROM Ticket WHERE UserID = ? AND Status = 'open' GROUP BY Priority");
+        $oResult = $this->getDatabase()->prepare("SELECT Priority, COUNT(1) FROM Ticket WHERE UserID = ? AND Status = 'open' GROUP BY Priority");
 
         foreach ($aUserList as $iUser)
         {
@@ -446,7 +446,7 @@ class Ticket extends \Omniverse\Item
       $hContent['updatetype'] = empty($hContent['userid']) == 0 ? 'system' : 'private';
     }
 
-    $oContent = parent::fromArray('TicketContent', $hContent, $this->getDB());
+    $oContent = parent::fromArray('TicketContent', $hContent, $this->getDatabase());
     $oContent->setHistory($this->aHistory);
     $oContent->save();
     $aHistory = $oContent->getHistory();
@@ -484,7 +484,7 @@ class Ticket extends \Omniverse\Item
       return $iTicket;
     }
 
-    $sDomain = $this->getDB()->getController()->getDomain()->name;
+    $sDomain = $this->getDatabase()->getController()->getDomain()->name;
     $oEmail->setFrom("ticket_system@{$sDomain}");
     $oEmail->setSubject("$this->subject [{$sDomain} Ticket #{$this->id}: $this->status]");
     $sBody = "The ticket has the follwing updates: \n\n";
@@ -502,7 +502,7 @@ class Ticket extends \Omniverse\Item
       $sBody .= "\n{$oContent->updateText}\n\n";
     }
 
-    $sBody .= "To see this ticket click <a href=\"https://{$sDomain}/" . $this->getDB()->getController()->generateUri('ticket', $this->id) . ">here</a>.";
+    $sBody .= "To see this ticket click <a href=\"https://{$sDomain}/" . $this->getDatabase()->getController()->generateUri('ticket', $this->id) . ">here</a>.";
     $oEmail->addBody($sBody);
     $oEmail->send();
     return $iTicket;
@@ -515,7 +515,7 @@ class Ticket extends \Omniverse\Item
    */
   public function getContentList()
   {
-    return parent::getList('TicketContent', "SELECT DISTINCT C.* FROM TicketContent C LEFT JOIN TicketHistory H ON C.ContentID = H.ContentID WHERE (C.UpdateText > '' OR H.Note > '') AND TicketID = $this->id ORDER BY ContentID DESC", $this->getDB());
+    return parent::getList('TicketContent', "SELECT DISTINCT C.* FROM TicketContent C LEFT JOIN TicketHistory H ON C.ContentID = H.ContentID WHERE (C.UpdateText > '' OR H.Note > '') AND TicketID = $this->id ORDER BY ContentID DESC", $this->getDatabase());
   }
 
   /**
@@ -525,7 +525,7 @@ class Ticket extends \Omniverse\Item
    */
   public function getTotalTime()
   {
-    $oResult = $this->getDB()->prepare("SELECT DISTINCT C.ContentID, C.TimeWorked FROM TicketContent C LEFT JOIN TicketHistory H ON C.ContentID = H.ContentID WHERE (C.UpdateText > '' OR H.Note > '') AND TicketID = ?");
+    $oResult = $this->getDatabase()->prepare("SELECT DISTINCT C.ContentID, C.TimeWorked FROM TicketContent C LEFT JOIN TicketHistory H ON C.ContentID = H.ContentID WHERE (C.UpdateText > '' OR H.Note > '') AND TicketID = ?");
     $oResult->execute([$this->id]);
     $hTime = $oResult->fetchAssoc();
     return array_sum($hTime);
@@ -538,7 +538,7 @@ class Ticket extends \Omniverse\Item
    */
   public function getWatcherList()
   {
-    return parent::getList('User', "SELECT DISTINCT U.* FROM User U NATURAL JOIN Ticket_User TU WHERE TU.TicketID = $this->id", $this->getDB());
+    return parent::getList('User', "SELECT DISTINCT U.* FROM User U NATURAL JOIN Ticket_User TU WHERE TU.TicketID = $this->id", $this->getDatabase());
   }
 
   /**
@@ -550,7 +550,7 @@ class Ticket extends \Omniverse\Item
   public function addWatcher($xUser)
   {
     $iUser = $xUser instanceof User ? $xUser->id : (integer)$xUser;
-    $bSuccess = $this->getDB()->exec("INSERT INTO Ticket_User (TicketID, UserID) VALUES ($this->id, $iUser)");
+    $bSuccess = $this->getDatabase()->exec("INSERT INTO Ticket_User (TicketID, UserID) VALUES ($this->id, $iUser)");
     return $bSuccess !== false;
   }
 
@@ -563,7 +563,7 @@ class Ticket extends \Omniverse\Item
   public function removeWatcher($xUser)
   {
     $iUser = $xUser instanceof User ? $xUser->id : (integer)$xUser;
-    $bSuccess = $this->getDB()->exec("DELETE FROM Ticket_User WHERE TicketID = $this->id AND UserID = $iUser");
+    $bSuccess = $this->getDatabase()->exec("DELETE FROM Ticket_User WHERE TicketID = $this->id AND UserID = $iUser");
     return $bSuccess !== false;
   }
 
@@ -577,7 +577,7 @@ class Ticket extends \Omniverse\Item
   {
     $sTicketNumber = $this->id < 10 ? '0' . (string)$this->id : (string)$this->id;
     $sDir = "/.ticket_attachments/{$sTicketNumber[0]}/{$sTicketNumber[1]}/{$this->id}";
-    return $bWeb ? $this->getDB()->getController()->domain->url . $sDir : $this->getDB()->getController()->domain->path . $sDir;
+    return $bWeb ? $this->getDatabase()->getController()->domain->url . $sDir : $this->getDatabase()->getController()->domain->path . $sDir;
   }
 
   /**
@@ -737,7 +737,7 @@ class Ticket extends \Omniverse\Item
    */
   public function getChildren()
   {
-    return parent::search('Ticket', ['ParentID' => $this->id], ['LastUpdate'], $this->getDB());
+    return parent::search('Ticket', ['ParentID' => $this->id], ['LastUpdate'], $this->getDatabase());
   }
 
   /**
@@ -748,7 +748,7 @@ class Ticket extends \Omniverse\Item
    */
   public function addChild($xChild)
   {
-    $oChild = $xChild instanceof \Omniverse\Item\Ticket ? $xChild : parent::fromId('Ticket', $xChild, $this->getDB());
+    $oChild = $xChild instanceof \Omniverse\Item\Ticket ? $xChild : parent::fromId('Ticket', $xChild, $this->getDatabase());
     $oChild->parentId = $this->id;
     return (boolean)$oChild->save();
   }
@@ -761,7 +761,7 @@ class Ticket extends \Omniverse\Item
    */
   public function removeChild($xChild)
   {
-    $oChild = $xChild instanceof \Omniverse\Item\Ticket ? $xChild : parent::fromId('Ticket', $xChild, $this->getDB());
+    $oChild = $xChild instanceof \Omniverse\Item\Ticket ? $xChild : parent::fromId('Ticket', $xChild, $this->getDatabase());
 
     if ($oChild->parentId != $this->id)
     {

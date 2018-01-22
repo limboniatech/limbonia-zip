@@ -350,7 +350,7 @@ class Database extends \PDO
    * @throws \Omniverse\Exception\Database
    * @return \Omniverse\Database
    */
-  static public function factory(array $hConfig, \Omniverse\Controller $oController = null)
+  static public function factory(array $hConfig, \Omniverse\Controller $oController = null): \Omniverse\Database
   {
     $hLowercaseConfig = array_change_key_case($hConfig, CASE_LOWER);
 

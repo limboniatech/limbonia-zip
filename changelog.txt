@@ -1,3 +1,8 @@
+2018-01-22 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.6.1
+Change #75: Software System - Limit the types of tickets displayed in "Software > Road Map" (Lonnie Blansett)
+Major Bug #77: Ticket System - Fix ticket change history (Lonnie Blansett)
+
 2018-01-19 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.6.0
 Feature #34: Admin - Change the page title to better reflect the page contents (Lonnie Blansett)
