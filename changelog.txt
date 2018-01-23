@@ -1,3 +1,8 @@
+2018-01-23 Lonnie Blansett <lonnie@omniverserpg.com>
+Omniverse 1.6.2
+Major Bug #87: Base - Fix test mechanism (Lonnie Blansett)
+Minor Bug #88: GUI - Remove broken Twig include (Lonnie Blansett)
+
 2018-01-22 Lonnie Blansett <lonnie@omniverserpg.com>
 Omniverse 1.6.1
 Change #75: Software System - Limit the types of tickets displayed in "Software > Road Map" (Lonnie Blansett)
