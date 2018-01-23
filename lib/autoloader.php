@@ -7,12 +7,12 @@ require 'Controller.php';
 
 spl_autoload_register(function ($sClassName)
 {
-	$sClassType = preg_match("#^Omniverse\\\?(.+)#", $sClassName, $aMatch) ? $aMatch[1] : $sClassName;
+  $sClassType = preg_match("#^Omniverse\\\?(.+)#", $sClassName, $aMatch) ? $aMatch[1] : $sClassName;
   $sClassPath = preg_replace("#[_\\\]#", DIRECTORY_SEPARATOR, $sClassType);
 
   foreach (\Omniverse\Controller::getLibs() as $sLibDir)
   {
-  	$sClassFile = $sLibDir . DIRECTORY_SEPARATOR . $sClassPath . '.php';
+    $sClassFile = $sLibDir . DIRECTORY_SEPARATOR . $sClassPath . '.php';
 
     if (is_file($sClassFile))
     {
@@ -21,6 +21,3 @@ spl_autoload_register(function ($sClassName)
     }
   }
 });
-
-//Twig autoloader
-require_once 'Twig/Autoloader.php';
