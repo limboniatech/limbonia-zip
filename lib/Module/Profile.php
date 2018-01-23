@@ -105,6 +105,7 @@ class Profile extends \Omniverse\Module
   [
     'view' => 'View',
     'edit' => 'Edit',
+    'tickets' => 'Tickets',
     'changepassword' => 'Change Password'
   ];
 
@@ -120,7 +121,7 @@ class Profile extends \Omniverse\Module
    *
    * @var array
    */
-  protected $aAllowedActions = ['editdialog', 'edit', 'view', 'changepassword'];
+  protected $aAllowedActions = ['editdialog', 'edit', 'view', 'changepassword', 'tickets'];
 
   /**
    * List of valid HTTP methods

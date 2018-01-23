@@ -61,8 +61,8 @@ class User extends \Omniverse\Module
     'view' => 'View',
     'edit' => 'Edit',
     'resources' => 'Resources',
-    'resetpassword' => 'Reset Password',
-    'tickets' => 'Tickets'
+    'tickets' => 'Tickets',
+    'resetpassword' => 'Reset Password'
   ];
 
   /**
