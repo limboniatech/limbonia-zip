@@ -1,15 +1,14 @@
 <?php
-namespace Omniverse\Traits;
+namespace Limbonia\Traits;
 
 /**
- * Omniverse Config Trait
+ * Limbonia Config Trait
  *
  * This trait allows an inheriting class to read, access and save configuration
  * data to and from an INI file
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 trait Config
 {

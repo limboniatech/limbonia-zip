@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Position Module class
+ * Limbonia Position Module class
  *
  * Admin module for handling page positions
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Position extends \Omniverse\Module
+class Position extends \Limbonia\Module
 {
   /**
    * The admin group that this module belongs to

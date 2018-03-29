@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse User Item Class
+ * Limbonia User Item Class
  *
  * Item based wrapper around the User table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class User extends \Omniverse\Item
+class User extends \Limbonia\Item
 {
   /**
    * The default password length
@@ -45,10 +44,10 @@ class User extends \Omniverse\Item
    * Generate and return a user object from the specified email
    *
    * @param string $sEmail
-   * @param \Omniverse\Database $oDatabase (optional)
-   * @return \Omniverse\Item\User User object on success or false on failure
+   * @param \Limbonia\Database $oDatabase (optional)
+   * @return \Limbonia\Item\User User object on success or false on failure
    */
-  public static function getByEmail($sEmail, \Omniverse\Database $oDatabase = null)
+  public static function getByEmail($sEmail, \Limbonia\Database $oDatabase = null)
   {
     $oUserList = parent::search('User', ['Email' => $sEmail], null, $oDatabase);
 
@@ -140,7 +139,7 @@ class User extends \Omniverse\Item
 
     $oResult = $this->getDatabase()->prepare("SELECT COUNT(1) FROM User_Key uk NATURAL JOIN ResourceKey rk WHERE rk.Name='Admin' AND uk.Level = 1000 AND uk.UserID = :UserID");
     $oResult->execute([':UserID' => $this->hData['UserID']]);
-    $iAdminCount = $oResult->fetchOne();
+    $iAdminCount = $oResult->fetchColumn();
     $this->bAdmin = $iAdminCount > 0;
 
     if ($this->bAdmin)
@@ -212,7 +211,7 @@ class User extends \Omniverse\Item
   /**
    * Return the list of resource key objects
    *
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function getResourceList()
   {
@@ -257,7 +256,7 @@ class User extends \Omniverse\Item
     {
       $xValue = trim($xValue);
       //if it validates successfully then let the normal value be returned...
-      \Omniverse\Email::validate($xValue);
+      \Limbonia\Email::validate($xValue);
     }
 
     return parent::formatInput($sName, $xValue);
@@ -298,7 +297,7 @@ class User extends \Omniverse\Item
   /**
    * Return the list of open tickets owned by this user
    *
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function getTickets()
   {

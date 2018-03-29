@@ -6,7 +6,11 @@ var adminJs =
 [
   'node_modules/jquery/dist/jquery.js',
   'node_modules/slideout/dist/slideout.js',
-  'share/admin.js'
+  'share/admin.js',
+  'share/ajax.js',
+  'share/select.js',
+  'share/sorttable.js',
+  'share/window.js'
 ];
 var outputDir = 'share';
 

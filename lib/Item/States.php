@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse State Item Class
+ * Limbonia State Item Class
  *
  * Item based wrapper around the States table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class States extends \Omniverse\Item
+class States extends \Limbonia\Item
 {
   /**
    * List of states by zip code

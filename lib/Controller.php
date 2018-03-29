@@ -1,21 +1,20 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse base Controller Class
+ * Limbonia base Controller Class
  *
  * The controller
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 abstract class Controller
 {
   /**
    * The current default Controller
    *
-   * @var \Omniverse\Controller
+   * @var \Limbonia\Controller
    */
   protected static $oDefaultController = null;
 
@@ -37,7 +36,7 @@ abstract class Controller
   protected static $sTimeStampFormat = "G:i:s M j Y";
 
   /**
-   * List of Omniverse lib directories
+   * List of Limbonia lib directories
    *
    * @var array
    */
@@ -58,7 +57,7 @@ abstract class Controller
   protected static $hModuleList = [];
 
   /**
-   * @var \Omniverse\Domain - The default domain for this controller instance
+   * @var \Limbonia\Domain - The default domain for this controller instance
    */
   protected $oDomain = null;
 
@@ -106,14 +105,14 @@ abstract class Controller
   /**
    * This controller's API
    *
-   * @var \Omniverse\Api
+   * @var \Limbonia\Api
    */
   protected $oApi = null;
 
   /**
    * The logged in user
    *
-   * @var \Omniverse\Item\User
+   * @var \Limbonia\Item\User
    */
   protected $oUser = null;
 
@@ -165,7 +164,7 @@ abstract class Controller
   }
 
   /**
-   * Return the build date of the current release of Omniverse.
+   * Return the build date of the current release of Limbonia.
    *
    * @param string $sFormat (optional) - Override the default format with this one, if it's is used
    */
@@ -211,7 +210,7 @@ abstract class Controller
   }
 
   /**
-   * Return the version number of the current release of Omniverse.
+   * Return the version number of the current release of Limbonia.
    *
    * @return string
    */
@@ -255,9 +254,9 @@ abstract class Controller
   }
 
   /**
-   * Add a new Omniverse library to the current list
+   * Add a new Limbonia library to the current list
    *
-   * @param string $sLibDir - The root directory to the Omniverse library to add
+   * @param string $sLibDir - The root directory to the Limbonia library to add
    */
   public static function addLib($sLibDir)
   {
@@ -268,7 +267,7 @@ abstract class Controller
   }
 
   /**
-   * Return the list of Omniverse libraries
+   * Return the list of Limbonia libraries
    *
    * @return array
    */
@@ -281,17 +280,17 @@ abstract class Controller
    * Generate and return a valid, configured controller
    *
    * @param array $hConfig
-   * @return \Omniverse\Controller
+   * @return \Limbonia\Controller
    * @throws \Exception
    */
   public static function factory(array $hConfig = [])
   {
     if (self::isCLI())
     {
-      return new \Omniverse\Controller\Cli($hConfig);
+      return new \Limbonia\Controller\Cli($hConfig);
     }
 
-    $oApi = \Omniverse\Api::singleton();
+    $oApi = \Limbonia\Api::singleton();
     $sControllerClass = __CLASS__ . '\\' . ucfirst($oApi->controller);
     return new $sControllerClass($hConfig);
   }
@@ -315,13 +314,13 @@ abstract class Controller
 
     if (isset($hLowerConfig['domain']))
     {
-      if ($hLowerConfig['domain'] instanceof \Omniverse\Domain)
+      if ($hLowerConfig['domain'] instanceof \Limbonia\Domain)
       {
         $this->oDomain = $hLowerConfig['domain'];
       }
       elseif (is_string($hLowerConfig['domain']))
       {
-        $this->oDomain = \Omniverse\Domain::factory($hLowerConfig['domain']);
+        $this->oDomain = \Limbonia\Domain::factory($hLowerConfig['domain']);
       }
 
       unset($hLowerConfig['domain']);
@@ -364,7 +363,7 @@ abstract class Controller
 
     if (isset($hLowerConfig['moduleblacklist']) && is_array($hLowerConfig['moduleblacklist']))
     {
-      \Omniverse\Module::generateDriverList($hLowerConfig['moduleblacklist']);
+      \Limbonia\Module::generateDriverList($hLowerConfig['moduleblacklist']);
     }
 
     $this->hConfig = array_merge($this->hConfig, $hLowerConfig);
@@ -400,7 +399,7 @@ abstract class Controller
 
     if (in_array($sLowerName, self::$aAutoInput))
     {
-      return \Omniverse\Input::singleton($sLowerName);
+      return \Limbonia\Input::singleton($sLowerName);
     }
 
     if ($sLowerName == 'api')
@@ -473,7 +472,7 @@ abstract class Controller
    * Generate and return a database object based on the specified database config section
    *
    * @param string $sSection (optional)
-   * @return \Omniverse\Database
+   * @return \Limbonia\Database
    */
   public function getDB($sSection = 'default')
   {
@@ -559,21 +558,21 @@ abstract class Controller
    * Generate and return a cache object
    *
    * @param string $sCacheDir (optional)- The directory the cache object will use, if empty it will default to the controller's cache directory
-   * @return \Omniverse\Cache
+   * @return \Limbonia\Cache
    */
   public function cacheFactory($sCacheDir = null)
   {
     $sCacheDir = $sCacheDir ?? $this->cacheDir;
-    return \Omniverse\Cache::factory($sCacheDir);
+    return \Limbonia\Cache::factory($sCacheDir);
   }
 
   /**
    * Generate and return an empty item object based on the specified table.
    *
    * @param string $sTable
-   * @return \Omniverse\Item
+   * @return \Limbonia\Item
    */
-  public function itemFactory($sTable): \Omniverse\Item
+  public function itemFactory($sTable): \Limbonia\Item
   {
     $oItem = Item::factory($sTable, $this->getDB());
     $oItem->setController($this);
@@ -585,9 +584,9 @@ abstract class Controller
    *
    * @param string $sTable
    * @param integer $iItem
-   * @return \Omniverse\Item
+   * @return \Limbonia\Item
    */
-  public function itemFromId($sTable, $iItem): \Omniverse\Item
+  public function itemFromId($sTable, $iItem): \Limbonia\Item
   {
     $oItem = Item::fromId($sTable, $iItem, $this->getDB());
     $oItem->setController($this);
@@ -599,9 +598,9 @@ abstract class Controller
    *
    * @param string $sTable
    * @param array $hItem
-   * @return \Omniverse\Item
+   * @return \Limbonia\Item
    */
-  public function itemFromArray($sTable, $hItem): \Omniverse\Item
+  public function itemFromArray($sTable, $hItem): \Limbonia\Item
   {
     $oItem = Item::fromArray($sTable, $hItem, $this->getDB());
     $oItem->setController($this);
@@ -613,9 +612,9 @@ abstract class Controller
    *
    * @param string $sType
    * @param string $sQuery
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
-  public function itemList($sType, $sQuery): \Omniverse\ItemList
+  public function itemList($sType, $sQuery): \Limbonia\ItemList
   {
     $oList = Item::getList($sType, $sQuery, $this->getDB());
     $oList->setController($this);
@@ -628,7 +627,7 @@ abstract class Controller
    * @param string $sType
    * @param array $hWhere
    * @param mixed $xOrder
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function itemSearch($sType, $hWhere = null, $xOrder = null)
   {
@@ -642,7 +641,7 @@ abstract class Controller
    *
    * @param string $sType
    * @param string $sName (optional) - The name to give the widget when it is instantiated
-   * @return \Omniverse\Widget - The requested \Omniverse\Widget on success, otherwise FALSE.
+   * @return \Limbonia\Widget - The requested \Limbonia\Widget on success, otherwise FALSE.
    */
   public function widgetFactory($sType, $sName = null)
   {
@@ -653,7 +652,7 @@ abstract class Controller
    * Generate and return the module of the specified type
    *
    * @param string $sType
-   * @return \Omniverse\Module
+   * @return \Limbonia\Module
    */
   public function moduleFactory($sType)
   {
@@ -668,9 +667,34 @@ abstract class Controller
   }
 
   /**
+   * Generate and return a Report object of the specified type
+   *
+   * @param string $sType
+   * @param array $hParam (optional)
+   * @return \Limbonia\Report
+   */
+  public function reportFactory($sType, array $hParam = []): \Limbonia\Report
+  {
+    return \Limbonia\Report::factory($sType, $hParam, $this);
+  }
+
+  /**
+   * Generate a report, run it then return the result
+   *
+   * @param string $sType The type of report to get a result from
+   * @param array $hParam (optional) List of report parameters to set before running the report
+   * @return \Limbonia\Interfaces\Result
+   * @throws \Limbonia\Exception\Object
+   */
+  public function reportResultFactory($sType, array $hParam = [])
+  {
+    return \Limbonia\Report::resultFactory($sType, $hParam, $this);
+  }
+
+  /**
    * Return the currently logged in user
    *
-   * @return \Omniverse\Item\User
+   * @return \Limbonia\Item\User
    */
   public function user()
   {
@@ -680,7 +704,7 @@ abstract class Controller
   /**
    * Generate and return the current user
    *
-   * @return \Omniverse\Item\User
+   * @return \Limbonia\Item\User
    * @throws \Exception
    */
   protected function generateUser()

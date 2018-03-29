@@ -2,7 +2,7 @@
 $sAdminNav = "No modules were found!\n";
 $sModuleNav = '';
 $iGroup = count($_SESSION['ModuleGroups']);
-$sPageTitle = 'Omniverse Admin';
+$sPageTitle = 'Limbonia Admin';
 
 if ($iGroup > 0)
 {
@@ -62,23 +62,14 @@ if ($iGroup > 0)
 
 if (isset($moduleOutput))
 {
-  if (isset($currentItem) && $currentItem->id > 0)
+  $aAdminOutput = $module->getAdminOutput();
+
+  if (!empty($aAdminOutput))
   {
-    $sPageTitle = ucwords($module->getType() . " #$currentItem->id > " . $module->getCurrentItemTitle() . " > $method");
-    $sTemp = $moduleOutput;
-    $sJsonData = json_encode
-    ([
-      'moduleType' => $module->getType(),
-      'itemTitle' => $module->getCurrentItemTitle(),
-      'action' => $method,
-      'subMenu' => $module->getSubMenuItems(true),
-      'id' => $currentItem->id,
-      'itemUri' => $module->generateUri($currentItem->id)
-    ]);
     $moduleOutput = "<script type=\"text/javascript\">
    updateAdminNav('" . $module->getType() . "');
-   buildItem($sJsonData);
-   $('#item > #page').html(" . json_encode($sTemp) . ");
+   buildItem(" . json_encode($aAdminOutput) . ");
+   $('#item > #page').html(" . json_encode($moduleOutput) . ");
 </script>\n";
   }
   else
@@ -98,8 +89,8 @@ else
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Lonnie Blansett">
-  <meta name="generator" content="Omniverse <?= \Omniverse\Controller::version() ?>">
-  <meta name="build-date" content="<?= \Omniverse\Controller::buildDate() ?>">
+  <meta name="generator" content="Limbonia <?= \Limbonia\Controller::version() ?>">
+  <meta name="build-date" content="<?= \Limbonia\Controller::buildDate() ?>">
   <title><?= $sPageTitle ?></title>
   <link rel="stylesheet" type="text/css" href="<?= $controller->domain->uri . '/' . $controller->getDir('share') ?>/admin.css" />
   <script type="text/javascript" src="<?= $controller->domain->uri . '/' . $controller->getDir('share') ?>/admin-all-min.js"></script>

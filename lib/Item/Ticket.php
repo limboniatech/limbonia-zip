@@ -1,17 +1,16 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse Ticket Item Class
+ * Limbonia Ticket Item Class
  *
  * Item based wrapper around the Ticket table and adds all the extra
  * functionality needed for a full ticket system
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Ticket extends \Omniverse\Item
+class Ticket extends \Limbonia\Item
 {
   /**
    * List of columns that shouldn't be updated after the data has been created
@@ -86,9 +85,9 @@ class Ticket extends \Omniverse\Item
    * The ticket constructor
    *
    * @param string $sType (optional)
-   * @param \Omniverse\Database $oDatabase (optional)
+   * @param \Limbonia\Database $oDatabase (optional)
    */
-  public function __construct($sType = null, \Omniverse\Database $oDatabase = null)
+  public function __construct($sType = null, \Limbonia\Database $oDatabase = null)
   {
     parent::__construct($sType, $oDatabase);
 
@@ -369,7 +368,7 @@ class Ticket extends \Omniverse\Item
         $sUserList = implode(', ', $aUserList);
         $oResult = $this->getDatabase()->prepare("SELECT UserID FROM Ticket WHERE UserID IN ($sUserList) AND CategoryID = ? ORDER BY TicketID DESC LIMIT 1");
         $oResult->execute([$this->hData['CategoryID']]);
-        $hTicket = $oResult-fetchOne();
+        $hTicket = $oResult->fetchColumn();
 
         //find the position of the most recent user to have a ticket
         $iCurrentPosition = array_search($hTicket['UserID'], $aUserList);
@@ -459,7 +458,7 @@ class Ticket extends \Omniverse\Item
     }
 
     $sOriginatorEmail = \strtolower($oContent->user->email);
-    $oEmail = new \Omniverse\Email();
+    $oEmail = new \Limbonia\Email();
 
     //don't send an email to the owner if they are making the changes
     if (\strtolower($this->owner->email) != $sOriginatorEmail)
@@ -511,7 +510,7 @@ class Ticket extends \Omniverse\Item
   /**
    * Return the list of content for this ticket
    *
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function getContentList()
   {
@@ -534,7 +533,7 @@ class Ticket extends \Omniverse\Item
   /**
    * Return a list of watchers of this ticket
    *
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function getWatcherList()
   {
@@ -544,7 +543,7 @@ class Ticket extends \Omniverse\Item
   /**
    * Add the specified watcher to this ticket
    *
-   * @param integer|\Omniverse\Item\User $xUser Either the userID or a User object
+   * @param integer|\Limbonia\Item\User $xUser Either the userID or a User object
    * @return boolean
    */
   public function addWatcher($xUser)
@@ -557,7 +556,7 @@ class Ticket extends \Omniverse\Item
   /**
    * Remove the specified watcher from this ticket
    *
-   * @param integer|\Omniverse\Item\User $xUser Either the userID or a User object
+   * @param integer|\Limbonia\Item\User $xUser Either the userID or a User object
    * @return boolean
    */
   public function removeWatcher($xUser)
@@ -679,7 +678,7 @@ class Ticket extends \Omniverse\Item
 
     $sAttachmentDir = $this->generateAttachmentDir();
 
-    \Omniverse\File::makeDir($sAttachmentDir);
+    \Limbonia\File::makeDir($sAttachmentDir);
 
     if (empty($sName))
     {
@@ -733,7 +732,7 @@ class Ticket extends \Omniverse\Item
   /**
    * Return a list of the child tickets
    *
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function getChildren()
   {
@@ -743,12 +742,12 @@ class Ticket extends \Omniverse\Item
   /**
    * Add the specified ticket as a child of this ticket
    *
-   * @param integer|\Omniverse\Item\Ticket $xChild Either the ID of a ticket or a ticket object
+   * @param integer|\Limbonia\Item\Ticket $xChild Either the ID of a ticket or a ticket object
    * @return boolean
    */
   public function addChild($xChild)
   {
-    $oChild = $xChild instanceof \Omniverse\Item\Ticket ? $xChild : parent::fromId('Ticket', $xChild, $this->getDatabase());
+    $oChild = $xChild instanceof \Limbonia\Item\Ticket ? $xChild : parent::fromId('Ticket', $xChild, $this->getDatabase());
     $oChild->parentId = $this->id;
     return (boolean)$oChild->save();
   }
@@ -756,12 +755,12 @@ class Ticket extends \Omniverse\Item
   /**
    * Remove the specified ticket as a child of this ticket
    *
-   * @param integer|\Omniverse\Item\Ticket $xChild Either the ID of a ticket or a ticket object
+   * @param integer|\Limbonia\Item\Ticket $xChild Either the ID of a ticket or a ticket object
    * @return boolean
    */
   public function removeChild($xChild)
   {
-    $oChild = $xChild instanceof \Omniverse\Item\Ticket ? $xChild : parent::fromId('Ticket', $xChild, $this->getDatabase());
+    $oChild = $xChild instanceof \Limbonia\Item\Ticket ? $xChild : parent::fromId('Ticket', $xChild, $this->getDatabase());
 
     if ($oChild->parentId != $this->id)
     {

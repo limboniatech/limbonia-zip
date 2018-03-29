@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Tag;
+namespace Limbonia\Tag;
 
 /**
- * Omniverse Table Cell Class
+ * Limbonia Table Cell Class
  *
  * This is a light wrapper around an HTML table cell
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class TableCell extends \Omniverse\Tag
+class TableCell extends \Limbonia\Tag
 {
   /**
    * Constructor

@@ -1,21 +1,20 @@
 <?php
-namespace Omniverse\Traits;
+namespace Limbonia\Traits;
 
 /**
- * Omniverse ItemModule Trait
+ * Limbonia ItemModule Trait
  *
  * This trait allows an inheriting module to use an item
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 trait ItemModule
 {
   /**
    * The item object associated with this module
    *
-   * @var \Omniverse\Item
+   * @var \Limbonia\Item
    */
   protected $oItem = null;
 
@@ -24,18 +23,18 @@ trait ItemModule
    */
   protected function init()
   {
-    $sItemDriver = \Omniverse\Item::driver($this->sType);
+    $sItemDriver = \Limbonia\Item::driver($this->sType);
 
     if (empty($sItemDriver))
     {
-      throw new \Omniverse\Exception\Object("Driver for type ($this->sType) not found");
+      throw new \Limbonia\Exception\Object("Driver for type ($this->sType) not found");
     }
 
     $this->oItem = $this->oController->itemFactory($this->sType);
 
-    if (isset($this->oController->api->id) && strtolower($this->sType) == $this->oController->api->module)
+    if (isset($this->oApi->id) && strtolower($this->sType) == $this->oApi->module)
     {
-      $this->oItem->load($this->oController->api->id);
+      $this->oItem->load($this->oApi->id);
     }
 
     if ($this->oItem->id > 0)
@@ -59,7 +58,7 @@ trait ItemModule
   {
     if ($this->oItem->id == 0)
     {
-      throw new \Exception($this->getType() . ' #' . $this->oController->api->id . ' not found', 404);
+      throw new \Exception($this->getType() . ' #' . $this->oApi->id . ' not found', 404);
     }
   }
 
@@ -71,10 +70,10 @@ trait ItemModule
    */
   protected function processApiHead()
   {
-    if (is_null($this->oController->api->id))
+    if (is_null($this->oApi->id))
     {
       $oDatabase = $this->oController->getDB();
-      $oDatabase->query($oDatabase->makeSearchQuery($this->oItem->getTable(), ['id'], $this->oController->api->search, null));
+      $oDatabase->query($oDatabase->makeSearchQuery($this->oItem->getTable(), ['id'], $this->oApi->search, null));
       return null;
     }
 
@@ -92,12 +91,12 @@ trait ItemModule
   {
     $sTable = $this->oItem->getTable();
     $oDatabase = $this->oController->getDB();
-    $aRawFields = isset($this->oController->api->fields) ? array_merge(['id'], $this->oController->api->fields) : [];
+    $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : [];
     $aFields = array_diff($oDatabase->verifyColumns($sTable, $aRawFields), $this->aIgnore['view']);
 
     //default order is according to the ID column of this item
-    $aOrder = $this->oController->api->sort ?? ['id'];
-    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($sTable, $aFields, $this->oController->api->search, $aOrder));
+    $aOrder = $this->oApi->sort ?? ['id'];
+    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($sTable, $aFields, $this->oApi->search, $aOrder));
     $hList = [];
 
     foreach ($oResult as $hRow)
@@ -139,12 +138,12 @@ trait ItemModule
   {
     $hRaw = $this->removeIgnoredFields('view', $this->oItem->getAll());
 
-    if ($this->oController->api->fields)
+    if ($this->oApi->fields)
     {
       $hResult = [];
       $sTable = $this->oItem->getTable();
 
-      foreach ($this->oController->api->fields as $sColumn)
+      foreach ($this->oApi->fields as $sColumn)
       {
         $sRealColumn = $this->oController->getDB()->hasColumn($sTable, $sColumn);
 
@@ -171,7 +170,7 @@ trait ItemModule
    */
   protected function processApiGet()
   {
-    if (is_null($this->oController->api->id))
+    if (is_null($this->oApi->id))
     {
       return $this->processApiGetList();
     }
@@ -183,12 +182,12 @@ trait ItemModule
   /**
    * Update the API specified item with the API specified data then return the updated item
    *
-   * @return \Omniverse\Item
+   * @return \Limbonia\Item
    * @throws \Exception
    */
   protected function processApiPutItem()
   {
-    $hItem = $this->oController->api->data;
+    $hItem = $this->oApi->data;
     $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
 
     foreach ($this->aIgnore['edit'] as $sField)
@@ -218,7 +217,7 @@ trait ItemModule
     $sIdColumn = strtolower($this->oItem->getIDColumn());
     $hList = [];
 
-    foreach ($this->oController->api->data as $iKey => $hItem)
+    foreach ($this->oApi->data as $iKey => $hItem)
     {
       $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
 
@@ -261,12 +260,12 @@ trait ItemModule
    */
   protected function processApiPut()
   {
-    if (!is_array($this->oController->api->data) || count($this->oController->api->data) == 0)
+    if (!is_array($this->oApi->data) || count($this->oApi->data) == 0)
     {
       throw new \Exception('No valid data found to process', 400);
     }
 
-    if (is_null($this->oController->api->id))
+    if (is_null($this->oApi->id))
     {
       return $this->processApiPutList();
     }
@@ -279,12 +278,12 @@ trait ItemModule
   /**
    * Create the API specified item with the API specified data then return the created item
    *
-   * @return \Omniverse\Item
+   * @return \Limbonia\Item
    * @throws \Exception
    */
   protected function processApiPostItem()
   {
-    $hLowerItem = \array_change_key_case($this->oController->api->data, CASE_LOWER);
+    $hLowerItem = \array_change_key_case($this->oApi->data, CASE_LOWER);
     $sIdColumn = strtolower($this->oItem->getIDColumn());
 
     if (isset($hLowerItem['id']))
@@ -314,7 +313,7 @@ trait ItemModule
     $sIdColumn = strtolower($this->oItem->getIDColumn());
     $hList = [];
 
-    foreach ($this->oController->api->data as $hItem)
+    foreach ($this->oApi->data as $hItem)
     {
       $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
 
@@ -344,12 +343,12 @@ trait ItemModule
    */
   protected function processApiPost()
   {
-    if (!is_array($this->oController->api->data) || count($this->oController->api->data) == 0)
+    if (!is_array($this->oApi->data) || count($this->oApi->data) == 0)
     {
       throw new \Exception('No valid data found to process', 400);
     }
 
-    $aKeys = array_keys($this->oController->api->data);
+    $aKeys = array_keys($this->oApi->data);
 
     //if the first data key is numeric
     if (is_numeric($aKeys[0]))
@@ -365,7 +364,7 @@ trait ItemModule
   /**
    * Delete the API specified item then return true
    *
-   * @return \Omniverse\Item
+   * @return \Limbonia\Item
    * @throws \Exception
    */
   protected function processApiDeleteItem()
@@ -383,7 +382,7 @@ trait ItemModule
   {
     $sIdColumn = $this->oItem->getIDColumn();
     $oDatabase = $this->oController->getDB();
-    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($this->oItem->getTable(), ['id'], $this->oController->api->search));
+    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($this->oItem->getTable(), ['id'], $this->oApi->search));
     $aList = [];
 
     foreach ($oResult as $hRow)
@@ -403,7 +402,7 @@ trait ItemModule
     if ($iRowsDeleted === false)
     {
       $aError = $this->errorInfo();
-      throw new \Omniverse\Exception\DBResult("Item list not deleted from $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSql, $aError[1]);
+      throw new \Limbonia\Exception\DBResult("Item list not deleted from $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSql, $aError[1]);
     }
 
     return true;
@@ -417,7 +416,7 @@ trait ItemModule
    */
   protected function processApiDelete()
   {
-    if (is_null($this->oController->api->id))
+    if (is_null($this->oApi->id))
     {
       return $this->processApiDeleteList();
     }
@@ -559,21 +558,12 @@ trait ItemModule
    */
   protected function prepareTemplatePostSearch()
   {
-    $xSearch = $this->processSearchGetCriteria();
-
-    if (is_array($xSearch))
-    {
-      foreach (array_keys($xSearch) as $sKey)
-      {
-        $this->processSearchTerm($xSearch, $sKey);
-      }
-    }
-
-    $oData = $this->processSearchGetData($xSearch);
+    $hSearch = $this->processSearchTerms($this->processSearchGetCriteria());
+    $oData = $this->processSearchGetData($hSearch);
 
     if ($oData->count() == 1)
     {
-      if (isset($this->oController->api->ajax))
+      if (isset($this->oApi->ajax))
       {
         $this->oItem = $oData[0];
         $this->oController->templateData('currentItem', $this->oItem);
@@ -583,7 +573,7 @@ trait ItemModule
         return true;
       }
 
-      if (isset($this->oController->api->subAction) && $this->oController->api->subAction == 'quick')
+      if (isset($this->oApi->subAction) && $this->oApi->subAction == 'quick')
       {
         $oItem = $oData[0];
         header('Location: '. $this->generateUri($oItem->id));
@@ -610,6 +600,27 @@ trait ItemModule
   {
     parent::prepareTemplate();
     $this->oController->templateData('currentItem', $this->oItem);
+  }
+
+  /**
+   * Return an array of data that is needed to display the module's admin output
+   *
+   * @return array
+   */
+  public function getAdminOutput()
+  {
+    if ($this->oItem->id > 0)
+    {
+      return array_merge(parent::getAdminOutput(),
+      [
+        'itemTitle' => $this->getCurrentItemTitle(),
+        'subMenu' => $this->getSubMenuItems(true),
+        'id' => $this->oItem->id,
+        'itemUri' => $this->generateUri($this->oItem->id)
+      ]);
+    }
+
+    return parent::getAdminOutput();
   }
 
   /**
@@ -694,7 +705,7 @@ trait ItemModule
    * Perform the search based on the specified criteria and return the result
    *
    * @param string|array $xSearch
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   protected function processSearchGetData($xSearch)
   {
@@ -787,7 +798,7 @@ trait ItemModule
       $bSuccess = false;
 
       $hWhere = isset($_SESSION['EditData']['All']) ? [] : [$sFullIDColumn => array_keys($_SESSION['EditData'][$sIDColumn])];
-      $oItemList = \Omniverse\Item::search($this->getType(), $hWhere);
+      $oItemList = \Limbonia\Item::search($this->getType(), $hWhere);
 
       if (isset($oItemList))
       {

@@ -1,18 +1,17 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse Window Widget
+ * Limbonia Window Widget
  *
  * A wrapper around an new window
  *
  * @todo This class needs to be reworked to be more modern and further DocBlocks will wait until *after* the rewrite
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Window extends \Omniverse\Widget
+class Window extends \Limbonia\Widget
 {
   /**
    * The configuration data
@@ -85,14 +84,14 @@ class Window extends \Omniverse\Widget
    * It increments the widget counter and generates a unique (but human readable) name.
    *
    * @param string $sName (optional)
-   * @param \Omniverse\Controller $oController (optional)
-   * @throws Omniverse\Exception\Object
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws Limbonia\Exception\Object
    */
-  public function __construct($sName = null, \Omniverse\Controller $oController = null)
+  public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->sOnClick = " onClick=\"show{$this->sID}()\"";
-    $this->aScript = [$this->sWebShareDir . '/window.js'];
+    //$this->aScript = [$this->sWebShareDir . '/window.js'];
   }
 
   /**
@@ -152,7 +151,7 @@ class Window extends \Omniverse\Widget
     $this->sScript .= "var {$this->sID}Target = document.getElementById('{$this->sID}');\n";
     $this->sScript .= "function show{$this->sID}()\n";
     $this->sScript .= "{\n";
-    $this->sScript .= "  {$this->sID}Target = showOmnisyswindow('$sURL', $this->iTop, $this->iLeft, $this->iWidth, $this->iHeight, $this->sToolbar, $this->sMenubar, $this->sLocation, $this->sStatus, $this->sScrollBars, $this->sResizable);\n";
+    $this->sScript .= "  {$this->sID}Target = showLimboniawindow('$sURL', $this->iTop, $this->iLeft, $this->iWidth, $this->iHeight, $this->sToolbar, $this->sMenubar, $this->sLocation, $this->sStatus, $this->sScrollBars, $this->sResizable);\n";
     $this->sScript .= "}\n";
     return TRUE;
   }

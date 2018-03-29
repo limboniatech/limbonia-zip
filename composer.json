@@ -1,11 +1,11 @@
 {
-    "name": "omniverse/omniverse",
-    "description": "This is the Omniverse Code Library",
+    "name": "limbonia/limbonia",
+    "description": "This is the Limbonia Code Library",
     "type": "library",
     "authors": [
         {
             "name": "Lonnie Blansett",
-            "email": "lonnie@omniverserpg.com"
+            "email": "lonnie@limbonia.com"
         }
     ],
     "require": {},

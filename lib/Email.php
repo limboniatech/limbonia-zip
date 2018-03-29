@@ -1,14 +1,13 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Email Class
+ * Limbonia Email Class
  *
  * This is a wrapper around the PHP mail command that allows for object oriented usage
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Email
 {
@@ -362,7 +361,7 @@ class Email
       $sHeader .= "Content-type: text/html; charset=utf8\r\n";
     }
 
-    $sHeader .= "X-Mailer: Omniverse\r\n";
+    $sHeader .= "X-Mailer: Limbonia\r\n";
     return $sHeader;
   }
 

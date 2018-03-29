@@ -1,21 +1,20 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse User Module class
+ * Limbonia User Module class
  *
  * Admin module for handling users
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class User extends \Omniverse\Module
+class User extends \Limbonia\Module
 {
-  use \Omniverse\Traits\ItemModule
+  use \Limbonia\Traits\ItemModule
   {
-    \Omniverse\Traits\ItemModule::processSearchGetData as originalProcessSearchGetData;
-    \Omniverse\Traits\ItemModule::processApiGetItem as originalprocessApiGetItem;
+    \Limbonia\Traits\ItemModule::processSearchGetData as originalProcessSearchGetData;
+    \Limbonia\Traits\ItemModule::processApiGetItem as originalprocessApiGetItem;
   }
 
   /**
@@ -73,7 +72,7 @@ class User extends \Omniverse\Module
    */
   protected function processApiGetItem()
   {
-    switch ($this->oController->api->action)
+    switch ($this->oApi->action)
     {
       case 'resources':
         $hResourceList = [];
@@ -135,7 +134,7 @@ class User extends \Omniverse\Module
     {
       $sNewPassword = $this->oItem->resetPassword();
       $sDomain = $this->oController->getDomain();
-      $oEmail = new \Omniverse\Email();
+      $oEmail = new \Limbonia\Email();
       $oEmail->setFrom($this->oController->user()->email);
       $oEmail->addTo($this->oItem->email);
       $oEmail->setSubject("The password for the $sDomain has been reset.");
@@ -163,7 +162,7 @@ class User extends \Omniverse\Module
    * Perform the search based on the specified criteria and return the result
    *
    * @param string|array $xSearch
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   protected function processSearchGetData($xSearch)
   {
@@ -184,11 +183,11 @@ class User extends \Omniverse\Module
   /**
    * Generate and return the value of the specified column
    *
-   * @param \Omniverse\Item $oItem
+   * @param \Limbonia\Item $oItem
    * @param string $sColumn
    * @return mixed
    */
-  public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
+  public function getColumnValue(\Limbonia\Item $oItem, $sColumn)
   {
     if (in_array($sColumn, ['Active', 'Visible']))
     {

@@ -1,16 +1,16 @@
 <?php
 /**
- * Omniverse autoloader
+ * Limbonia autoloader
  */
 
 require 'Controller.php';
 
 spl_autoload_register(function ($sClassName)
 {
-  $sClassType = preg_match("#^Omniverse\\\?(.+)#", $sClassName, $aMatch) ? $aMatch[1] : $sClassName;
+  $sClassType = preg_match("#^Limbonia\\\?(.+)#", $sClassName, $aMatch) ? $aMatch[1] : $sClassName;
   $sClassPath = preg_replace("#[_\\\]#", DIRECTORY_SEPARATOR, $sClassType);
 
-  foreach (\Omniverse\Controller::getLibs() as $sLibDir)
+  foreach (\Limbonia\Controller::getLibs() as $sLibDir)
   {
     $sClassFile = $sLibDir . DIRECTORY_SEPARATOR . $sClassPath . '.php';
 

@@ -9,7 +9,7 @@ else
 {
   $table->makeSortable();
   $table->startHeader();
-  $sDelete = $module->allow('Delete') ? '<span class="OmnisysSortGridDelete" onClick="document.getElementById(\'Omnisys_SortGrid_Edit\').name=\'Delete\';document.getElementById(\'EditColumn\').submit();">Delete</span>' : '';
+  $sDelete = $module->allow('Delete') ? '<span class="LimboniaSortGridDelete" onClick="document.getElementById(\'Limbonia_SortGrid_Edit\').name=\'Delete\';document.getElementById(\'EditColumn\').submit();">Delete</span>' : '';
   $table->addCell($sDelete, false);
 
   $module->processSearchGridHeader($table, 'Name');
@@ -61,7 +61,7 @@ else
   if ($module->allow('edit'))
   {
     echo "<form name=\"Edit\" id=\"Edit\" action=\"" . $module->generateUri('editcolumn') . "\" method=\"post\">\n";
-    echo "<input type=\"hidden\" name=\"Column\" id=\"Omnisys_SortGrid_Edit\" value=\"\">\n";
+    echo "<input type=\"hidden\" name=\"Column\" id=\"Limbonia_SortGrid_Edit\" value=\"\">\n";
   }
 
   echo $table->toString();

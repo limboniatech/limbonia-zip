@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse Ticket Category Item Class
+ * Limbonia Ticket Category Item Class
  *
  * Item based wrapper around the TicketCategory table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class TicketCategory extends \Omniverse\Item
+class TicketCategory extends \Limbonia\Item
 {
   /**
    * List of names and their associated types, used by __get to generate item objects

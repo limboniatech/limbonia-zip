@@ -1,18 +1,17 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Widget base class
+ * Limbonia Widget base class
  *
  * This defines all the basic parts of a basic HTML tag
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Tag
 {
-  use \Omniverse\Traits\DriverList;
+  use \Limbonia\Traits\DriverList;
 
   /**
    * Name of the basic HTML tag represented by the widget
@@ -74,17 +73,17 @@ class Tag
    * factory method that creates an instance of a specific type of widget.
    * It must be called statically.
    *
-   * @param string $sType - The type of widget to instanciate
+   * @param string $sType - The type of widget to instantiate
    * @return "mixed" - The object requested on success, otherwise false.
    */
   static public function factory($sType)
   {
-     $sTypeClass = __CLASS__ . '\\' . $sType;
+    $sTypeClass = self::driverClass($sType);
 
     if (\class_exists($sTypeClass, true))
     {
       return new $sTypeClass();
-    }
+  }
 
     return new Tag($sType);
   }

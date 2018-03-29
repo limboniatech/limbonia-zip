@@ -34,16 +34,16 @@ form
 }
 
 .sorttable_sort_anchor,
-.OmnisysSortGridDelete,
-.OmnisysSortGridEdit
+.LimboniaSortGridDelete,
+.LimboniaSortGridEdit
 {
   cursor: pointer;
   display: block;
   width: 100%;
 }
 
-.OmnisysSortGridDelete,
-.OmnisysSortGridEdit
+.LimboniaSortGridDelete,
+.LimboniaSortGridEdit
 {
   display: none;
 }

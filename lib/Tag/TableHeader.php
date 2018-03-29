@@ -1,15 +1,14 @@
 <?php
-namespace Omniverse\Tag;
+namespace Limbonia\Tag;
 
 /**
- * Omniverse Table Header Class
+ * Limbonia Table Header Class
  *
  * This is a light wrapper around an HTML table header
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
- */class TableHeader extends \Omniverse\Tag
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
+ */class TableHeader extends \Limbonia\Tag
 {
   /**
    * Constructor

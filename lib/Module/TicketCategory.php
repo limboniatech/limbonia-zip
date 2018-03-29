@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Ticket Category Module class
+ * Limbonia Ticket Category Module class
  *
  * Admin module for handling ticket categories
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class TicketCategory extends \Omniverse\Module
+class TicketCategory extends \Limbonia\Module
 {
-  use \Omniverse\Traits\ItemModule;
+  use \Limbonia\Traits\ItemModule;
 }

@@ -1,7 +1,7 @@
 <?php
 if ($failure)
 {
-  echo "<div class=\"OmnisysMethodFailure\">$failure</div>\n";
+  echo "<div class=\"LimboniaMethodFailure\">$failure</div>\n";
 }
 
 echo "Please enter the new password below:\n";

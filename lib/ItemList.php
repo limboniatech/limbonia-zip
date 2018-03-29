@@ -1,20 +1,19 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse ItemList class
+ * Limbonia ItemList class
  *
  * This is an iterable and countable wrapper around the around the result of
  * database search for a set of items
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 {
-  use \Omniverse\Traits\HasController;
-  use \Omniverse\Traits\HasDatabase;
+  use \Limbonia\Traits\HasController;
+  use \Limbonia\Traits\HasDatabase;
 
   /**
    * Name of the table that the list items come from
@@ -26,7 +25,7 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 	/**
    * The database result object that contain the items
    *
-	 * @var \Omniverse\Interfaces\Result
+	 * @var \Limbonia\Interfaces\Result
 	 */
 	protected $oResult = null;
 
@@ -34,9 +33,9 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 	 * Constructor
 	 *
 	 * @param string $sTable - the name of the table that the list items come from.
-	 * @param \Omniverse\Interfaces\Result $oResult - the database result object that contain the items
+	 * @param \Limbonia\Interfaces\Result $oResult - the database result object that contain the items
 	 */
-	public function __construct($sTable, \Omniverse\Interfaces\Result $oResult)
+	public function __construct($sTable, \Limbonia\Interfaces\Result $oResult)
 	{
 		$this->sTable = $sTable;
 		$this->oResult = $oResult;
@@ -57,7 +56,7 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 
 		$oItem = Item::fromArray($this->sTable, $hItem, $this->getDatabase());
 
-    if ($this->oController instanceof \Omniverse\Controller)
+    if ($this->oController instanceof \Limbonia\Controller)
     {
       $oItem->setController($this->oController);
     }

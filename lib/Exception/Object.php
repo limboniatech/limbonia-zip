@@ -1,13 +1,12 @@
 <?php
-namespace Omniverse\Exception;
+namespace Limbonia\Exception;
 
 /**
- * Omniverse Object Exception Class
+ * Limbonia Object Exception Class
  *
  * Extends the default exception class for use in object constructors.
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Object extends \Exception { }

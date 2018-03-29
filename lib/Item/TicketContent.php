@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse Ticket Content Item Class
+ * Limbonia Ticket Content Item Class
  *
  * Item based wrapper around the TicketContent table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class TicketContent extends \Omniverse\Item
+class TicketContent extends \Limbonia\Item
 {
   /**
    * List of this content's history data
@@ -121,7 +120,7 @@ class TicketContent extends \Omniverse\Item
       $this->setHistory($aHistory);
     }
 
-    return new \Omniverse\ItemList('TicketHistory', new \Omniverse\ArrayResult($this->aHistory));
+    return new \Limbonia\ItemList('TicketHistory', new \Limbonia\Result\Collection($this->aHistory));
   }
 
   /**

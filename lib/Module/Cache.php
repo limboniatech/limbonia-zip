@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Cache Module class
+ * Limbonia Cache Module class
  *
  * Admin module for handling the site's cache
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Cache extends \Omniverse\Module
+class Cache extends \Limbonia\Module
 {
   /**
    * The admin group that this module belongs to

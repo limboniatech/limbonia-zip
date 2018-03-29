@@ -1,19 +1,18 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Widget base class
+ * Limbonia Widget base class
  *
  * This defines all the basic parts of an HTML widget
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Widget extends Tag
 {
-  use \Omniverse\Traits\DriverList;
-  use \Omniverse\Traits\HasController;
+  use \Limbonia\Traits\DriverList;
+  use \Limbonia\Traits\HasController;
 
   /**
    * @var integer $iCount - number of existing widgets.
@@ -28,12 +27,12 @@ class Widget extends Tag
   /**
    * @var string $sName - unique object name for use in submitting form data.
    */
-  protected $sName = 'OmnisysWidget';
+  protected $sName = 'LimboniaWidget';
 
   /**
    * @var string $sID - unique object id for use in the scripts.
    */
-  protected $sID = 'OmnisysWidget';
+  protected $sID = 'LimboniaWidget';
 
   /**
    * @var string $sType - The type of widget this object represents
@@ -106,19 +105,12 @@ class Widget extends Tag
    *
    * @param string $sType - The type of widget to instantiate
    * @param string $sName (optional) - The name to give the widget when it is instantiated
-   * @param \Omniverse\Controller $oController (optional)
-   * @return \Omniverse\Widget - The object requested on success, otherwise false.
+   * @param \Limbonia\Controller $oController (optional)
+   * @return \Limbonia\Widget - The object requested on success, otherwise false.
    */
-  public static function factory($sType, $sName = null, \Omniverse\Controller $oController = null)
+  public static function factory($sType, $sName = null, \Limbonia\Controller $oController = null)
   {
-    $sTypeClass = __CLASS__ . '\\' . self::driver($sType);
-
-    if (!\class_exists($sTypeClass, true))
-    {
-      throw new \Omniverse\Exception\Object("$sType is not a valid Widget type!");
-    }
-
-    return new $sTypeClass($sName, $oController);
+    return self::driverFactory($sType, $sName, $oController);
   }
 
     /**
@@ -218,22 +210,22 @@ class Widget extends Tag
    * It increments the widget counter and generates a unique (but human readable) name.
    *
    * @param string $sName (optional)
-   * @param \Omniverse\Controller $oController (optional)
-   * @throws Omniverse\Exception\Object
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws Limbonia\Exception\Object
    */
-  public function __construct($sName=null, \Omniverse\Controller $oController = null)
+  public function __construct($sName=null, \Limbonia\Controller $oController = null)
   {
     $this->sType = strtolower(str_replace(__CLASS__ . '\\', '', get_class($this)));
 
     if (empty($this->sType))
     {
-      throw new Omniverse\Exception\Object(__CLASS__ . " couldn't find a valid type!");
+      throw new Limbonia\Exception\Object(__CLASS__ . " couldn't find a valid type!");
     }
 
-    if ($oController instanceof \Omniverse\Controller)
+    if ($oController instanceof \Limbonia\Controller)
     {
 /*
-      if ($oController instanceof \Omniverse\Controller\Web)
+      if ($oController instanceof \Limbonia\Controller\Web)
       {
         If it's a web type then allow scripts to be placed in the head instead of the body?
       }
@@ -243,7 +235,7 @@ class Widget extends Tag
 
     $this->sWebShareDir = $this->getController()->domain->uri . '/' . $this->getController()->getDir('share');
     self::$iCount++;
-    $this->sName = empty($sName) ? 'Omnisys' . $this->sType . self::widgetCount() : $sName;
+    $this->sName = empty($sName) ? 'Limbonia' . $this->sType . self::widgetCount() : $sName;
     $this->setParam('name', $this->sName);
     $this->sID = preg_replace("/\[|\]/", "", $this->sName);
     $this->setParam('id', $this->sID);
@@ -591,17 +583,17 @@ class Widget extends Tag
    */
   public function addAjaxFunction($sFunction, $bReportStatus = false)
   {
-    $sAjaxFunction = "Omniverse_$sFunction";
+    $sAjaxFunction = "Limbonia_$sFunction";
 
     if (!in_array($sAjaxFunction, self::$aAjaxFunction))
     {
-      $sClassName = str_replace('\\', '/', preg_replace("#^Omniverse\\\#", '', get_class($this)));
-      self::includeScript($this->getController()->domain->uri . '/' . $this->getController()->getDir('share') . "/ajax.js");
+      $sClassName = str_replace('\\', '/', preg_replace("#^Limbonia\\\#", '', get_class($this)));
+//      self::includeScript($this->getController()->domain->uri . '/' . $this->getController()->getDir('share') . "/ajax.js");
       $sReportStatus = $bReportStatus === true ? 'true' : 'false';
       $sDebug = self::$bAjaxDebug === true ? 'true' : 'false';
       $sBaseUrl = "'" . $this->getController()->domain->url . '/ajax' ."'";
 
-      $sJavascript =  "\n<script type=\"text/javascript\">function $sAjaxFunction(){Omniverse_HttpRequest('$sClassName', '$sFunction', arguments, $sReportStatus, $sDebug, $sBaseUrl);}</script>\n";
+      $sJavascript =  "\n<script type=\"text/javascript\">function $sAjaxFunction(){Limbonia_HttpRequest('$sClassName', '$sFunction', arguments, $sReportStatus, $sDebug, $sBaseUrl);}</script>\n";
       $this->write($sJavascript);
       self::$aAjaxFunction[] = $sAjaxFunction;
     }

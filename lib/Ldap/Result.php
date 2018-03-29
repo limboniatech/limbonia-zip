@@ -1,5 +1,5 @@
 <?php
-namespace Omniverse\Ldap;
+namespace Limbonia\Ldap;
 
 /**
  * Wrapper around an LDAP result and the associated LDAP link

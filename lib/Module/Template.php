@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Template Module class
+ * Limbonia Template Module class
  *
  * Admin module for handling site templates
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Template extends \Omniverse\Module
+class Template extends \Limbonia\Module
 {
   /**
    * The admin group that this module belongs to

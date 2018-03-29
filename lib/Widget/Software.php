@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse Software Widget
+ * Limbonia Software Widget
  *
  * The methods needed to load software names, releases and elements
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Software extends \Omniverse\Widget\Select
+class Software extends \Limbonia\Widget\Select
 {
   /**
    * Constructor
@@ -18,15 +17,15 @@ class Software extends \Omniverse\Widget\Select
    * It increments the widget counter and generates a unique (but human readable) name.
    *
    * @param string $sName (optional)
-   * @param \Omniverse\Controller $oController (optional)
-   * @throws Omniverse\Exception\Object
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws Limbonia\Exception\Object
    */
-  public function __construct($sName = null, \Omniverse\Controller $oController = null)
+  public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->sType = 'select';
     $this->addOption('Select a Software Project', '0');
-    $aSoftware = \Omniverse\Item\Software::getSoftwareList();
+    $aSoftware = \Limbonia\Item\Software::getSoftwareList();
 
     foreach ($aSoftware as $oSoftware)
     {
@@ -50,7 +49,7 @@ class Software extends \Omniverse\Widget\Select
 
     if ($iSoftware != '0' && !empty($iSoftware))
     {
-      $oSoftware = \Omniverse\Item::fromId('software', $iSoftware);
+      $oSoftware = \Limbonia\Item::fromId('software', $iSoftware);
       $oReleaseList = $oSoftware->getReleaseList('active');
 
       foreach ($oReleaseList as $iKey => $oRelease)
@@ -84,7 +83,7 @@ class Software extends \Omniverse\Widget\Select
 
     if ($iSoftware != '0' && !empty($iSoftware))
     {
-      $oSoftware = \Omniverse\Item::fromId('software', $iSoftware);
+      $oSoftware = \Limbonia\Item::fromId('software', $iSoftware);
       $oElementList = $oSoftware->getElementList();
 
       foreach ($oElementList as $iKey => $oElement)

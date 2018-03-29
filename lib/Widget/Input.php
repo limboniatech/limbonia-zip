@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse Input Widget
+ * Limbonia Input Widget
  *
  * A wrapper around an HTML input tag
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Input extends \Omniverse\Widget
+class Input extends \Limbonia\Widget
 {
   /**
    * @var string $sType -
@@ -23,10 +22,10 @@ class Input extends \Omniverse\Widget
    * It increments the widget counter and generates a unique (but human readable) name.
    *
    * @param string $sName (optional)
-   * @param \Omniverse\Controller $oController (optional)
-   * @throws Omniverse\Exception\Object
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws Limbonia\Exception\Object
    */
-  public function __construct($sName = null, \Omniverse\Controller $oController = null)
+  public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->sScript .= "var $this->sName = document.getElementById(\"$this->sName\");\n";

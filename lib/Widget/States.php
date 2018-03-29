@@ -1,14 +1,13 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse States Widget
+ * Limbonia States Widget
  *
  * The methods needed to load cities and states
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class States extends Select
 {
@@ -20,14 +19,14 @@ class States extends Select
    * It increments the widget counter and generates a unique (but human readable) name.
    *
    * @param string $sName (optional)
-   * @param \Omniverse\Controller $oController (optional)
-   * @throws Omniverse\Exception\Object
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws Limbonia\Exception\Object
    */
-  public function __construct($sName = null, \Omniverse\Controller $oController = null)
+  public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->sType = 'select';
-    $hState = array_merge(['0' => 'Select a State'] , \Omniverse\Item\States::getStateList());
+    $hState = array_merge(['0' => 'Select a State'] , \Limbonia\Item\States::getStateList());
     $this->addArray($hState);
   }
 

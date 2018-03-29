@@ -1,8 +1,8 @@
 <html>
 <head>
-  <title>Default OmniSys Gallery Popup Template</title>
+  <title>Default Limbonia Gallery Popup Template</title>
 </head>
 <body>
-<omnitarget type="gallery" component="popup"/>
+<limbonia-target type="gallery" component="popup"/>
 </body>
 </html>

@@ -23,7 +23,7 @@ echo "    </select>
     <select name=\"{$sModuleType}[UserID]\" id=\"{$sModuleType}UserID\">
       <option value=\"\">Select a user</option>\n";
 
-foreach (\Omniverse\Item::search('User', ['Active' => true, 'Visible' => true]) as $user)
+foreach (\Limbonia\Item::search('User', ['Active' => true, 'Visible' => true]) as $user)
 {
   echo "      <option value=\"$user->id\">" . ucwords($user->name) . "</option>\n";
 }

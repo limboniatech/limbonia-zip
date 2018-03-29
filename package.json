@@ -1,7 +1,7 @@
 {
-  "name": "omniverse",
+  "name": "limbonia",
   "version": "1.5.0",
-  "description": "The Omniverse Code Library",
+  "description": "The Limbonia Code Library",
   "main": "index.js",
   "directories": {
     "test": "tests"

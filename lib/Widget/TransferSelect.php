@@ -1,21 +1,20 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse TransferSelect Widget
+ * Limbonia TransferSelect Widget
  *
  * This is a multi-level HTML + JavaScript construct that consists of two
  * multi-select boxes that allow the transfer of data from one to the other then
  * before they are submitted to the parent form.
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class TransferSelect extends \Omniverse\Widget
+class TransferSelect extends \Limbonia\Widget
 {
   /**
-   * @var \Omniverse\Widget\Select $oFrom - Select box that the select options come *from*.
+   * @var \Limbonia\Widget\Select $oFrom - Select box that the select options come *from*.
    */
   protected $oFrom = NULL;
 
@@ -30,9 +29,9 @@ class TransferSelect extends \Omniverse\Widget
    * Call the parent constructor and create the child select objects.
    *
    * @param type $sName
-   * @param \Omniverse\Controller $oController
+   * @param \Limbonia\Controller $oController
    */
-  public function __construct($sName = null, \Omniverse\Controller $oController = null)
+  public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->oFrom = $this->getController()->widgetFactory('Select', 'From_' . $this->sName);
@@ -50,17 +49,17 @@ class TransferSelect extends \Omniverse\Widget
    */
  protected function init()
   {
-    $this->sPreScript .= "<table class=\"OmnisysTransferSelectTable\">\n";
+    $this->sPreScript .= "<table class=\"LimboniaTransferSelectTable\">\n";
     $this->sPreScript .= "<tr>\n";
-    $this->sPreScript .= "  <td class=\"OmnisysTransferSelectCell\">\n";
+    $this->sPreScript .= "  <td class=\"LimboniaTransferSelectCell\">\n";
     $this->sPreScript .= $this->fromSelect();
     $this->sPreScript .= "  </td>\n";
-    $this->sPreScript .= "  <td class=\"OmnisysTransferSelectCell\">\n";
+    $this->sPreScript .= "  <td class=\"LimboniaTransferSelectCell\">\n";
     $this->sPreScript .= '    ' . $this->moveToButton() . "\n";
     $this->sPreScript .= "    <br>\n";
     $this->sPreScript .= '    ' . $this->moveFromButton() . "\n";
     $this->sPreScript .= "  </td>\n";
-    $this->sPreScript .= "  <td class=\"OmnisysTransferSelectCell\">\n";
+    $this->sPreScript .= "  <td class=\"LimboniaTransferSelectCell\">\n";
     $this->sPreScript .= $this->toSelect();
     $this->sPreScript .= "  </td>\n";
     $this->sPreScript .= "</tr>\n";
@@ -110,7 +109,7 @@ class TransferSelect extends \Omniverse\Widget
   public function moveToButton($sValue = '')
   {
     $sValue = empty($sValue) ? 'Move ->' : $sValue;
-    return $this->button($sValue, "Omnisys_MoveOptions('$this->sFrom', '$this->sTo');");
+    return $this->button($sValue, "Limbonia_MoveOptions('$this->sFrom', '$this->sTo');");
   }
 
   /**
@@ -122,7 +121,7 @@ class TransferSelect extends \Omniverse\Widget
   public function moveFromButton($sValue = '')
   {
     $sValue = empty($sValue) ? 'Move <-' : $sValue;
-    return $this->button($sValue, "Omnisys_MoveOptions('$this->sTo', '$this->sFrom');");
+    return $this->button($sValue, "Limbonia_MoveOptions('$this->sTo', '$this->sFrom');");
   }
 
   /**
@@ -134,7 +133,7 @@ class TransferSelect extends \Omniverse\Widget
   public function moveAllToButton($sValue = '')
   {
     $sValue = empty($sValue) ? 'Move All ->' : $sValue;
-    return $this->button($sValue, "Omnisys_SelectAll('$this->sFrom'); Omnisys_MoveOptions('$this->sFrom', '$this->sTo');");
+    return $this->button($sValue, "Limbonia_SelectAll('$this->sFrom'); Limbonia_MoveOptions('$this->sFrom', '$this->sTo');");
   }
 
   /**
@@ -146,7 +145,7 @@ class TransferSelect extends \Omniverse\Widget
   public function moveAllFromButton($sValue = '')
   {
     $sValue = empty($sValue) ? 'Move All <-' : $sValue;
-    return $this->button($sValue, "Omnisys_SelectAll('$this->sTo'); Omnisys_MoveOptions('$this->sTo', '$this->sFrom');");
+    return $this->button($sValue, "Limbonia_SelectAll('$this->sTo'); Limbonia_MoveOptions('$this->sTo', '$this->sFrom');");
   }
 
   /**
@@ -160,7 +159,7 @@ class TransferSelect extends \Omniverse\Widget
   {
     $sValue = empty($sValue) ? 'Submit' : $sValue;
     $sName = empty($sName) ? 'Submit' : $sName;
-    return "<input type=\"submit\" name=\"$sName\" value=\"$sValue\" onClick=\"Omnisys_SelectAll('$this->sFrom'); Omnisys_SelectAll('$this->sTo');\"></td>\n";
+    return "<input type=\"submit\" name=\"$sName\" value=\"$sValue\" onClick=\"Limbonia_SelectAll('$this->sFrom'); Limbonia_SelectAll('$this->sTo');\"></td>\n";
   }
 
   /**

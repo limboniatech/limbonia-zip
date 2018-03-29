@@ -3,8 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Omniverse Password Check</title>
-  <link rel="stylesheet" type="text/css" href="<?= $this->domain->uri . '/' . $this->getDir('share') ?>/login.css" />
+  <title>Limbonia Password Check</title>
+  <style>
+<?php
+$sDefaultCSSFile = $controller->getDir('root') . '/share/login.css';
+
+if (is_readable($sDefaultCSSFile))
+{
+  echo file_get_contents($sDefaultCSSFile);
+}
+else
+{
+  echo "  <link rel=\"stylesheet\" type=\"text/css\" href=\"<?= $this->domain->uri . '/' . $this->getDir('share') ?>/login.css\" />";
+}
+?>
+  </style>
 </head>
 <body onLoad="document.passCheck.email.focus();">
 <form action="" method="post" name="passCheck">

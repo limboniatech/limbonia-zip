@@ -1,14 +1,13 @@
 <?php
-namespace Omniverse\Ldap;
+namespace Limbonia\Ldap;
 
 /**
- * Omniverse LDAP Resource Class
+ * Limbonia LDAP Resource Class
  *
  * Object wrapper for the LDAP functions
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Resource
 {
@@ -320,7 +319,7 @@ class Resource
    * </p>
    * @param int $iDerefOption (optional) - Specifies how aliases should be handled during the search. It can be one of the following:
    * LDAP_DEREF_NEVER - (default) aliases are never dereferenced.
-   * @return \Omniverse\Ldap\Result
+   * @return \Limbonia\Ldap\Result
    * @throws \Exception on error
    */
   public function search(

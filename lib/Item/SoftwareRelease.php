@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse Software Release Item Class
+ * Limbonia Software Release Item Class
  *
  * Item based wrapper around the SoftwareRelease table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class SoftwareRelease extends \Omniverse\Item
+class SoftwareRelease extends \Limbonia\Item
 {
   /**
    * List of columns that shouldn't be updated after the data has been created
@@ -172,7 +171,7 @@ class SoftwareRelease extends \Omniverse\Item
    * Return a list of tickets associated with this release depending on the specified type
    *
    * @param string $sType (optional)
-   * @return array|\Omniverse\ItemList
+   * @return array|\Limbonia\ItemList
    */
   public function getTicketList($sType = '')
   {

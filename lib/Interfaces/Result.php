@@ -1,19 +1,25 @@
 <?php
-namespace Omniverse\Interfaces;
+namespace Limbonia\Interfaces;
 
 /**
- * Omniverse Result Interface
+ * Limbonia Result Interface
  *
  * This interface is a combination of both the ArrayAccess and Countable interfaces.
  * It allows the user to interact with a given result set in a consistent way array-like way.
 
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 interface Result
 {
+  /**
+   * Return an array of all the fields in this dataset
+   *
+   * @return array on success or null on failure
+   */
+  public function getFields();
+
   /**
    * Return an array of all the data in the result set
    *

@@ -1,6 +1,6 @@
 //the object's name must be identical to sTarget
 //because it's part of the "magic"...
-function Omniverse_Widget_SortGrid(sTarget)
+function Limbonia_Widget_SortGrid(sTarget)
 {
   //Private object data
   var aHeader = Array();
@@ -157,9 +157,9 @@ function Omniverse_Widget_SortGrid(sTarget)
       sort();
     }
 
-    aTemp.push('\n<table width="' + iWidth + '"  class="OmnisysSortGrid">');
+    aTemp.push('\n<table width="' + iWidth + '"  class="LimboniaSortGrid">');
     aTemp.push('<thead>');
-    aTemp.push('  <tr class="OmnisysSortGridHeader">');
+    aTemp.push('  <tr class="LimboniaSortGridHeader">');
 
     var sText;
     var sCSS;
@@ -167,9 +167,9 @@ function Omniverse_Widget_SortGrid(sTarget)
     {
       sText = aHeader[iCount].sPrefix;
       sCSS = iCount == iColumnToSort ? 'Selected' : '';
-      sText += aHeader[iCount].bSortable ? '<a href="javascript:void(0);" onClick="' + sTarget + '.draw(' + iCount + ');" class="OmnisysSortGridHeader">' + aHeader[iCount].sName + '</a>' : aHeader[iCount].sName;
+      sText += aHeader[iCount].bSortable ? '<a href="javascript:void(0);" onClick="' + sTarget + '.draw(' + iCount + ');" class="LimboniaSortGridHeader">' + aHeader[iCount].sName + '</a>' : aHeader[iCount].sName;
       sText += aHeader[iCount].sPostfix;
-      aTemp.push('    <th class="OmnisysSortGridHeader' + sCSS + '" nowrap>' + sText + '</th>');
+      aTemp.push('    <th class="LimboniaSortGridHeader' + sCSS + '" nowrap>' + sText + '</th>');
     }
     aTemp.push('  </tr>');
     aTemp.push('</thead>');
@@ -181,11 +181,11 @@ function Omniverse_Widget_SortGrid(sTarget)
       bCSS = !bCSS;
       sCSS = bCSS ? '' : 'Alt';
       iCellCount = aData[iCount].length;
-      aTemp.push('  <tr class="OmnisysSortGrid' + sCSS + '">');
+      aTemp.push('  <tr class="LimboniaSortGrid' + sCSS + '">');
       for (jCount = 0; jCount < iCellCount; jCount++)
       {
         sCSS = jCount == iColumnToSort ? 'Selected' : '';
-        aTemp.push('    <td class="OmnisysSortGrid' + sCSS + '">' + aData[iCount][jCount].HTML + '</td>');
+        aTemp.push('    <td class="LimboniaSortGrid' + sCSS + '">' + aData[iCount][jCount].HTML + '</td>');
       }
       aTemp.push('  </tr>');
     }
@@ -302,4 +302,4 @@ function Omniverse_Widget_SortGrid(sTarget)
     }
   }
 
-}//end of Omnisys_Widget_SortGrid javascript object
+}//end of Limbonia_Widget_SortGrid javascript object

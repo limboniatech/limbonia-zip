@@ -1,16 +1,16 @@
 <?php
 /**
- * Omniverse Table Class
+ * Limbonia Table Class
  *
  * This is a light wrapper around an HTML table with some JavaScript for sorting
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @version $Revision: 1.4 $
- * @package Omniverse
+ * @package Limbonia
  */
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
-class Table extends \Omniverse\Widget
+class Table extends \Limbonia\Widget
 {
   /**
    * A list of rows to put into the table head
@@ -29,7 +29,7 @@ class Table extends \Omniverse\Widget
   /**
    * The current row object
    *
-   * @var \Omniverse\Tag
+   * @var \Limbonia\Tag
    */
   protected $oCurrentRow = null;
 
@@ -110,7 +110,7 @@ class Table extends \Omniverse\Widget
    */
   public function makeSortable()
   {
-    \Omniverse\Widget::includeScript($this->sWebShareDir . "/sorttable.js");
+    //\Limbonia\Widget::includeScript($this->sWebShareDir . "/sorttable.js");
     $this->addClass('sortable');
     $this->addClass('sortGrid');
     $this->writeJavascript('sorttable.init();');
@@ -130,20 +130,20 @@ class Table extends \Omniverse\Widget
    * Start a new row of the specified type for this table and return the row object
    *
    * @param string $sType
-   * @return \Omniverse\Tag
+   * @return \Limbonia\Tag
    */
   public function startRow($sType = null)
   {
     $this->endRow();
     $this->sCurrentType = strtolower($sType);
-    $this->oCurrentRow = \Omniverse\Tag::factory('TableRow');
+    $this->oCurrentRow = \Limbonia\Tag::factory('TableRow');
     return $this->oCurrentRow;
   }
 
   /**
    * Start a row of type header
    *
-   * @return \Omniverse\Tag
+   * @return \Limbonia\Tag
    */
   public function startHeader()
   {
@@ -153,7 +153,7 @@ class Table extends \Omniverse\Widget
   /**
    * Start a row of type footer
    *
-   * @return \Omniverse\Tag
+   * @return \Limbonia\Tag
    */
   public function startFooter()
   {
@@ -169,26 +169,26 @@ class Table extends \Omniverse\Widget
    */
   public function addCell($xData, $xSort = null)
   {
-    if (!($this->oCurrentRow instanceof \Omniverse\Tag))
+    if (!($this->oCurrentRow instanceof \Limbonia\Tag))
     {
       $this->startRow();
     }
 
-    if (!($xData instanceof \Omniverse\Tag))
+    if (!($xData instanceof \Limbonia\Tag))
     {
       $sData = (string)$xData;
       $sCellType = $this->sCurrentType == 'head' && empty($this->aHead) ? 'TableHeader' : 'TableCell';
-      $xData = \Omniverse\Tag::factory($sCellType);
+      $xData = \Limbonia\Tag::factory($sCellType);
       $xData->addContent($sData);
     }
 
-    if ($xData instanceof \Omniverse\Tag)
+    if ($xData instanceof \Limbonia\Tag)
     {
       if (!preg_match("#TableHeader|th|TableCell|td#i", $xData->getType()))
       {
         $oData = $xData;
         $sCellType = $this->sCurrentType == 'head' && empty($this->aHead) ? 'TableHeader' : 'TableCell';
-        $xData = \Omniverse\Tag::factory($sCellType);
+        $xData = \Limbonia\Tag::factory($sCellType);
         $xData->addContent($oData);
       }
 
@@ -225,7 +225,7 @@ class Table extends \Omniverse\Widget
     {
       $this->aFoot[] = $this->oCurrentRow;
     }
-    elseif ($this->oCurrentRow instanceof \Omniverse\Tag\TableRow)
+    elseif ($this->oCurrentRow instanceof \Limbonia\Tag\TableRow)
     {
       $this->addTag($this->oCurrentRow);
     }

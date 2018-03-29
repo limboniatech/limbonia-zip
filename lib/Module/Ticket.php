@@ -1,23 +1,22 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Ticket Module class
+ * Limbonia Ticket Module class
  *
  * Admin module for handling tickets
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Ticket extends \Omniverse\Module
+class Ticket extends \Limbonia\Module
 {
-  use \Omniverse\Traits\ItemModule
+  use \Limbonia\Traits\ItemModule
   {
-    \Omniverse\Traits\ItemModule::processApiGetItem as originalProcessApiGetItem;
-    \Omniverse\Traits\ItemModule::processApiGetList as originalProcessApiGetList;
-    \Omniverse\Traits\ItemModule::processCreateGetData as originalProcessCreateGetData;
-    \Omniverse\Traits\ItemModule::editGetData as originalEditGetData;
+    \Limbonia\Traits\ItemModule::processApiGetItem as originalProcessApiGetItem;
+    \Limbonia\Traits\ItemModule::processApiGetList as originalProcessApiGetList;
+    \Limbonia\Traits\ItemModule::processCreateGetData as originalProcessCreateGetData;
+    \Limbonia\Traits\ItemModule::editGetData as originalEditGetData;
   }
 
   /**
@@ -145,7 +144,7 @@ class Ticket extends \Omniverse\Module
    */
   protected function processApiGetItem()
   {
-    switch ($this->oController->api->action)
+    switch ($this->oApi->action)
     {
       case 'attachments':
         return $this->oItem->getAttachmentList();
@@ -169,7 +168,7 @@ class Ticket extends \Omniverse\Module
   protected function processApiGetList()
   {
     //if the field list is either not narrowed down at all or includes "children"
-    if (empty($this->oController->api->fields) || in_array('children', $this->oController->api->fields))
+    if (empty($this->oApi->fields) || in_array('children', $this->oApi->fields))
     {
       //then add the children list to each ticket
       $hList = $this->originalProcessApiGetList();
@@ -251,7 +250,7 @@ class Ticket extends \Omniverse\Module
    */
   protected function prepareTemplateAttachmentsDelete()
   {
-    $this->oItem->removeAttachmentById($this->oController->api->subId);
+    $this->oItem->removeAttachmentById($this->oApi->subId);
     $this->oController->templateData('success', "Successfully removed attachment.");
   }
 
@@ -292,7 +291,7 @@ class Ticket extends \Omniverse\Module
    */
   protected function prepareTemplateRelationshipsRemovechild()
   {
-    $oChild = $this->oController->itemFromId('ticket', $this->oController->api->subId);
+    $oChild = $this->oController->itemFromId('ticket', $this->oApi->subId);
     $this->oItem->removeChild($oChild);
     $this->oItem->save();
     $this->oController->templateData('success', "Successfully removed child ticket.");
@@ -341,11 +340,11 @@ class Ticket extends \Omniverse\Module
   /**
    * Generate and return the value of the specified column
    *
-   * @param \Omniverse\Item $oItem
+   * @param \Limbonia\Item $oItem
    * @param string $sColumn
    * @return mixed
    */
-  public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
+  public function getColumnValue(\Limbonia\Item $oItem, $sColumn)
   {
     if ($sColumn == 'ReleaseID')
     {
@@ -395,7 +394,7 @@ class Ticket extends \Omniverse\Module
   {
     if ($sName == 'CategoryID')
     {
-      $oList = \Omniverse\Item::search('TicketCategory');
+      $oList = \Limbonia\Item::search('TicketCategory');
       $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select Category';
       $oSelect->addOption($sEmptyItemLabel, '');
@@ -416,7 +415,7 @@ class Ticket extends \Omniverse\Module
     if (in_array($sName, ['OwnerID', 'CreatorID']))
     {
       $sType = strtolower(preg_replace('/id$/i', '', $sName));
-      $oUsers = \Omniverse\Item::search('User', ['Visible' => true, 'Active' => true]);
+      $oUsers = \Limbonia\Item::search('User', ['Visible' => true, 'Active' => true]);
       $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select an $sType";
       $oSelect->addOption($sEmptyItemLabel, '');

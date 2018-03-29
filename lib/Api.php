@@ -1,23 +1,22 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse API input class
+ * Limbonia API input class
  *
- * This defines all the basic parts of Omniverse API
+ * This defines all the basic parts of Limbonia API
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Api
 {
-  use \Omniverse\Traits\Hash;
+  use \Limbonia\Traits\Hash;
 
   /**
    * The single instance allowed for the API object
    *
-   * @var \Omniverse\Api
+   * @var \Limbonia\Api
    */
   protected static $oInstance = null;
 
@@ -35,33 +34,252 @@ class Api
   ];
 
   /**
+   * The list of possible keys in the data array
+   *
+   * @var array
+   */
+  protected static $aDataKeys =
+  [
+    'method',
+    'user',
+    'pass',
+    'baseurl',
+    'rawpath',
+    'path',
+    'controller',
+    'module',
+    'id',
+    'action',
+    'subid',
+    'subid',
+    'subaction',
+    'sort',
+    'fields',
+    'offset',
+    'limit',
+    'ajax',
+    'search'
+  ];
+
+  /**
    * List of methods that should supply JSON data to process
    *
    * @var array
    */
   protected static $aJsonMethods = ['put', 'post'];
 
+  /**
+   * The API data
+   *
+   * @var array
+   */
   protected $hData = [];
 
   /**
    * Instantiate and return a single version of this class to all callers
    *
-   * @return \Omniverse\Api
+   * @return \Limbonia\Api
    */
   public static function singleton()
   {
     if (is_null(self::$oInstance))
     {
       self::$oInstance = new self();
+      self::$oInstance->generate();
     }
 
     return self::$oInstance;
   }
 
   /**
-   * The constructor
+   * Generate an API object from the specified URI then return it
+   *
+   * @param string $sUri - The URI to extract the API data from
+   * @return \Limbonia\Api
    */
-  protected function __construct()
+  public static function fromUri(string $sUri)
+  {
+    $oApi = new self();
+    $oApi->setAll(['uri' => $sUri]);
+    return $oApi;
+  }
+
+  /**
+   * Generate an API object from the specified URI then return it
+   *
+   * @param array $hApi - The array to extract the API data from
+   * @return \Limbonia\Api
+   */
+  public static function fromArray(array $hApi)
+  {
+    $oApi = new self();
+    $oApi->setAll($hApi);
+    return $oApi;
+  }
+
+  /**
+   * Set the specified data into the the current API object
+   *
+   * @param array $hData
+   */
+  protected function setAll(array $hData)
+  {
+    $this->hData['method'] = 'get';
+
+    if (isset($hData['uri']))
+    {
+      $hUri = parse_url(strtolower($hData['uri']));
+      $sWebTypes = implode('|', static::$aWebTypes);
+
+      if (preg_match("#(.*?)(($sWebTypes).*$)#", $hUri['path'], $aMatch))
+      {
+        $this->hData['baseurl'] = $aMatch[1];
+        $this->hData['rawpath'] = $aMatch[2];
+      }
+      else
+      {
+        $this->hData['baseurl'] = '/';
+        $this->hData['rawpath'] = preg_replace("#^/#", '', $hUri['path']);
+      }
+
+      $this->processRawPath();
+
+      if (isset($hUri['query']))
+      {
+        $hQuery = null;
+        parse_str($hUri['query'], $hQuery);
+        $this->processGet($hQuery);
+      }
+    }
+
+    foreach ($hData as $sKey => $sValue)
+    {
+      if (in_array(strtolower($sKey), static::$aDataKeys))
+      {
+        $this->hData[strtolower($sKey)] = strtolower($sValue);
+      }
+    }
+  }
+
+  /**
+   * Extract all the information we can from the existing rawpath data
+   */
+  public function processRawPath()
+  {
+    $this->hData['path'] = strtolower($this->hData['rawpath']);
+    $this->hData['call'] = explode('/', $this->hData['path']);
+
+    if (isset($this->hData['call'][0]) && in_array($this->hData['call'][0], self::$aWebTypes))
+    {
+      $this->hData['controller'] = $this->hData['call'][0];
+    }
+    else
+    {
+      $this->hData['controller'] = 'web';
+      array_unshift($this->hData['call'], 'web');
+    }
+
+    $this->hData['module'] = $this->hData['call'][1] ?? null;
+    $this->hData['id'] = null;
+
+    if (isset($this->hData['call'][2]) && is_numeric($this->hData['call'][2]))
+    {
+      $this->hData['id'] = $this->hData['call'][2];
+      $this->hData['action'] = $this->hData['call'][3] ?? 'view';
+      $this->hData['subid'] = null;
+
+      if (isset($this->hData['call'][4]) && is_numeric($this->hData['call'][4]))
+      {
+        $this->hData['subid'] = $this->hData['call'][4];
+        $this->hData['subaction'] = $this->hData['call'][5] ?? null;
+      }
+      else
+      {
+        $this->hData['subaction'] = $this->hData['call'][4] ?? null;
+      }
+    }
+    else
+    {
+      $this->hData['action'] = $this->hData['call'][2] ?? 'list';
+      $this->hData['subaction'] = $this->hData['call'][3] ?? null;
+    }
+  }
+
+  /**
+   * Process the specified array of "get" data into API data
+   *
+   * @param array $hGet
+   */
+  protected function processGet($hGet)
+  {
+    if (isset($hGet['sort']))
+    {
+      $this->hData['sort'] = [];
+
+      foreach (explode(',', $hGet['sort']) as $sSort)
+      {
+        if (preg_match("/(-|\+)(.*)/", $sSort, $aMatch))
+        {
+          $this->hData['sort'][] = $aMatch[1] === '-' ? trim($aMatch[2]) . ' DESC' : trim($aMatch[2]) . ' ASC';
+        }
+        else
+        {
+          $this->hData['sort'][] = trim($sSort) . ' ASC';
+        }
+      }
+
+      unset($hGet['sort']);
+    }
+
+    if (isset($hGet['fields']))
+    {
+      $this->hData['fields'] = explode(',', $hGet['fields']);
+      unset($hGet['fields']);
+    }
+
+    if (isset($hGet['offset']))
+    {
+      $this->hData['offset'] = $hGet['offset'];
+      unset($hGet['offset']);
+    }
+
+    if (isset($hGet['limit']))
+    {
+      $this->hData['limit'] = $hGet['limit'];
+      unset($hGet['limit']);
+    }
+
+    if (isset($hGet['ajax']))
+    {
+      $this->hData['ajax'] = $hGet['ajax'];
+      unset($hGet['ajax']);
+    }
+
+    if (count($hGet) > 0)
+    {
+      $this->hData['search'] = [];
+      $hTemp = $hGet->getRaw();
+
+      foreach ($hTemp as $sKey => $sValue)
+      {
+        if (preg_match("/,/", $sValue))
+        {
+          $this->hData['search'][$sKey] = explode(',', $sValue);
+        }
+        else
+        {
+          $this->hData['search'][$sKey] = $sValue;
+        }
+
+        unset($hGet[$sKey]);
+      }
+    }
+  }
+
+  /**
+   * Generate all the default information from existing data
+   */
+  protected function generate()
   {
     $oServer = Input::singleton('server');
     $this->hData['method'] = isset($oServer['http_x_http_method_override']) ? strtolower($oServer['http_x_http_method_override']) : strtolower($oServer['request_method']);
@@ -89,110 +307,11 @@ class Api
     }
 
     $oGet = Input::singleton('get');
-
-    if (isset($oGet['sort']))
-    {
-      $this->hData['sort'] = [];
-
-      foreach (explode(',', $oGet['sort']) as $sSort)
-      {
-        if (preg_match("/(-|\+)(.*)/", $sSort, $aMatch))
-        {
-          $this->hData['sort'][] = $aMatch[1] === '-' ? trim($aMatch[2]) . ' DESC' : trim($aMatch[2]) . ' ASC';
-        }
-        else
-        {
-          $this->hData['sort'][] = trim($sSort) . ' ASC';
-        }
-      }
-
-      unset($oGet['sort']);
-    }
-
-    if (isset($oGet['fields']))
-    {
-      $this->hData['fields'] = explode(',', $oGet['fields']);
-      unset($oGet['fields']);
-    }
-
-    if (isset($oGet['offset']))
-    {
-      $this->hData['offset'] = $oGet['offset'];
-      unset($oGet['offset']);
-    }
-
-    if (isset($oGet['limit']))
-    {
-      $this->hData['limit'] = $oGet['limit'];
-      unset($oGet['limit']);
-    }
-
-    if (isset($oGet['ajax']))
-    {
-      $this->hData['ajax'] = $oGet['ajax'];
-      unset($oGet['ajax']);
-    }
-
-    if (count($oGet) > 0)
-    {
-      $this->hData['search'] = [];
-      $hTemp = $oGet->getRaw();
-
-      foreach ($hTemp as $sKey => $sValue)
-      {
-        if (preg_match("/,/", $sValue))
-        {
-          $this->hData['search'][$sKey] = explode(',', $sValue);
-        }
-        else
-        {
-          $this->hData['search'][$sKey] = $sValue;
-        }
-
-        unset($oGet[$sKey]);
-      }
-    }
+    $this->processGet($oGet);
 
     $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
     $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
-    $this->hData['path'] = strtolower($this->hData['rawpath']);
-    $this->hData['rawcall'] = explode('/', $this->hData['rawpath']);
-    $aCall = explode('/', $this->hData['path']);
-
-    if (isset($aCall[0]) && in_array($aCall[0], self::$aWebTypes))
-    {
-      $this->hData['controller'] = $aCall[0];
-    }
-    else
-    {
-      $this->hData['controller'] = 'web';
-      array_unshift($aCall, 'web');
-    }
-
-    $this->hData['module'] = $aCall[1] ?? null;
-    $this->hData['id'] = null;
-
-    if (isset($aCall[2]) && is_numeric($aCall[2]))
-    {
-      $this->hData['id'] = $aCall[2];
-      $this->hData['action'] = $aCall[3] ?? 'view';
-      $this->hData['subid'] = null;
-
-      if (isset($aCall[4]) && is_numeric($aCall[4]))
-      {
-        $this->hData['subid'] = $aCall[4];
-        $this->hData['subaction'] = $aCall[5] ?? null;
-      }
-      else
-      {
-        $this->hData['subaction'] = $aCall[4] ?? null;
-      }
-    }
-    else
-    {
-      $this->hData['action'] = $aCall[2] ?? 'list';
-      $this->hData['subaction'] = $aCall[3] ?? null;
-    }
+    $this->processRawPath();
   }
 
   /**

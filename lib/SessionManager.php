@@ -1,14 +1,13 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse session manager
+ * Limbonia session manager
  *
  * Contains all the code needed to control the session
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class SessionManager
 {
@@ -17,7 +16,7 @@ class SessionManager
    *
    * @var string
    */
-  protected static $sDefaultSessionName = 'Omniverse_SessionKey';
+  protected static $sDefaultSessionName = 'Limbonia_SessionKey';
 
   /**
    * The number of secondes to let the obsolete session continue to live.

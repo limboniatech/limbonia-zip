@@ -1,14 +1,13 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Template base class
+ * Limbonia Template base class
  *
- * This defines all the basic parts of an Omniverse template
+ * This defines all the basic parts of an Limbonia template
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Template
 {

@@ -1,18 +1,17 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Database Class
+ * Limbonia Database Class
  *
  * This is an extension to PHP's PDO system for accessing databases
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Database extends \PDO
 {
-  use \Omniverse\Traits\HasController;
+  use \Limbonia\Traits\HasController;
 
   /**
    * List of existing database objects
@@ -36,6 +35,13 @@ class Database extends \PDO
   ];
 
   /**
+   * List of PDO drivers that do not allow use of database cursors
+   *
+   * @note These are added as we become aware of them...
+   */
+  const CURSOR_BLACKLIST = ['mysql'];
+
+  /**
    * List of tables
    *
    * @var array
@@ -55,6 +61,13 @@ class Database extends \PDO
    * @var array
    */
   protected $hColumnAlias = [];
+
+  /**
+   * Is this instance allowed to use cursors?
+   *
+   * @var boolean
+   */
+  protected $bAllowCursor = true;
 
   /**
    * Return the existing column type from the data passed in
@@ -343,14 +356,14 @@ class Database extends \PDO
   }
 
   /**
-   * Generate an instance of the Omniverse Database object based on the specified configuration
+   * Generate an instance of the Limbonia Database object based on the specified configuration
    *
    * @param array $hConfig
-   * @param \Omniverse\Controller $oController (optional)
-   * @throws \Omniverse\Exception\Database
-   * @return \Omniverse\Database
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws \Limbonia\Exception\Database
+   * @return \Limbonia\Database
    */
-  static public function factory(array $hConfig, \Omniverse\Controller $oController = null): \Omniverse\Database
+  static public function factory(array $hConfig, \Limbonia\Controller $oController = null): \Limbonia\Database
   {
     $hLowercaseConfig = array_change_key_case($hConfig, CASE_LOWER);
 
@@ -389,8 +402,73 @@ class Database extends \PDO
   public function __construct($sDSN, $sUsername = null, $sPassword = null, $hOptions = null)
   {
     parent::__construct($sDSN, $sUsername, $sPassword, $hOptions);
-    $this->setAttribute(\PDO::ATTR_STATEMENT_CLASS, ['\Omniverse\DBResult', [$this]]);
+    $this->setAttribute(\PDO::ATTR_STATEMENT_CLASS, ['\Limbonia\Result\Database', [$this]]);
     $this->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    $this->bAllowCursor = !in_array($this->getType(), self::CURSOR_BLACKLIST);
+  }
+
+	/**
+	 * Prepares a statement for execution and returns a statement object
+   *
+	 * @param string $sStatement <p>
+	 * This must be a valid SQL statement template for the target database server.
+	 * </p>
+	 * @param array $hDriverOptions (optional) <p>
+	 * This array holds one or more key=&gt;value pairs to set
+	 * attribute values for the PDOStatement object that this method
+	 * returns. You would most commonly use this to set the
+	 * PDO::ATTR_CURSOR value to
+	 * PDO::CURSOR_SCROLL to request a scrollable cursor.
+	 * Some drivers have driver specific options that may be set at
+	 * prepare-time.
+	 * </p>
+	 * @return PDOStatement If the database server successfully prepares the statement,
+	 * <b>PDO::prepare</b> returns a
+	 * <b>PDOStatement</b> object.
+	 * If the database server cannot successfully prepare the statement,
+	 * <b>PDO::prepare</b> returns <b>FALSE</b> or emits
+	 * <b>PDOException</b> (depending on error handling).
+	 * </p>
+   *
+	 * @link http://php.net/manual/en/pdo.prepare.php
+	 */
+  public function prepare($sStatement, $hDriverOptions = null)
+  {
+    if ($this->bAllowCursor)
+    {
+      if (is_array($hDriverOptions))
+      {
+        $hDriverOptions[\PDO::ATTR_CURSOR] = \PDO::CURSOR_SCROLL;
+      }
+      else
+      {
+        $hDriverOptions = [\PDO::ATTR_CURSOR => \PDO::CURSOR_SCROLL];
+      }
+    }
+    elseif (empty($hDriverOptions))
+    {
+      $hDriverOptions = [];
+    }
+
+    return parent::prepare($sStatement, $hDriverOptions);
+  }
+
+	/**
+	 * Executes an SQL statement, returning a result set as a PDOStatement object
+   *
+	 * @param string $sStatement <p>
+	 * The SQL statement to prepare and execute.
+	 * </p>
+   *
+	 * @return PDOStatement returns a PDOStatement object on success, or <b>false</b> on failure.
+   *
+	 * @link http://php.net/manual/en/pdo.query.php
+	 */
+  public function query(string $sStatement)
+  {
+    $oResult = $this->prepare($sStatement);
+    $oResult->execute();
+    return $oResult;
   }
 
   /**
@@ -401,6 +479,16 @@ class Database extends \PDO
   public function getType()
   {
     return $this->getAttribute(\PDO::ATTR_DRIVER_NAME);
+  }
+
+  /**
+   * Is this instance allowed to use cursors?
+   *
+   * @return bool Return true if cursors are allowed and false if not...
+   */
+  public function allowCursor()
+  {
+    return $this->bAllowCursor;
   }
 
   /**
@@ -444,7 +532,7 @@ class Database extends \PDO
         throw new Exception\Database(__METHOD__ . ": Can not create tables of this type, yet.", $this->getType());
     }
 
-    $this->query($sCreateSQL);
+    $this->exec($sCreateSQL);
     $this->aTableList[] = $sName;
   }
 
@@ -528,7 +616,7 @@ class Database extends \PDO
    * @param string $sTable - name of the table to get column data from
    * @param boolean $bUseTableName (optional) - Should the table name be prepended to each column name (defaults to false)
    * @return array
-   * @throws \Omniverse\Exception\Database
+   * @throws \Limbonia\Exception\Database
    */
   public function getColumns($sTable, $bUseTableName = false)
   {
@@ -537,9 +625,9 @@ class Database extends \PDO
       return $this->hColumnList[$sTable];
     }
 
-    if (SessionManager::isStarted() && isset($_SESSION['OmnisysTableColumns'][$sTable]))
+    if (SessionManager::isStarted() && isset($_SESSION['LimboniaTableColumns'][$sTable]))
     {
-      $this->hColumnList[$sTable] = $_SESSION['OmnisysTableColumns'][$sTable];
+      $this->hColumnList[$sTable] = $_SESSION['LimboniaTableColumns'][$sTable];
       return $this->hColumnList[$sTable];
     }
 
@@ -587,27 +675,33 @@ class Database extends \PDO
 
     if (SessionManager::isStarted())
     {
-      if (!isset($_SESSION['OmnisysTableColumns']))
+      if (!isset($_SESSION['LimboniaTableColumns']))
       {
-        $_SESSION['OmnisysTableColumns'] = [];
+        $_SESSION['LimboniaTableColumns'] = [];
       }
 
-      $_SESSION['OmnisysTableColumns'][$sTable] = $this->hColumnList[$sTable];
+      $_SESSION['LimboniaTableColumns'][$sTable] = $this->hColumnList[$sTable];
     }
 
     return $this->hColumnList[$sTable];
   }
 
-  public function getAliasColumns($sTable)
+  /**
+   * Return the list of valid column aliases for the specified table
+   *
+   * @param string $sTable
+   * @return array
+   */
+  public function getAliasColumns($sTable): array
   {
     if (isset($this->hColumnAlias[$sTable]))
     {
       return $this->hColumnAlias[$sTable];
     }
 
-    if (SessionManager::isStarted() && isset($_SESSION['OmnisysTableColumnAlias'][$sTable]))
+    if (SessionManager::isStarted() && isset($_SESSION['LimboniaTableColumnAlias'][$sTable]))
     {
-      $this->hColumnAlias[$sTable] = $_SESSION['OmnisysTableColumnAlias'][$sTable];
+      $this->hColumnAlias[$sTable] = $_SESSION['LimboniaTableColumnAlias'][$sTable];
       return $this->hColumnAlias[$sTable];
     }
 
@@ -625,12 +719,21 @@ class Database extends \PDO
 
     if (SessionManager::isStarted())
     {
-      $_SESSION['OmnisysTableColumnAlias'][$sTable] = $this->hColumnAlias[$sTable];
+      $_SESSION['LimboniaTableColumnAlias'][$sTable] = $this->hColumnAlias[$sTable];
     }
 
     return $this->hColumnAlias[$sTable];
   }
 
+  /**
+   * Does the specified table contain the specified column?
+   *
+   * @note This function even checks of the specified column name is an alias of a real column name
+   *
+   * @param string $sTable
+   * @param string $sColumn
+   * @return mixed Returns the real column name if it exists or false if it doesn't
+   */
   public function hasColumn($sTable, $sColumn)
   {
     $hColumnAlias = $this->getAliasColumns($sTable);
@@ -638,19 +741,40 @@ class Database extends \PDO
     return isset($hColumnAlias[$sLowerColumn]) ? $hColumnAlias[$sLowerColumn] : false;
   }
 
-  public function getColumnData($sTable, $sColumn)
+  /**
+   * Return the column data for the specified column in the specified table, if there is any
+   *
+   * @param string $sTable
+   * @param string $sColumn
+   * @return array
+   */
+  public function getColumnData($sTable, $sColumn): array
   {
     $sRealColumn = $this->hasColumn($sTable, $sColumn);
     return $sRealColumn ? $this->getColumns($sTable)[$sRealColumn] : [];
   }
 
-  public function getIdColumn($sTable)
+  /**
+   * Return the ID column for the specified table, if there is one
+   *
+   * @param string $sTable
+   * @return string
+   */
+  public function getIdColumn($sTable): string
   {
     $sIdColumn = $this->hasColumn($sTable, 'id');
     return empty($sIdColumn) ? self::makeIdColumn($sTable) : $sIdColumn;
   }
 
-  public function verifyColumns($sTable, $xColumns, $bPrependTable = false)
+  /**
+   * Return the list of real column names from the specified list of columns
+   *
+   * @param string $sTable
+   * @param string|array $xColumns Either a single column name or an array of column names
+   * @param bool $bPrependTable
+   * @return array
+   */
+  public function verifyColumns($sTable, $xColumns, $bPrependTable = false): array
   {
     $aColumns = [];
 
@@ -673,7 +797,15 @@ class Database extends \PDO
     return (boolean)$bPrependTable && empty($aColumns) ? [$sTable] : $aColumns;
   }
 
-  public function verifyWhere($sTable, array $hWhere = null, $bPrependTable = false)
+  /**
+   * Validate the specified where array against the specified table, returning only valid fully qualified where options
+   *
+   * @param string $sTable
+   * @param array $hWhere
+   * @param bool $bPrependTable
+   * @return array
+   */
+  public function verifyWhere($sTable, array $hWhere = null, $bPrependTable = false): array
   {
     $aWhere = [];
 
@@ -724,7 +856,15 @@ class Database extends \PDO
     return $aWhere;
   }
 
-  public function verifyOrder($sTable, $xOrder, $bPrependTable = false)
+  /**
+   * Validate the specified order data against the specified table, returning only valid fully qualified order options
+   *
+   * @param string $sTable
+   * @param string|array $xOrder Either a single order string or an array of order strings
+   * @param bool $bPrependTable
+   * @return array
+   */
+  public function verifyOrder($sTable, $xOrder, $bPrependTable = false): array
   {
     $aOrder = [];
 
@@ -763,7 +903,7 @@ class Database extends \PDO
   {
     if (!$this->hasTable($sTable))
     {
-      throw new \Exception("The table ($sTable) does not exist");
+      throw new \Limbonia\Exception\Database("The table ($sTable) does not exist", $this->getType());
     }
 
     $sColumns = self::makeSelect($this->verifyColumns($sTable, $xColumns));
@@ -812,7 +952,7 @@ class Database extends \PDO
     if (empty($iRowsAffected))
     {
       $aError = $this->errorInfo();
-      throw new \Omniverse\Exception\DBResult("Data not inserted into $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
+      throw new \Limbonia\Exception\DBResult("Data not inserted into $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
     }
 
     return $this->lastInsertId();
@@ -853,7 +993,7 @@ class Database extends \PDO
     if (empty($iRowsAffected))
     {
       $aError = $this->errorInfo();
-      throw new \Omniverse\Exception\DBResult("Item #$iID not update in $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
+      throw new \Limbonia\Exception\DBResult("Item #$iID not update in $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
     }
 
     return $iID;
@@ -865,7 +1005,7 @@ class Database extends \PDO
    * @param string $sTable
    * @param integer $iID
    * @return boolean
-   * @throws \Omniverse\Exception\DBResult
+   * @throws \Limbonia\Exception\DBResult
    */
   public function delete($sTable, $iID)
   {
@@ -876,7 +1016,7 @@ class Database extends \PDO
     if ($iRowsAffected === false)
     {
       $aError = $this->errorInfo();
-      throw new \Omniverse\Exception\DBResult("Item #$iID not deleted from $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
+      throw new \Limbonia\Exception\DBResult("Item #$iID not deleted from $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
     }
 
     return true;

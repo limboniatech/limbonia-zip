@@ -1,14 +1,13 @@
 <?php
-namespace Omniverse\Traits;
+namespace Limbonia\Traits;
 
 /**
- * Omniverse Result Trait
+ * Limbonia Result Trait
  *
- * This trait is a basic implementation of the \Omniverse\Interfaces\Result interface
+ * This trait is a basic implementation of the \Limbonia\Interfaces\Result interface
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 trait Result
 {
@@ -27,31 +26,27 @@ trait Result
   protected $iRowCount = false;
 
   /**
-   * An array of the data from the results
+   * The fields that are in the current data
    *
    * @var array
    */
-  protected $aData = null;
+  protected $aFields = null;
 
-  /**
-   * Fill the data array with the specified data
-   *
-   * @param array $aData
-   */
-  protected function setData(array $aData = [])
+  public function getFields()
   {
-    $this->aData = $aData;
-    $this->iRowCount = \count($this->aData);
-  }
+    if (is_null($this->aFields))
+    {
+      $this->aFields = [];
+      $hRow = $this->offsetGet(0);
 
-  /**
-   * Return an array of all the data in the result set
-   *
-   * @return array on success or false on failure
-   */
-  public function getData()
-  {
-    return $this->aData;
+      //if the 0 offset doesn't exist
+      if (is_array($hRow))
+      {
+        $this->aFields = array_keys($hRow);
+      }
+    }
+
+    return $this->aFields;
   }
 
   /**
@@ -91,20 +86,7 @@ trait Result
    */
   public function offsetExists($xOffset)
   {
-    return \is_array($this->aData) && isset($this->aData[$xOffset]);
-  }
-
-  /**
-   * Return the value stored at the specified array offset
-   *
-   * @note This is an implementation detail of the ArrayAccess Interface
-   *
-   * @param mixed $xOffset
-   * @return mixed
-   */
-  public function offsetGet($xOffset)
-  {
-    return \is_array($this->aData) && isset($this->aData[$xOffset]) ? $this->aData[$xOffset] : false;
+    return $this->offsetGet($xOffset) === false ? false : true;
   }
 
   /**
@@ -129,7 +111,7 @@ trait Result
    */
   public function seek($iRow)
   {
-    if (!isset($this->aData[$iRow]))
+    if (!$this->offsetExists($iRow))
     {
       throw new OutOfBoundsException("Invalid seek position ($iRow)");
     }
@@ -142,7 +124,7 @@ trait Result
    *
    * @note This is an implementation detail of the SeekableIterator Interface
    *
-   * @return type
+   * @return mixed
    */
   public function current()
   {
@@ -193,6 +175,6 @@ trait Result
    */
   public function valid()
   {
-    return isset($this->aData[$this->iCurrentRow]);
+    return $this->offsetExists($this->iCurrentRow);
   }
 }

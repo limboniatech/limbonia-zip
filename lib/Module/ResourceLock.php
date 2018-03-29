@@ -1,18 +1,17 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Resource Lock Module class
+ * Limbonia Resource Lock Module class
  *
  * Admin module for handling site resource locks
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class ResourceLock extends \Omniverse\Module
+class ResourceLock extends \Limbonia\Module
 {
-  use \Omniverse\Traits\ItemModule;
+  use \Limbonia\Traits\ItemModule;
 
   /**
    * List of column names that should remain static
@@ -108,10 +107,10 @@ class ResourceLock extends \Omniverse\Module
   /**
    * Generate the search results table headers in the specified grid object
    *
-   * @param \Omniverse\Widget\Table $oSortGrid
+   * @param \Limbonia\Widget\Table $oSortGrid
    * @param string $sColumn
    */
-  public function processSearchGridHeader(\Omniverse\Widget\Table $oSortGrid, $sColumn)
+  public function processSearchGridHeader(\Limbonia\Widget\Table $oSortGrid, $sColumn)
   {
     return parent::processSearchGridHeader($oSortGrid, ($sColumn == 'KeyID' ? 'Name' : $sColumn));
   }
@@ -119,11 +118,11 @@ class ResourceLock extends \Omniverse\Module
   /**
    * Generate and return the value of the specified column
    *
-   * @param \Omniverse\Item $oItem
+   * @param \Limbonia\Item $oItem
    * @param string $sColumn
    * @return mixed
    */
-  public function getColumnValue(\Omniverse\Item $oItem, $sColumn)
+  public function getColumnValue(\Limbonia\Item $oItem, $sColumn)
   {
     if ($sColumn == 'KeyID')
     {

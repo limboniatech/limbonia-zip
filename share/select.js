@@ -1,12 +1,12 @@
 //var NS4 = (navigator.appName == "Netscape" && parseInt(navigator.appVersion) < 5);
 
-function Omnisys_AddOption(sSelectID, sTitle, sValue)
+function Limbonia_AddOption(sSelectID, sTitle, sValue)
 {
   var oSelect = document.getElementById(sSelectID);
   oSelect.options[oSelect.length] = new Option(sTitle, sValue);
 }
 
-function Omnisys_RemoveOption(sSelectID, iIndex)
+function Limbonia_RemoveOption(sSelectID, iIndex)
 {
   oSelect = document.getElementById(sSelectID);
 
@@ -16,7 +16,7 @@ function Omnisys_RemoveOption(sSelectID, iIndex)
   }
 }
 
-function Omnisys_MoveOptions(sFromID, sToID)
+function Limbonia_MoveOptions(sFromID, sToID)
 {
   oFrom = document.getElementById(sFromID);
   oTo = document.getElementById(sToID);
@@ -33,7 +33,7 @@ function Omnisys_MoveOptions(sFromID, sToID)
     {
       aTitle[iCount] = oFrom.options[i].text;
       aValue[iCount] = oFrom.options[i].value;
-      Omnisys_RemoveOption(sFromID, i);
+      Limbonia_RemoveOption(sFromID, i);
       iCount++;
     }
   }
@@ -43,13 +43,13 @@ function Omnisys_MoveOptions(sFromID, sToID)
   // in the same order as they were in the 'from' Select.
   for(i = iCount - 1; i >= 0; i--)
   {
-    Omnisys_AddOption(sToID, aTitle[i], aValue[i]);
+    Limbonia_AddOption(sToID, aTitle[i], aValue[i]);
   }
 
 //  if(NS4) history.go(0);
 }
 
-function Omnisys_RemoveAll(sSelectID)
+function Limbonia_RemoveAll(sSelectID)
 {
   oSelect = document.getElementById(sSelectID);
   var iFrom = oSelect.length;
@@ -59,7 +59,7 @@ function Omnisys_RemoveAll(sSelectID)
   }
 }
 
-function Omnisys_SelectAll(sSelectID)
+function Limbonia_SelectAll(sSelectID)
 {
   oSelect = document.getElementById(sSelectID);
   for (i = 0; i < oSelect.length; i++)

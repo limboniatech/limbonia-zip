@@ -1,20 +1,19 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Software Module class
+ * Limbonia Software Module class
  *
  * Admin module for handling Software
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Software extends \Omniverse\Module
+class Software extends \Limbonia\Module
 {
-  use \Omniverse\Traits\ItemModule
+  use \Limbonia\Traits\ItemModule
   {
-    \Omniverse\Traits\ItemModule::processApiGetItem as originalProcessApiGetItem;
+    \Limbonia\Traits\ItemModule::processApiGetItem as originalProcessApiGetItem;
   }
 
   /**
@@ -47,13 +46,13 @@ class Software extends \Omniverse\Module
    */
   protected function processApiGetItem()
   {
-    switch ($this->oController->api->action)
+    switch ($this->oApi->action)
     {
       case 'releases':
         $oDatabase = $this->oController->getDB();
         $sTable = 'SoftwareRelease';
         $sIdColumn = $oDatabase->getIdColumn($sTable);
-        $hWhere = $this->oController->api->search ?? [];
+        $hWhere = $this->oApi->search ?? [];
         $bUseTableName = false;
         $aWhere = ['SoftwareID = ' . $this->oItem->id];
 
@@ -67,16 +66,16 @@ class Software extends \Omniverse\Module
           unset($hWhere['status']);
         }
 
-        $aRawFields = isset($this->oController->api->fields) ? array_merge(['id'], $this->oController->api->fields) : null;
+        $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : null;
         $aFields = $oDatabase->verifyColumns('SoftwareRelease', $aRawFields, $bUseTableName);
-        $sSelect = \Omniverse\Database::makeSelect($aFields, 'SoftwareRelease');
+        $sSelect = \Limbonia\Database::makeSelect($aFields, 'SoftwareRelease');
 
         $aWhere = array_merge($aWhere, $oDatabase->verifyWhere('SoftwareRelease', $hWhere, $bUseTableName));
-        $sWhere = \Omniverse\Database::makeWhere($aWhere);
+        $sWhere = \Limbonia\Database::makeWhere($aWhere);
 
         //default order is according to the ID column of this item
-        $aOrder = $this->oController->api->sort ?? ['id'];
-        $sOrder = \Omniverse\Database::makeOrder($oDatabase->verifyOrder('SoftwareRelease', $aOrder, $bUseTableName));
+        $aOrder = $this->oApi->sort ?? ['id'];
+        $sOrder = \Limbonia\Database::makeOrder($oDatabase->verifyOrder('SoftwareRelease', $aOrder, $bUseTableName));
 
         $sSQL = "SELECT DISTINCT $sSelect FROM $sTable$sWhere$sOrder";
         $oResult = $oDatabase->query($sSQL);
@@ -112,17 +111,17 @@ class Software extends \Omniverse\Module
         $sTable = 'SoftwareElement';
         $sIdColumn = $oDatabase->getIdColumn($sTable);
 
-        $aRawFields = isset($this->oController->api->fields) ? array_merge(['id'], $this->oController->api->fields) : null;
+        $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : null;
         $aFields = $oDatabase->verifyColumns($sTable, $aRawFields);
-        $sSelect = \Omniverse\Database::makeSelect($aFields);
+        $sSelect = \Limbonia\Database::makeSelect($aFields);
 
-        $hWhere = $this->oController->api->search ?? [];
+        $hWhere = $this->oApi->search ?? [];
         $aWhere = array_merge(['SoftwareID = ' . $this->oItem->id], $oDatabase->verifyWhere($sTable, $hWhere));
-        $sWhere = \Omniverse\Database::makeWhere($aWhere);
+        $sWhere = \Limbonia\Database::makeWhere($aWhere);
 
         //default order is according to the name column of this item
-        $aOrder = $this->oController->api->sort ?? ['name'];
-        $sOrder = \Omniverse\Database::makeOrder($oDatabase->verifyOrder($sTable, $aOrder));
+        $aOrder = $this->oApi->sort ?? ['name'];
+        $sOrder = \Limbonia\Database::makeOrder($oDatabase->verifyOrder($sTable, $aOrder));
 
         $sSQL = "SELECT DISTINCT $sSelect FROM $sTable$sWhere$sOrder";
         $oResult = $oDatabase->query($sSQL);
@@ -178,9 +177,9 @@ class Software extends \Omniverse\Module
    */
   protected function prepareTemplateGetElements()
   {
-    if (isset($this->oController->api->subId))
+    if (isset($this->oApi->subId))
     {
-      $oElement = $this->oController->itemFromId('SoftwareElement', $this->oController->api->subId);
+      $oElement = $this->oController->itemFromId('SoftwareElement', $this->oApi->subId);
       $this->oController->templateData('element', $oElement);
     }
   }
@@ -209,7 +208,7 @@ class Software extends \Omniverse\Module
    */
   protected function prepareTemplatePostElementsEdit()
   {
-    $oElement = $this->oController->itemFromId('SoftwareElement', $this->oController->api->subId);
+    $oElement = $this->oController->itemFromId('SoftwareElement', $this->oApi->subId);
     $oElement->setAll($this->editGetData());
     $oElement->save();
     $this->oController->templateData('success', "Software element successfully updated");
@@ -220,7 +219,7 @@ class Software extends \Omniverse\Module
    */
   protected function prepareTemplatePostElementsDelete()
   {
-    $this->oItem->removeElement($this->oController->api->subId);
+    $this->oItem->removeElement($this->oApi->subId);
     $this->oController->templateData('success', "Software element successfully deleted");
   }
 
@@ -229,9 +228,9 @@ class Software extends \Omniverse\Module
    */
   protected function prepareTemplateGetReleases()
   {
-    if (isset($this->oController->api->subId))
+    if (isset($this->oApi->subId))
     {
-      $oRelease = $this->oController->itemFromId('SoftwareRelease', $this->oController->api->subId);
+      $oRelease = $this->oController->itemFromId('SoftwareRelease', $this->oApi->subId);
       $this->oController->templateData('release', $oRelease);
     }
   }
@@ -259,7 +258,7 @@ class Software extends \Omniverse\Module
    */
   protected function prepareTemplatePostReleasesEdit()
   {
-    $oRelease = $this->oController->itemFromId('SoftwareRelease', $this->oController->api->subId);
+    $oRelease = $this->oController->itemFromId('SoftwareRelease', $this->oApi->subId);
     $oRelease->setAll($this->editGetData());
     $oRelease->save();
     $this->oController->templateData('success', "Software release successfully updated");
@@ -270,7 +269,7 @@ class Software extends \Omniverse\Module
    */
   protected function prepareTemplatePostReleasesDelete()
   {
-    $this->oItem->removeRelease($this->oController->api->subId);
+    $this->oItem->removeRelease($this->oApi->subId);
     $this->oController->templateData('success', "Software release successfully deleted");
   }
 }

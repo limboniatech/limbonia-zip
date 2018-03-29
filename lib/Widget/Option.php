@@ -1,23 +1,22 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse Option Widget
+ * Limbonia Option Widget
  *
  * A wrapper around an HTML option tag
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Option extends \Omniverse\Tag
+class Option extends \Limbonia\Widget
 {
   /**
    * Return the HTML representation of this tag
    *
    * @return string
    */
-  protected function toString()
+  public function toString()
   {
     $sContent = $this->getContent();
     $sParam = $this->getParam();

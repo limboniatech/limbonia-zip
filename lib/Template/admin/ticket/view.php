@@ -81,12 +81,13 @@ foreach ($currentItem->contentList as $content)
   echo "</span>\n";
   echo "<span class=\"$content->updateType data\">\n";
   echo $content->updateText . "\n";
+  $historyList = $content->getHistory();
 
-  if (!empty($content->history))
+  if (count($historyList) > 0)
   {
     echo "<div class=\"history\">\n";
 
-    foreach ($content->history as $history)
+    foreach ($historyList as $history)
     {
       if (!empty($history->note))
       {

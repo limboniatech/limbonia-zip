@@ -1,15 +1,14 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Cache Class
+ * Limbonia Cache Class
  *
  * This allows caching of bits and pieces that can benefit from being kept track
  * of long term
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Cache
 {
@@ -46,7 +45,7 @@ class Cache
    * Constructor
    *
    * @param string $sCacheDir - The directory where cache files will be stored.
-   * @throws Omniverse\Exception\Object
+   * @throws Limbonia\Exception\Object
    */
   protected function __construct($sCacheDir)
   {

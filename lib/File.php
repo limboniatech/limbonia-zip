@@ -1,8 +1,8 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Programming API Class
+ * Limbonia Programming API Class
  *
  * It defines a host of needed functionality including a standard method for
  * writing that allows for web and cli environments, opening and closing files,
@@ -10,9 +10,9 @@ namespace Omniverse;
  *
  * NOTE: All properties and methods are static.
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @version $Revision: 1.3 $
- * @package Omniverse
+ * @package Limbonia
  */
 class File
 {
@@ -207,7 +207,7 @@ class File
   }
 
   /**
-   * Prints the the passed data with the Omniverse EOL string appended to it
+   * Prints the the passed data with the Limbonia EOL string appended to it
    *
    * @param string $sData - The string will be printed
    * @param string $sFilePath - the file to be printed to (optional)

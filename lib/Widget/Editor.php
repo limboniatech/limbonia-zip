@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse Editor Widget
+ * Limbonia Editor Widget
  *
  * A wrapper around an HTML editor
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Editor extends \Omniverse\Widget
+class Editor extends \Limbonia\Widget
 {
   /**
    * The CSS width of this widget
@@ -53,10 +52,10 @@ class Editor extends \Omniverse\Widget
    * It increments the widget counter and generates a unique (but human readable) name.
    *
    * @param string $sName (optional)
-   * @param \Omniverse\Controller $oController (optional)
-   * @throws Omniverse\Exception\Object
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws Limbonia\Exception\Object
    */
-  public function __construct($sName = null, \Omniverse\Controller $oController = null)
+  public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->aScript[] = $this->sWebShareDir . '/ckeditor/ckeditor.js';

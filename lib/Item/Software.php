@@ -1,21 +1,20 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse Software Item Class
+ * Limbonia Software Item Class
  *
  * Item based wrapper around the Software table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Software extends \Omniverse\Item
+class Software extends \Limbonia\Item
 {
   /**
    * Return the list of configured software
    *
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public static function getSoftwareList()
   {
@@ -26,7 +25,7 @@ class Software extends \Omniverse\Item
    * Return a list of releases for this software
    *
    * @param string $sType (optional) The type of list to return
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function getReleaseList($sType = '')
   {
@@ -88,7 +87,7 @@ class Software extends \Omniverse\Item
   /**
    * Return the list of elements related to this software
    *
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function getElementList()
   {
@@ -130,7 +129,7 @@ class Software extends \Omniverse\Item
   /**
    * Generate and return a list of ticket related to this software but is not associated with any releases
    *
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public function getUnversionedTikets()
   {

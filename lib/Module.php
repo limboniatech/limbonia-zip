@@ -1,19 +1,18 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Module base class
+ * Limbonia Module base class
  *
- * This defines all the basic parts of an Omniverse module
+ * This defines all the basic parts of an Limbonia module
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Module
 {
-  use \Omniverse\Traits\DriverList;
-  use \Omniverse\Traits\HasController;
+  use \Limbonia\Traits\DriverList;
+  use \Limbonia\Traits\HasController;
 
   /**
    * List of fields used by module settings
@@ -36,13 +35,6 @@ class Module
     'delete',
     'options'
   ];
-
-  /**
-   * The type of module this is
-   *
-   * @var string
-   */
-  protected $sType = null;
 
   /**
    * A list of the actual module settings
@@ -186,9 +178,16 @@ class Module
   protected $bCityStateZipDone = false;
 
   /**
+   * The API object for this class to use
+   *
+   * @var \Limbonia\Api
+   */
+  protected $oApi = null;
+
+  /**
    * Generate and cache the driver list for the current object type
    */
-  public static function overrideDriverList(\Omniverse\Controller $oController, \Omniverse\Item\User $oUser)
+  public static function overrideDriverList(\Limbonia\Controller $oController, \Limbonia\Item\User $oUser)
   {
     if (!isset($_SESSION['DriverList']))
     {
@@ -198,10 +197,11 @@ class Module
     $_SESSION['ResourceList'] = [];
     $_SESSION['ModuleGroups'] = [];
     $_SESSION['DriverList'][__CLASS__] = [];
-    $sClassDir = preg_replace("#\\\#", '/', preg_replace("#Omniverse\\\\#", '', __CLASS__));
+    $sClassDir = preg_replace("#\\\#", '/', preg_replace("#Limbonia\\\\#", '', __CLASS__));
     $aBlackList = $oController->moduleBlackList ?? [];
+    $oApi = \Limbonia\Api::fromUri('admin');
 
-    foreach (\Omniverse\Controller::getLibs() as $sLib)
+    foreach (\Limbonia\Controller::getLibs() as $sLib)
     {
       foreach (glob("$sLib/$sClassDir/*.php") as $sClassFile)
       {
@@ -219,7 +219,7 @@ class Module
           continue;
         }
 
-        $oModule =  new $sTypeClass($oController);
+        $oModule = new $sTypeClass($oController, $oApi);
         $hComponent = $oModule->getComponents();
         ksort($hComponent);
         reset($hComponent);
@@ -247,30 +247,24 @@ class Module
    * Module Factory
    *
    * @param string $sType - The type of module to create
-   * @param \Omniverse\Controller $oController
-   * @return \Omniverse\Module
+   * @param \Limbonia\Controller $oController
+   * @return \Limbonia\Module
    */
-  public static function factory($sType, \Omniverse\Controller $oController)
+  public static function factory($sType, \Limbonia\Controller $oController)
   {
-    $sTypeClass = __CLASS__ . '\\' . self::driver($sType);
-
-    if (!class_exists($sTypeClass, true))
-    {
-      throw new \Omniverse\Exception\Object("No driver for module ($sType) exists!");
-    }
-
-    return new $sTypeClass($oController);
+    return self::driverFactory($sType, $oController);
   }
 
   /**
    * Instantiate a module
    *
-   * @param \Omniverse\Controller $oController
+   * @param \Limbonia\Controller $oController
    */
-  protected function __construct(\Omniverse\Controller $oController)
+  protected function __construct(\Limbonia\Controller $oController, \Limbonia\Api $oApi = null)
   {
     $this->oController = $oController;
-    $this->sType = empty($this->sType) ? preg_replace("#.*Module\\\#", '', get_class($this)) : $this->sType;
+    $this->oApi = is_null($oApi) ? $this->oController->api : $oApi;
+    $this->getType();
 
     if (count(static::$hSettingsFields) > 0)
     {
@@ -281,7 +275,7 @@ class Module
       $oStatement = $this->oController->getDB()->prepare('SELECT Data FROM Settings WHERE Type = :Type LIMIT 1');
       $oStatement->bindParam(':Type', $this->sType);
       $oStatement->execute();
-      $sSettings = $oStatement->fetchOne();
+      $sSettings = $oStatement->fetchColumn();
 
       if (empty($sSettings))
       {
@@ -299,7 +293,7 @@ class Module
     }
 
     $this->init();
-    $this->sCurrentAction = in_array($oController->api->action, $this->aAllowedActions) ? $oController->api->action : $this->sDefaultAction;
+    $this->sCurrentAction = in_array($this->oApi->action, $this->aAllowedActions) ? $this->oApi->action : $this->sDefaultAction;
   }
 
   /**
@@ -350,7 +344,7 @@ class Module
    */
   protected function processApiHead()
   {
-    throw new \Exception("Action (dispaly) not implemented by {$this->oController->api->module}", 404);
+    throw new \Exception("Action (dispaly) not implemented by {$this->oApi->module}", 404);
   }
 
   /**
@@ -361,7 +355,7 @@ class Module
    */
   protected function processApiGet()
   {
-    throw new \Exception("Action (dispaly) not implemented by {$this->oController->api->module}", 404);
+    throw new \Exception("Action (dispaly) not implemented by {$this->oApi->module}", 404);
   }
 
   /**
@@ -372,7 +366,7 @@ class Module
    */
   protected function processApiPut()
   {
-    throw new \Exception("Action (update) not implemented by {$this->oController->api->module}", 404);
+    throw new \Exception("Action (update) not implemented by {$this->oApi->module}", 404);
   }
 
   /**
@@ -383,7 +377,7 @@ class Module
    */
   protected function processApiPost()
   {
-    throw new \Exception("Action (create) not implemented by {$this->oController->api->module}", 404);
+    throw new \Exception("Action (create) not implemented by {$this->oApi->module}", 404);
   }
 
   /**
@@ -394,7 +388,7 @@ class Module
    */
   protected function processApiDelete()
   {
-    throw new \Exception("Action (delete) not implemented by {$this->oController->api->module}", 404);
+    throw new \Exception("Action (delete) not implemented by {$this->oApi->module}", 404);
   }
 
   /**
@@ -407,17 +401,17 @@ class Module
   {
     http_response_code(200);
 
-    if (!in_array($this->oController->api->method, static::$hHttpMethods))
+    if (!in_array($this->oApi->method, static::$hHttpMethods))
     {
-      throw new \Exception("HTTP method ({$this->oController->api->method}) not allowed by {$this->oController->api->module}", 405);
+      throw new \Exception("HTTP method ({$this->oApi->method}) not allowed by {$this->oApi->module}", 405);
     }
 
-    switch ($this->oController->api->method)
+    switch ($this->oApi->method)
     {
       case 'head':
         if (!$this->allow('search'))
         {
-          throw new \Exception("Action (dispaly) not allowed by {$this->oController->api->module}", 405);
+          throw new \Exception("Action (dispaly) not allowed by {$this->oApi->module}", 405);
         }
 
         return $this->processApiHead();
@@ -425,7 +419,7 @@ class Module
       case 'get':
         if (!$this->allow('search'))
         {
-          throw new \Exception("Action (dispaly) not allowed by {$this->oController->api->module}", 405);
+          throw new \Exception("Action (dispaly) not allowed by {$this->oApi->module}", 405);
         }
 
         return $this->processApiGet();
@@ -433,7 +427,7 @@ class Module
       case 'put':
         if (!$this->allow('edit'))
         {
-          throw new \Exception("Action (update) not allowed by {$this->oController->api->module}", 405);
+          throw new \Exception("Action (update) not allowed by {$this->oApi->module}", 405);
         }
 
         return $this->processApiPut();
@@ -441,7 +435,7 @@ class Module
       case 'post':
         if (!$this->allow('create'))
         {
-          throw new \Exception("Action (create) not allowed by {$this->oController->api->module}", 405);
+          throw new \Exception("Action (create) not allowed by {$this->oApi->module}", 405);
         }
 
         http_response_code(201);
@@ -450,7 +444,7 @@ class Module
       case 'delete':
         if (!$this->allow('delete'))
         {
-          throw new \Exception("Action (delete) not allowed by {$this->oController->api->module}", 405);
+          throw new \Exception("Action (delete) not allowed by {$this->oApi->module}", 405);
         }
 
         http_response_code(204);
@@ -462,7 +456,7 @@ class Module
         return null;
     }
 
-    throw new \Exception("HTTP method ({$this->oController->api->method}) not recognized by {$this->oController->api->module}", 405);
+    throw new \Exception("HTTP method ({$this->oApi->method}) not recognized by {$this->oApi->module}", 405);
   }
 
   /**
@@ -472,17 +466,7 @@ class Module
    */
   public function isSearch()
   {
-    return in_array($this->oController->api->action, ['search', 'list']);
-  }
-
-  /**
-   * Return the type of module that this object represents
-   *
-   * @return string
-   */
-  public function getType()
-  {
-    return $this->sType;
+    return in_array($this->oApi->action, ['search', 'list']);
   }
 
   /**
@@ -574,10 +558,10 @@ class Module
   public function prepareTemplate()
   {
     $aMethods = [];
-    $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction) . ucfirst($this->oController->api->subAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction) . ucfirst($this->oApi->subAction);
     $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction);
-    $aMethods[] = 'prepareTemplate' . ucfirst($this->oController->api->method) . ucfirst($this->sCurrentAction) . ucfirst($this->oController->api->subAction);
-    $aMethods[] = 'prepareTemplate' . ucfirst($this->oController->api->method) . ucfirst($this->sCurrentAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->oApi->method) . ucfirst($this->sCurrentAction) . ucfirst($this->oApi->subAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->oApi->method) . ucfirst($this->sCurrentAction);
     $aMethods = array_unique($aMethods);
 
     foreach ($aMethods as $sMethod)
@@ -617,7 +601,7 @@ class Module
 
     $sModuleDir = strtolower($this->getType());
     $sActionTemplate = $this->sCurrentAction == 'list' ? 'search' : strtolower("{$this->sCurrentAction}");
-    $sMethod = $this->oController->api->method == 'post' || $this->sCurrentAction == 'list' ? 'process' : 'display';
+    $sMethod = $this->oApi->method == 'post' || $this->sCurrentAction == 'list' ? 'process' : 'display';
     $aTemplates =
     [
       $sModuleDir . '/' . $sActionTemplate,
@@ -639,6 +623,20 @@ class Module
     }
 
     throw new \Exception("The action \"{$this->sCurrentAction}\" does *not* exist in {$this->sType}!!!");
+  }
+
+  /**
+   * Return an array of data that is needed to display the module's admin output
+   *
+   * @return array
+   */
+  public function getAdminOutput()
+  {
+    return
+    [
+      'moduleType' => $this->getType(),
+      'action' => $this->getCurrentAction()
+    ];
   }
 
   /**
@@ -832,6 +830,19 @@ class Module
     }
   }
 
+  protected function processSearchTerms($hArray)
+  {
+    if (is_array($hArray))
+    {
+      foreach (array_keys($hArray) as $sKey)
+      {
+        $this->processSearchTerm($hArray, $sKey);
+      }
+    }
+
+    return $hArray;
+  }
+
   /**
    * Generate and return the column headers for the "Search" process
    *
@@ -846,23 +857,23 @@ class Module
   /**
    * Generate the search results table headers in the specified grid object
    *
-   * @param \Omniverse\Widget\Table $oSortGrid
+   * @param \Limbonia\Widget\Table $oSortGrid
    * @param string $sColumn
    */
-  public function processSearchGridHeader(\Omniverse\Widget\Table $oSortGrid, $sColumn)
+  public function processSearchGridHeader(\Limbonia\Widget\Table $oSortGrid, $sColumn)
   {
     //any columns that need to be static can be set in the aStaticColumn array...
     if (in_array($sColumn, $this->getStaticColumn()) || !$this->allow('Edit'))
     {
-      $oSortGrid->addCell(\Omniverse\Widget\Table::generateSortHeader($sColumn), false);
+      $oSortGrid->addCell(\Limbonia\Widget\Table::generateSortHeader($sColumn), false);
     }
     else
     {
-      $sDisplay = \Omniverse\Widget\Table::generateSortHeader($this->getColumnTitle($sColumn));
+      $sDisplay = \Limbonia\Widget\Table::generateSortHeader($this->getColumnTitle($sColumn));
 
       if (in_array($sColumn, $this->aEditColumn))
       {
-        $sDisplay .= "<span class=\"OmnisysSortGridEdit\" onClick=\"document.getElementById('Omnisys_SortGrid_Edit').value='$sColumn'; document.getElementById('EditColumn').submit();\">[Edit]</span>";
+        $sDisplay .= "<span class=\"LimboniaSortGridEdit\" onClick=\"document.getElementById('Limbonia_SortGrid_Edit').value='$sColumn'; document.getElementById('EditColumn').submit();\">[Edit]</span>";
       }
 
       $oSortGrid->addCell($sDisplay);
@@ -879,7 +890,7 @@ class Module
   public function processSearchGridRowControl($sIDColumn, $iID)
   {
     $sURL = $this->generateUri($iID);
-    return "<input type=\"checkbox\" class=\"OmnisysSortGridCellCheckbox\" name=\"{$sIDColumn}[$iID]\" id=\"{$sIDColumn}[$iID]\" value=\"1\"> [<a class=\"item\" href=\"$sURL\">View</a>]";
+    return "<input type=\"checkbox\" class=\"LimboniaSortGridCellCheckbox\" name=\"{$sIDColumn}[$iID]\" id=\"{$sIDColumn}[$iID]\" value=\"1\"> [<a class=\"item\" href=\"$sURL\">View</a>]";
   }
 
   /**
@@ -890,7 +901,7 @@ class Module
   protected function processSearchGetCriteria()
   {
     //unless overridden by a descendant form data will allways take precendence over URL data
-    return isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : (isset($this->oController->get[$this->sType]) ? $this->oController->get[$this->sType] : null);
+    return isset($this->oController->post[$this->sType]) ? $this->oController->post[$this->sType] : (isset($this->oController->get[$this->sType]) ? $this->oController->get[$this->sType] : []);
   }
 
   /**
@@ -1118,7 +1129,7 @@ class Module
     switch ($sType)
     {
       case 'hidden':
-        $oHidden = \Omniverse\Tag::factory('hidden');
+        $oHidden = \Limbonia\Tag::factory('hidden');
         $oHidden->setParam('name', "$this->sType[$sName]");
         $oHidden->setParam('id', $this->sType . $sName);
         $oHidden->setParam('value', $sValue);
@@ -1132,11 +1143,24 @@ class Module
         $aElements = explode(",", $sElements);
         $aTitle = array_map('ucwords', $aElements);
         $hElements = array_combine($aElements, $aTitle);
-        $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
+        return $this->getFormField($sName, $sValue, ['Type' => 'hash', 'Extra' => $hElements]);
 
-        $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select $sLabel";
-        $oSelect->addOption($sEmptyItemLabel, '');
-        $oSelect->addArray($hElements);
+      case 'hash':
+        $oSelect = $this->oController->widgetFactory('select', "$this->sType[$sName]");
+
+        if ($this->isSearch())
+        {
+          $oSelect->isMultiple(true);
+        }
+        else
+        {
+          $oSelect->addOption("Select $sLabel", '');
+        }
+
+        if (is_array($hData['Extra']))
+        {
+          $oSelect->addArray($hData['Extra']);
+        }
 
         if (!empty($sValue))
         {
@@ -1177,7 +1201,7 @@ class Module
       case 'timestamp':
       case 'date':
       case 'searchdate':
-        $sSearchDate = $sType == 'searchdate' ? "<select name=\"{$sName}Operator\"><option> < </option><option selected> = </option><option> > </option></select>\n" : '';
+        $sSearchDate = $sType == 'searchdate' ? "<select name=\"$this->sType[{$sName}Operator]\"><option> < </option><option selected> = </option><option> > </option></select>\n" : '';
         $oDate = $this->oController->widgetFactory('Calendar', "$this->sType[$sName]");
         $oDate->button('Change');
 
@@ -1229,7 +1253,7 @@ class Module
   /**
    * Generate and return the value of the specified column
    *
-   * @param \Omniverse\Item $oItem
+   * @param \Limbonia\Item $oItem
    * @param string $sColumn
    * @return mixed
    */
@@ -1289,7 +1313,7 @@ class Module
    * @param array $hFields
    * @param array $hValues
    */
-  public function getForm($sType, $hFields, $hValues)
+  public function getForm($sType, $hFields, $hValues = [])
   {
     $sButtonValue = ucwords($sType);
     $sType = preg_replace('/ /', '', $sType);
@@ -1313,6 +1337,6 @@ class Module
     $sContent .= $sText;
     $sContent .= "<button type=\"submit\" name=\"$sButtonName\">Yes</button>&nbsp;&nbsp;&nbsp;&nbsp;<button type=\"submit\" name=\"No\">No</button>";
     $sContent .= "</form>\n";
-    return \Omniverse\Controller\Admin::getMenu($sContent, $this->getTitle() . " :: $sVerb");
+    return \Limbonia\Controller\Admin::getMenu($sContent, $this->getTitle() . " :: $sVerb");
   }
 }

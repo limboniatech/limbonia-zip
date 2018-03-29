@@ -1,18 +1,17 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse Calendar Widget
+ * Limbonia Calendar Widget
  *
  * A wrapper around a calendar window
  *
  * @todo This class needs to be reworked to be more modern and further DocBlocks will wait until *after* the rewrite
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Calendar extends \Omniverse\Widget\Window
+class Calendar extends \Limbonia\Widget\Window
 {
   protected $iWidth = 200;
   protected $iHeight = 195;
@@ -24,7 +23,7 @@ class Calendar extends \Omniverse\Widget\Window
   protected $bClickable = FALSE;
   protected $bReadOnly = FALSE;
 
-  public function __construct($sName = null, \Omniverse\Controller $oController = null)
+  public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
     $this->setConfig('Target', $this->sID);

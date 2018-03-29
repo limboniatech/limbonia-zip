@@ -179,12 +179,12 @@ function updateNav(sUrl, sType, sFormData, bHasFiles)
       switch (sType)
       {
         case 'item':
-          if (oData.id > 0)
+          if (oData.id)
           {
             buildItem(oData);
           }
 
-          $('#item > #page').html(oData.moduleOutput);
+          $('#item > #page').empty().html(oData.moduleOutput);
           $('#item > .tabSet > a.' + oData.moduleType.toLowerCase() + '.' + oData.action).addClass('current').siblings().removeClass('current');
           break;
 
@@ -192,7 +192,7 @@ function updateNav(sUrl, sType, sFormData, bHasFiles)
           var sPageTitle = oData.moduleType + ' > ' + oData.action.charAt(0).toUpperCase() + oData.action.slice(1);
           $(document).prop('title', sPageTitle);
 
-          $('#moduleOutput').html(oData.moduleOutput);
+          $('#moduleOutput').empty().html(oData.moduleOutput);
           $('#content > .tabSet > span').remove();
           $('#content > .tabSet > a.' + oData.moduleType.toLowerCase() + '.' + oData.action).addClass('current').siblings().removeClass('current');
       }
@@ -246,11 +246,11 @@ $(function()
   /**
    * Make options that only work if boxes are checked only visible when they are checked
    */
-  $('#moduleOutput').on('click', '.OmnisysSortGridCellCheckbox', function()
+  $('#moduleOutput').on('click', '.LimboniaSortGridCellCheckbox', function()
   {
-    var bChecked = $('.OmnisysSortGridCellCheckbox:checked').length > 0;
-    $('.OmnisysSortGridDelete').toggle(bChecked);
-    $('.OmnisysSortGridEdit').toggle(bChecked);
+    var bChecked = $('.LimboniaSortGridCellCheckbox:checked').length > 0;
+    $('.LimboniaSortGridDelete').toggle(bChecked);
+    $('.LimboniaSortGridEdit').toggle(bChecked);
   });
 
   /**

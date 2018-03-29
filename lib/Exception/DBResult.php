@@ -1,14 +1,13 @@
 <?php
-namespace Omniverse\Exception;
+namespace Limbonia\Exception;
 
 /**
- * Omniverse DBResult Exception Class
+ * Limbonia DBResult Exception Class
  *
  * Handles exceptions thrown by the DBResult class(es)
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class DBResult extends Database
 {

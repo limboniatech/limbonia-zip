@@ -1,15 +1,14 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse Resource Item Class
+ * Limbonia Resource Item Class
  *
  * Item based wrapper around the ResourceLock table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class ResourceLock extends \Omniverse\Item
+class ResourceLock extends \Limbonia\Item
 {
 }

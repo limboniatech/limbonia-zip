@@ -1,17 +1,16 @@
 <?php
-namespace Omniverse\Controller;
+namespace Limbonia\Controller;
 
 /**
- * Omniverse Admin Controller Class
+ * Limbonia Admin Controller Class
  *
  * This extends the basic controller with the ability to display and react to
  * site administration pages
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Admin extends \Omniverse\Controller\Web
+class Admin extends \Limbonia\Controller\Web
 {
   /**
    * Echo the data field generated from the specified data
@@ -39,7 +38,7 @@ class Admin extends \Omniverse\Controller\Web
 
   protected function renderPage()
   {
-    $sModuleDriver = isset($this->oApi->module) ? \Omniverse\Module::driver($this->oApi->module) : '';
+    $sModuleDriver = isset($this->oApi->module) ? \Limbonia\Module::driver($this->oApi->module) : '';
 
     if (!empty($sModuleDriver))
     {
@@ -51,26 +50,7 @@ class Admin extends \Omniverse\Controller\Web
 
         if (isset($this->oApi->ajax))
         {
-          if (isset($this->hTemplateData['currentItem']) && $this->hTemplateData['currentItem']->id > 0)
-          {
-            parent::outputJson
-            ([
-              'moduleType' => $oCurrentModule->getType(),
-              'moduleOutput' => $this->templateRender($sModuleTemplate),
-              'action' => $oCurrentModule->getCurrentAction(),
-              'itemTitle' => $oCurrentModule->getCurrentItemTitle(),
-              'subMenu' => $oCurrentModule->getSubMenuItems(true),
-              'id' => $this->hTemplateData['currentItem']->id,
-              'itemUri' => $oCurrentModule->generateUri($this->hTemplateData['currentItem']->id)
-            ]);
-          }
-
-          parent::outputJson
-          ([
-            'moduleType' => $oCurrentModule->getType(),
-            'moduleOutput' => $this->templateRender($sModuleTemplate),
-            'action' => $oCurrentModule->getCurrentAction()
-          ]);
+           parent::outputJson(array_merge(['moduleOutput' => $this->templateRender($sModuleTemplate)], $oCurrentModule->getAdminOutput()));
         }
 
         $this->templateData('moduleOutput', $this->templateRender($sModuleTemplate));
@@ -97,7 +77,7 @@ class Admin extends \Omniverse\Controller\Web
   /**
    * Generate and return the current user
    *
-   * @return \Omniverse\Item\User
+   * @return \Limbonia\Item\User
    * @throws \Exception
    */
   protected function generateUser()
@@ -112,7 +92,7 @@ class Admin extends \Omniverse\Controller\Web
     if (!isset($_SESSION['LoggedInUser']))
     {
       $_SESSION['LoggedInUser'] = $oUser->id;
-      \Omniverse\Module::overrideDriverList($this, $oUser);
+      \Limbonia\Module::overrideDriverList($this, $oUser);
     }
 
     return $oUser;

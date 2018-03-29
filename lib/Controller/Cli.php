@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Controller;
+namespace Limbonia\Controller;
 
 /**
- * Omniverse CLI Controller Class
+ * Limbonia CLI Controller Class
  *
  * This allows the basic controller to run in the command line environment
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Cli extends \Omniverse\Controller
+class Cli extends \Limbonia\Controller
 {
 
 }

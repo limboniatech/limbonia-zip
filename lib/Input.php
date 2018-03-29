@@ -1,21 +1,20 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse input class
+ * Limbonia input class
  *
- * This defines all the basic parts of Omniverse input
+ * This defines all the basic parts of Limbonia input
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Input implements \ArrayAccess, \Countable, \SeekableIterator
 {
   /**
    * Inherit the Hash trait
    */
-  use \Omniverse\Traits\Hash;
+  use \Limbonia\Traits\Hash;
 
   /**
    * List of singleton classes
@@ -42,7 +41,7 @@ class Input implements \ArrayAccess, \Countable, \SeekableIterator
    * Only allow the creation of only one input class of each type
    *
    * @param string $sType
-   * @return \Omniverse\Input
+   * @return \Limbonia\Input
    */
   public static function singleton($sType)
   {
@@ -60,13 +59,13 @@ class Input implements \ArrayAccess, \Countable, \SeekableIterator
    * The constructor
    *
    * @param string $sType
-   * @throws \Omniverse\Exception\Object
+   * @throws \Limbonia\Exception\Object
    */
   protected function __construct($sType)
   {
     if (!isset(self::$aValidTypes[$sType]))
     {
-      throw new \Omniverse\Exception\Object("Invalid input type found: $sType");
+      throw new \Limbonia\Exception\Object("Invalid input type found: $sType");
     }
 
     //to work around a PHP bug in getting server variables on some systems...

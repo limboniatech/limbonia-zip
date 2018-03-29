@@ -1,17 +1,16 @@
 <?php
-namespace Omniverse\Controller;
+namespace Limbonia\Controller;
 
 /**
- * Omniverse API Controller Class
+ * Limbonia API Controller Class
  *
  * This allows the basic controller retrieve data base on the API URL and return
  * that data in JSON format
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Api extends \Omniverse\Controller\Web
+class Api extends \Limbonia\Controller\Web
 {
   /**
    * Handle any Exceptions thrown while generating the current user
@@ -53,7 +52,7 @@ class Api extends \Omniverse\Controller\Web
         die();
       }
 
-      if ($xResult instanceof \Omniverse\ItemList)
+      if ($xResult instanceof \Limbonia\ItemList)
       {
         $hList = [];
 
@@ -62,11 +61,15 @@ class Api extends \Omniverse\Controller\Web
           $hList[$oItem->id] = $oItem->getAll();
         }
 
-
         parent::outputJson($hList);
       }
 
-      if ($xResult instanceof \Omniverse\Item)
+      if ($xResult instanceof \Limbonia\Item)
+      {
+        parent::outputJson($xResult->getAll());
+      }
+
+      if ($xResult instanceof \Limbonia\Interfaces\Result)
       {
         parent::outputJson($xResult->getAll());
       }

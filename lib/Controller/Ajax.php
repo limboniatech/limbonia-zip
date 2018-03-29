@@ -1,17 +1,16 @@
 <?php
-namespace Omniverse\Controller;
+namespace Limbonia\Controller;
 
 /**
- * Omniverse Ajax Controller Class
+ * Limbonia Ajax Controller Class
  *
  * This allows the basic controller to feed data to JavaScript on pages through
  * the use of AJAX
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Ajax extends \Omniverse\Controller\Web
+class Ajax extends \Limbonia\Controller\Web
 {
   /**
    * Run everything needed to react and display data in the way this controller is intended
@@ -22,15 +21,15 @@ class Ajax extends \Omniverse\Controller\Web
     $sApiPath = trim(preg_replace("#\?.*#", '', str_replace($this->baseUri, '', $this->server['request_uri'])), '/');
     $aApiCall = explode('/', $sApiPath);
     $sFunction = 'ajax_' . urldecode(array_pop($aApiCall));
-    array_unshift($aApiCall, 'Omniverse');
+    array_unshift($aApiCall, 'Limbonia');
     $sClass = implode('\\', $aApiCall);
 
     try
     {
-      \Omniverse\Controller::run();
+      \Limbonia\Controller::run();
       $oRequest = new $sClass();
     }
-    catch (\Omniverse\Exception\Object $oException)
+    catch (\Limbonia\Exception\Object $oException)
     {
       die("alert('Could not create an object from \"$sClass\":  " . $oException->getMessage() . "');");
     }

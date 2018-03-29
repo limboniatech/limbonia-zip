@@ -1,30 +1,29 @@
 <?php
-namespace Omniverse\Traits;
+namespace Limbonia\Traits;
 
 /**
- * Omniverse HasController Trait
+ * Limbonia HasController Trait
  *
  * This trait allows an inheriting class to have a database
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 trait HasDatabase
 {
   /**
    * The controller for this object
    *
-   * @var \Omniverse\Database
+   * @var \Limbonia\Database
    */
   protected $oDatabase = null;
 
   /**
    * Set this object's database
    *
-   * @param \Omniverse\Database $oDatabase
+   * @param \Limbonia\Database $oDatabase
    */
-  public function setDatabase(\Omniverse\Database $oDatabase = null)
+  public function setDatabase(\Limbonia\Database $oDatabase = null)
   {
     $this->oDatabase = $oDatabase;
   }
@@ -32,13 +31,13 @@ trait HasDatabase
   /**
    * Return this object's controller
    *
-   * @return \Omniverse\Database
+   * @return \Limbonia\Database
    */
-  public function getDatabase(): \Omniverse\Database
+  public function getDatabase(): \Limbonia\Database
   {
     if (is_null($this->oDatabase))
     {
-      return \Omniverse\Controller::getDefault()->getDB();
+      return \Limbonia\Controller::getDefault()->getDB();
     }
 
     return $this->oDatabase;

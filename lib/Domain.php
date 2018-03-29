@@ -1,12 +1,12 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Domain Class
+ * Limbonia Domain Class
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @version $Revision: 1.3 $
- * @package Omniverse
+ * @package Limbonia
  */
 class Domain
 {
@@ -46,14 +46,23 @@ class Domain
   protected $sPath = '';
 
   /**
-   * Return a hash of domain data based on the specified domain name
+   * Generate and return the document root of the specified domain
    *
    * @param string $sDomain
-   * @throws Exception
-   * @return array
+   * @return type
+   * @throws \Exception
+   * @return string The generated document root
    */
   public static function generatePath($sDomain)
   {
+    //if the template doesn't contain a sub domain section
+    if (!preg_match("#__SUB__#", self::$sDomainDirTemplate))
+    {
+      //then use the whole thing all at once!
+      return preg_replace('#__DOMAIN__#', $sDomain, self::$sDomainDirTemplate);
+    }
+
+    //otherwise try to detect the sub-domain as well at the base domain
     $aDomainDirTest = array
     (
       '#((.*)\.)?(.*?\.[a-z]{3,})$#',
@@ -64,17 +73,38 @@ class Domain
     {
       if (preg_match($sExpressions, $sDomain, $aMatch))
       {
-        $sSub = empty($aMatch[2]) || $aMatch[2] == 'www' ? 'root' : $aMatch[2];
-        $sDomain = $aMatch[3];
-        return preg_replace("#__DOMAIN__#", $sDomain, preg_replace("#__SUB__#", $sSub, self::$sDomainDirTemplate));
+        $sSub = empty($aMatch[2]) ? 'www' : $aMatch[2];
+        return preg_replace("#__DOMAIN__#", $aMatch[3], preg_replace("#__SUB__#", $sSub, stripslashes(self::$sDomainDirTemplate)));
       }
     }
 
     throw new \Exception("The domain specified ($sDomain) is not valid!");
   }
 
+  /**
+   * Generate and return the domain of the specified directory
+   *
+   * @param string $sDomainPath
+   * @return string
+   * @throws \Exception
+   * @return string The generated domain name
+   */
   public static function generateName($sDomainPath)
   {
+    //if the template doesn't contain a sub domain section
+    if (!preg_match("#__SUB__#", self::$sDomainDirTemplate))
+    {
+      //then use the whole thing all at once!
+      $sExpression = '#^' . preg_replace("#__DOMAIN__#", '(.*?)', self::$sDomainDirTemplate) . '#';
+
+      if (preg_match($sExpression, $sDomainPath, $aMatch))
+      {
+        return $aMatch[1];
+      }
+
+      throw new \Exception("The domain path specified ($sDomainPath) is not valid!");
+    }
+
     $sExpression = '#^' . preg_replace("#__DOMAIN__#", '(.*?)', preg_replace("#__SUB__#", '(.*?)', self::$sDomainDirTemplate)) . '#';
 
     if (!preg_match($sExpression, $sDomainPath, $aMatch) || count($aMatch) == 1)
@@ -82,14 +112,14 @@ class Domain
       throw new \Exception("The domain path specified ($sDomainPath) is not valid!");
     }
 
-    return $aMatch[2] == 'root' ? $aMatch[1] : $aMatch[2] . '.' . $aMatch[1];
+    return empty($aMatch[2]) || $aMatch[2] == 'www' ? $aMatch[1] : $aMatch[2] . '.' . $aMatch[1];
   }
 
   /**
    * Generate and return a domain object base on the specified domain name
    *
    * @param string $sDomain
-   * @return \Omniverse\Domain
+   * @return \Limbonia\Domain
    */
   public static function factory($sDomain)
   {
@@ -118,12 +148,17 @@ class Domain
 
     $sDomain = self::generateName($sDomainRoot);
 
-    if ($bValidatePath && $sDomain == 'localhost')
+    if (!isset(self::$hDomainList[$sDomain]))
     {
-      throw new \Exception("The directory ($sDomainRoot) is not valid!");
+      if ($bValidatePath && $sDomain == 'localhost')
+      {
+        throw new \Exception("The directory ($sDomainRoot) is not valid!");
+      }
+
+      self::$hDomainList[$sDomain] = new self($sDomain, $sDomainRoot);
     }
 
-   return self::factory($sDomain);
+    return self::$hDomainList[$sDomain];
   }
 
   /**
@@ -154,7 +189,7 @@ class Domain
       $this->sName = $sName;
     }
 
-    $this->sPath = empty($sPath) || !is_dir($sPath) ? self::generatePath($sName) : $sPath;
+    $this->sPath = empty($sPath) || !is_dir($sPath) ? self::generatePath($this->sName) : $sPath;
   }
 
   /**

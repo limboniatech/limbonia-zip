@@ -1,15 +1,14 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse Ticket History Item Class
+ * Limbonia Ticket History Item Class
  *
  * Item based wrapper around the TicketHistory table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class TicketHistory extends \Omniverse\Item
+class TicketHistory extends \Limbonia\Item
 {
 }

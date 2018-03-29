@@ -1,30 +1,29 @@
 <?php
-namespace Omniverse\Traits;
+namespace Limbonia\Traits;
 
 /**
- * Omniverse HasController Trait
+ * Limbonia HasController Trait
  *
  * This trait allows an inheriting class to have a controller
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 trait HasController
 {
   /**
    * The controller for this object
    *
-   * @var \Omniverse\Controller
+   * @var \Limbonia\Controller
    */
   protected $oController = null;
 
   /**
    * Set this object's controller
    *
-   * @param \Omniverse\Controller $oController
+   * @param \Limbonia\Controller $oController
    */
-  public function setController(\Omniverse\Controller $oController)
+  public function setController(\Limbonia\Controller $oController)
   {
     $this->oController = $oController;
   }
@@ -32,13 +31,13 @@ trait HasController
   /**
    * Return this object's controller
    *
-   * @return \Omniverse\Controller
+   * @return \Limbonia\Controller
    */
-  public function getController(): \Omniverse\Controller
+  public function getController(): \Limbonia\Controller
   {
     if (is_null($this->oController))
     {
-      return \Omniverse\Controller::getDefault();
+      return \Limbonia\Controller::getDefault();
     }
 
     return $this->oController;

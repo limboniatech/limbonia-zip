@@ -1,21 +1,20 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse Item Class
+ * Limbonia Item Class
  *
  * This is a wrapper around the around a row of item data that allows access to
  * the data
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Item implements \ArrayAccess, \Countable, \SeekableIterator
 {
-  use \Omniverse\Traits\DriverList;
-  use \Omniverse\Traits\HasController;
-  use \Omniverse\Traits\HasDatabase;
+  use \Limbonia\Traits\DriverList;
+  use \Limbonia\Traits\HasController;
+  use \Limbonia\Traits\HasDatabase;
 
   /**
    * The prepared statements that represent various item queries
@@ -89,7 +88,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public static function factory($sTable, Database $oDatabase = null)
   {
-    $sTypeClass = __CLASS__ . '\\' . self::driver($sTable);
+    $sTypeClass = self::driverClass($sTable);
 
     if (\class_exists($sTypeClass, true))
     {
@@ -135,11 +134,11 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * @param string $sType
    * @param string $sQuery
    * @param Database $oDatabase (optional)
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public static function getList($sType, $sQuery, Database $oDatabase = null)
   {
-    $oDatabase = $oDatabase instanceof \Omniverse\Database ? $oDatabase : \Omniverse\Controller::getDefault()->getDB();
+    $oDatabase = $oDatabase instanceof \Limbonia\Database ? $oDatabase : \Limbonia\Controller::getDefault()->getDB();
     $oList = new ItemList($sType, $oDatabase->query($sQuery));
     $oList->setDatabase($oDatabase);
     return $oList;
@@ -152,7 +151,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * @param array $hWhere - Where to search for the Items
    * @param string|array $xOrder - The order the Items should be returned
    * @param Database $oDatabase (optional) - The Database to perform the search in
-   * @return \Omniverse\ItemList
+   * @return \Limbonia\ItemList
    */
   public static function search($sType, $hWhere = [], $xOrder = null, Database $oDatabase = null)
   {
@@ -163,9 +162,9 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * The item constructor
    *
    * @param string $sType (optional)
-   * @param \Omniverse\Database $oDatabase (optional)
+   * @param \Limbonia\Database $oDatabase (optional)
    */
-  public function __construct($sType = null, \Omniverse\Database $oDatabase = null)
+  public function __construct($sType = null, \Limbonia\Database $oDatabase = null)
   {
     $this->setDatabase($oDatabase);
 
@@ -195,9 +194,9 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   /**
    * Return this object's controller
    *
-   * @return \Omniverse\Controller
+   * @return \Limbonia\Controller
    */
-  public function getController(): \Omniverse\Controller
+  public function getController(): \Limbonia\Controller
   {
     if (is_null($this->oController))
     {
@@ -636,7 +635,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
     }
 
     settype($iItemID, 'integer');
-    self::$hStatement[$this->sTable]['load']->bindParam(':ItemId', $iItemID, \PDO::PARAM_INT);
+    self::$hStatement[$this->sTable]['load']->bindValue(':ItemId', $iItemID, \PDO::PARAM_INT);
     $bSuccess = self::$hStatement[$this->sTable]['load']->execute();
 
     if (!$bSuccess)
@@ -646,6 +645,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
     }
 
     $hData = self::$hStatement[$this->sTable]['load']->fetch();
+    self::$hStatement[$this->sTable]['load']->closeCursor();
 
     if ($hData == false)
     {
@@ -659,7 +659,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * Delete the row representing this object from the database
    *
    * @return boolean
-   * @throws \Omniverse\Exception\DBResult
+   * @throws \Limbonia\Exception\DBResult
    */
   public function delete()
   {

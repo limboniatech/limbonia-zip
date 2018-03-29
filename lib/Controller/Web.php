@@ -1,17 +1,16 @@
 <?php
-namespace Omniverse\Controller;
+namespace Limbonia\Controller;
 
 /**
- * Omniverse API Controller Class
+ * Limbonia API Controller Class
  *
  * This allows the basic controller retrieve data base on the API URL and return
  * that data in JSON format
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Web extends \Omniverse\Controller
+class Web extends \Limbonia\Controller
 {
   /**
    * All the data that will be used by the templates
@@ -32,7 +31,7 @@ class Web extends \Omniverse\Controller
    *
    * @param type $xData
    */
-  protected static function outputJson($xData)
+  public static function outputJson($xData)
   {
     header("Cache-Control: no-cache, must-revalidate");
     header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
@@ -73,15 +72,15 @@ class Web extends \Omniverse\Controller
 
     if (isset($this->hConfig['sessionname']))
     {
-      \Omniverse\SessionManager::sessionName($this->hConfig['sessionname']);
+      \Limbonia\SessionManager::sessionName($this->hConfig['sessionname']);
       unset($this->hConfig['sessionname']);
     }
 
-    \Omniverse\SessionManager::start();
+    \Limbonia\SessionManager::start();
 
     if (empty($this->oDomain))
     {
-      $this->oDomain = \Omniverse\Domain::getByDirectory($this->server['document_root']);
+      $this->oDomain = \Limbonia\Domain::getByDirectory($this->server['document_root']);
       $this->hConfig['baseuri'] = $this->oDomain->uri;
     }
 
@@ -92,7 +91,7 @@ class Web extends \Omniverse\Controller
       $this->hConfig['baseuri'] .= '/' . strtolower(preg_replace("#.*\\\#", '', get_class($this)));
     }
 
-    $this->oApi = \Omniverse\Api::singleton();
+    $this->oApi = \Limbonia\Api::singleton();
   }
 
   /**
@@ -200,7 +199,7 @@ class Web extends \Omniverse\Controller
   /**
    * Generate and return the current user
    *
-   * @return \Omniverse\Item\User
+   * @return \Limbonia\Item\User
    * @throws \Exception
    */
   protected function generateUser()
@@ -222,7 +221,7 @@ class Web extends \Omniverse\Controller
         return parent::generateUser();
       }
 
-      $oUser = \Omniverse\Item\User::getByEmail($this->oApi->user, $this->getDB());
+      $oUser = \Limbonia\Item\User::getByEmail($this->oApi->user, $this->getDB());
       $oUser->setController($this);
       $oUser->authenticate($this->oApi->pass);
       return $oUser;

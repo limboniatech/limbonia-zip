@@ -1,18 +1,17 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Profile Module class
+ * Limbonia Profile Module class
  *
  * Admin module for handling the profile of the logged in user
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Profile extends \Omniverse\Module
+class Profile extends \Limbonia\Module
 {
-  use \Omniverse\Traits\ItemModule;
+  use \Limbonia\Traits\ItemModule;
 
   /**
    * The admin group that this module belongs to
@@ -24,7 +23,7 @@ class Profile extends \Omniverse\Module
   /**
    * The item object associated with this module
    *
-   * @var \Omniverse\Item
+   * @var \Limbonia\Item
    */
   protected $oItem = null;
 
@@ -162,7 +161,7 @@ class Profile extends \Omniverse\Module
 
     try
     {
-      \Omniverse\Item\User::validatePassword($hData['Password']);
+      \Limbonia\Item\User::validatePassword($hData['Password']);
     }
     catch (\Exception $e)
     {

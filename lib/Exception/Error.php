@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Exception;
+namespace Limbonia\Exception;
 
 /**
- * Omniverse Error Exception Class
+ * Limbonia Error Exception Class
  *
  * Extends the default exception class for use as a substitute for errors.
  *
  * This is only needed for PHP *before* version 7.0
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Error extends Exception
 {

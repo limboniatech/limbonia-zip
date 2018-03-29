@@ -1,14 +1,13 @@
 <?php
-namespace Omniverse\Exception;
+namespace Limbonia\Exception;
 
 /**
- * Omniverse Database Exception Class
+ * Limbonia Database Exception Class
  *
  * Handles exceptions thrown by the Database class(es)
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
 class Database extends \Exception
 {
@@ -22,9 +21,9 @@ class Database extends \Exception
   /**
    * Construct a new exception
    *
-   * @param string $sMessage
-   * @param string $sSQLType
-   * @param integer $iCode
+   * @param string $sMessage The error message
+   * @param string $sSQLType (optional) The SQL driver being used, if there is one
+   * @param integer $iCode (optional) The error code, if there is one
    */
 	public function __construct($sMessage, $sSQLType = "Unknown", $iCode = 0)
 	{

@@ -3,7 +3,7 @@ use PHPUnit\Framework\TestCase;
 
 class ConfigObj
 {
-  use \Omniverse\Traits\Config;
+  use \Limbonia\Traits\Config;
 
   public function __construct($xIni)
   {

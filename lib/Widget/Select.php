@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Widget;
+namespace Limbonia\Widget;
 
 /**
- * Omniverse Select Widget
+ * Limbonia Select Widget
  *
  * A wrapper around an HTML select tag
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class Select extends \Omniverse\Widget
+class Select extends \Limbonia\Widget
 {
   protected $bMultiple = false;
 
@@ -25,13 +24,13 @@ class Select extends \Omniverse\Widget
    * It increments the widget counter and generates a unique (but human readable) name.
    *
    * @param string $sName (optional)
-   * @param \Omniverse\Controller $oController (optional)
-   * @throws Omniverse\Exception\Object
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws Limbonia\Exception\Object
    */
-  public function __construct($sName = null, \Omniverse\Controller $oController = null)
+  public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
-    $this->aScript = [$this->sWebShareDir . "/select.js"];
+//    $this->aScript = [$this->sWebShareDir . "/select.js"];
   }
 
   /**
@@ -47,7 +46,7 @@ class Select extends \Omniverse\Widget
       {
         $sValue = $xData->getRawParam('value');
 
-        if (self::IsOption($xData) && in_array($sValue, $this->aSelected))
+        if (self::isOption($xData) && in_array($sValue, $this->aSelected))
         {
           $this->aContent[$iKey]->setParam('selected', 'selected');
         }
@@ -81,12 +80,12 @@ class Select extends \Omniverse\Widget
   /**
    * Is the specified data is an option object
    *
-   * @param \Omniverse\Widget\Option $xData
+   * @param \Limbonia\Widget\Option $xData
    * @return boolean
    */
   protected function isOption($xData)
   {
-    return ($xData instanceof \Omniverse\Widget\Option);
+    return ($xData instanceof \Limbonia\Widget\Option);
   }
 
   /**
@@ -103,14 +102,14 @@ class Select extends \Omniverse\Widget
     }
 
     //We keep track of all additions, even if they happen *after* bInit == TRUE.
-    $oOption = \Omniverse\Widget::factory('Option');
+    $oOption = \Limbonia\Widget::factory('Option');
     $oOption->setParam('value', $sValue);
     $oOption->addText((string)$sTitle);
     $this->addTag($oOption);
 
     if ($this->bInit)
     {
-      $this->writeJavascript("Omnisys_addOption('$this->sName', '$sTitle', '$sValue');");
+      $this->writeJavascript("Limbonia_addOption('$this->sName', '$sTitle', '$sValue');");
     }
   }
 
@@ -138,7 +137,7 @@ class Select extends \Omniverse\Widget
 
       if ($this->bInit && $iIndex !== false)
       {
-        $this->writeJavascript("Omnisys_removeOption('$this->sName', $iIndex);");
+        $this->writeJavascript("Limbonia_removeOption('$this->sName', $iIndex);");
       }
 
       return true;

@@ -26,7 +26,7 @@ function $()
 }
 */
 
-function Omniverse_GetRequest()
+function Limbonia_GetRequest()
 {
   //compliant browsers
   if (window.XMLHttpRequest)
@@ -44,13 +44,13 @@ function Omniverse_GetRequest()
   return false;
 }
 
-function Omniverse_HttpRequest(sClass, sFunction, aArg, bReportStatus, bDebug, sBaseUri)
+function Limbonia_HttpRequest(sClass, sFunction, aArg, bReportStatus, bDebug, sBaseUri)
 {
   if (arguments.length < 4) { bReportStatus = false; }
   if (arguments.length < 5) { bDebug = false; }
   if (arguments.length < 6) { sBaseUri = '/ajax/'; }
 
-  var oRequest = Omniverse_GetRequest();
+  var oRequest = Limbonia_GetRequest();
   if (!oRequest)
   {
     return false;

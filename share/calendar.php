@@ -13,8 +13,8 @@ $aWeekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 $iStartDay = 0;
 $sDateFormat = "m/d/Y";
 $sFontFace = "tahoma, verdana, arial";
-$sPrevButton = "/share/omnisys/cal_prev.gif";
-$sNextButton = "/share/omnisys/cal_next.gif";
+$sPrevButton = "/share/limbonia/cal_prev.gif";
+$sNextButton = "/share/limbonia/cal_next.gif";
 $iWindowHeight = 190;
 $sRawConfig = filter_input(INPUT_GET, 'Config');
 

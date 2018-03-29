@@ -1,15 +1,15 @@
-2018-01-23 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.6.2
+2018-01-23 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.6.2
 Major Bug #87: Base - Fix test mechanism (Lonnie Blansett)
 Minor Bug #88: GUI - Remove broken Twig include (Lonnie Blansett)
 
-2018-01-22 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.6.1
+2018-01-22 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.6.1
 Change #75: Software System - Limit the types of tickets displayed in "Software > Road Map" (Lonnie Blansett)
 Major Bug #77: Ticket System - Fix ticket change history (Lonnie Blansett)
 
-2018-01-19 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.6.0
+2018-01-19 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.6.0
 Feature #34: Admin - Change the page title to better reflect the page contents (Lonnie Blansett)
 Change #67: Admin - Update Editor widget to use new CKEditor (Lonnie Blansett)
 Change #68: Base - Overhaul the external library system (Lonnie Blansett)
@@ -18,58 +18,58 @@ Feature #70: Admin - Change template system (Lonnie Blansett)
 Change #72: User - Move user authentication to the User Item (Lonnie Blansett)
 Feature #73: Base - Add some LDAP components (Lonnie Blansett)
 
-2017-12-28 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.5.0
+2017-12-28 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.5.0
 Feature #62: Admin - Make the admin more responsive and mobile friendly (Lonnie Blansett)
 
-2017-10-09 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.4.0
+2017-10-09 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.4.0
 Feature #50: API - Implement Basic REST API (Lonnie Blansett)
 
-2017-09-28 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.3.1
+2017-09-28 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.3.1
 Crash #58: Base - Work around the INPUT_SERVER PHP bug (Lonnie Blansett)
 Minor Bug #59: Admin - Fix pretty URLs for some modules (Lonnie Blansett)
 Major Bug #60: Base - Fix domain pathing (Lonnie Blansett)
 
-2017-09-25 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.3.0
+2017-09-25 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.3.0
 Change #35: - Change tables to divs except for tabular data display (Lonnie Blansett)
 Change #42: Base - Remove all references of global variable (Lonnie Blansett)
 Feature #51: Admin - Update admin to use pretty URLs (Lonnie Blansett)
 
-2017-09-05 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.2.0
+2017-09-05 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.2.0
 Change #40: Software System - Display all open releases on the change log (Lonnie Blansett)
 Change #33: Ticket System - When editing a software ticket only display valid releases in the list (Lonnie Blansett)
 Feature #30: Software System - Add "New Release" link to the Road Map (Lonnie Blansett)
 
-2017-09-05 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.1.1
+2017-09-05 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.1.1
 Change #29: Software System - Always display "Unversioned Tickets" section on Road Map (Lonnie Blansett)
 Major Bug #37: Admin - "Search" tabs not working for any module (Lonnie Blansett)
 
-2017-08-31 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.1.0
+2017-08-31 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.1.0
 Feature #20: Software System - Add ability to add tickets from the roadmap (Lonnie Blansett)
 Feature #21: Ticket System - Link ticket fields with thier respective representations in the admin (Lonnie Blansett)
 Feature #23: Software System - Display List of Unversioned Tickets on Roadmap (Lonnie Blansett)
 Feature #22: User - Add a User tab for tickets (Lonnie Blansett)
 
-2017-08-27 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.0.2
+2017-08-27 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.0.2
 Minor Bug #10: Ticket System - Successful ticket creation doesn't display the "Subject" of the ticket (Lonnie Blansett)
 Minor Bug #25: Admin - Items are not being deleted (Lonnie Blansett)
 Minor Bug #19: Ticket System - Subjects with quotes get mangled on edit (Lonnie Blansett)
 
-2017-08-27 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.0.1
+2017-08-27 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.0.1
 Minor Bug #7: - Some Ticket List columns display IDs (Lonnie Blansett)
 Minor Bug #8: - Ticket View has problems (Lonnie Blansett)
 Minor Bug #9: - Updating tickets leads to module error (Lonnie Blansett)
 Minor Bug #11: - Sotware Roadmap not displaying user names (Lonnie Blansett)
 Change #13: Update code to standards (Lonnie Blansett)
 
-2017-08-16 Lonnie Blansett <lonnie@omniverserpg.com>
-Omniverse 1.0.0
+2017-08-16 Lonnie Blansett <lonnie@limbonia.tech>
+Limbonia 1.0.0
 Initial check-in

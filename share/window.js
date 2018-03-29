@@ -1,4 +1,4 @@
-function showOmnisyswindow(sURL, iTop, iLeft, iWidth, iHeight, bToolbar, bMenubar, bLocation, bStatus, bScrollbars, bResizable)
+function showLimboniawindow(sURL, iTop, iLeft, iWidth, iHeight, bToolbar, bMenubar, bLocation, bStatus, bScrollbars, bResizable)
 {
   sURL = (arguments.length > 0) ? sURL : '_blank';
   iTop = (arguments.length > 1) ? iTop : 100;
@@ -12,12 +12,12 @@ function showOmnisyswindow(sURL, iTop, iLeft, iWidth, iHeight, bToolbar, bMenuba
   bScrollbars = (arguments.length > 9) ?  bScrollbars: 0;
   bResizable = (arguments.length > 10) ? bResizable : 0;
 
-  var Omnisyswindow = window.open(sURL, 'Omnisyswindow', 'top='+iTop+',left='+iLeft+',width='+iWidth+',height='+iHeight+',toolbar='+bToolbar+',menubar='+bMenubar+',location='+bLocation+',status='+bStatus+',scrollbars='+bScrollbars+',resizable='+bResizable);
-  Omnisyswindow.opener = self;
+  var Limboniawindow = window.open(sURL, 'Limboniawindow', 'top='+iTop+',left='+iLeft+',width='+iWidth+',height='+iHeight+',toolbar='+bToolbar+',menubar='+bMenubar+',location='+bLocation+',status='+bStatus+',scrollbars='+bScrollbars+',resizable='+bResizable);
+  Limboniawindow.opener = self;
   if (window.focus)
   {
-    Omnisyswindow.focus();
+    Limboniawindow.focus();
   }
 
-  return Omnisyswindow;
+  return Limboniawindow;
 }

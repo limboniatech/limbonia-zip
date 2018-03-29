@@ -1,18 +1,17 @@
 <?php
-namespace Omniverse\Module;
+namespace Limbonia\Module;
 
 /**
- * Omniverse Resource Module class
+ * Limbonia Resource Module class
  *
  * Admin module for handling site resource keys
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class ResourceKey extends \Omniverse\Module
+class ResourceKey extends \Limbonia\Module
 {
-  use \Omniverse\Traits\ItemModule;
+  use \Limbonia\Traits\ItemModule;
 
   /**
    * List of menu items that this module should display

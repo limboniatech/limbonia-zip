@@ -1,15 +1,15 @@
 <?php
-namespace Omniverse;
+namespace Limbonia;
 
 /**
- * Omniverse zip creation class
+ * Limbonia zip creation class
  *
  * Official ZIP file format: http://www.info-zip.org/pub/infozip/doc/appnote-iz-latest.zip
  * Based on the code found here: http://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=957&lngWId=8
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @version $Revision: 1.11 $
- * @package Omniverse
+ * @package Limbonia
  */
 class Zip
 {

@@ -1,16 +1,15 @@
 <?php
-namespace Omniverse\Item;
+namespace Limbonia\Item;
 
 /**
- * Omniverse Zip Code Item Class
+ * Limbonia Zip Code Item Class
  *
  * Item based wrapper around the ZipCode table
  *
- * @author Lonnie Blansett <lonnie@omniverserpg.com>
- * @version $Revision: 1.1 $
- * @package Omniverse
+ * @author Lonnie Blansett <lonnie@limbonia.tech>
+ * @package Limbonia
  */
-class ZipCode extends \Omniverse\Item
+class ZipCode extends \Limbonia\Item
 {
   /**
    * Get a list of all the zips in the specified radius of miles from the specified zip code
@@ -74,7 +73,7 @@ class ZipCode extends \Omniverse\Item
    * Get the
    *
    * @param integer $iZip
-   * @return \Omniverse\Item
+   * @return \Limbonia\Item
    */
   public function getCityByZip($iZip)
   {
