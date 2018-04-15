@@ -78,6 +78,14 @@ class Web extends \Limbonia\Controller
 
     \Limbonia\SessionManager::start();
 
+    self::templateDirs();
+    $sTemplateDir = $this->getDir('template');
+
+    if (is_readable($sTemplateDir) && !in_array($sTemplateDir, $_SESSION['TemplateDirs']))
+    {
+      array_unshift($_SESSION['TemplateDirs'], $sTemplateDir);
+    }
+
     if (empty($this->oDomain))
     {
       $this->oDomain = \Limbonia\Domain::getByDirectory($this->server['document_root']);
@@ -91,7 +99,7 @@ class Web extends \Limbonia\Controller
       $this->hConfig['baseuri'] .= '/' . strtolower(preg_replace("#.*\\\#", '', get_class($this)));
     }
 
-    $this->oApi = \Limbonia\Api::singleton();
+    $this->oApi = $this->oDomain->uri ? \Limbonia\Api::fromArray(['uri' => $this->server['request_uri'], 'baseurl' => $this->oDomain->uri]) : \Limbonia\Api::singleton();
   }
 
   /**

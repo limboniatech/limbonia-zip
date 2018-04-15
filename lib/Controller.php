@@ -361,11 +361,6 @@ abstract class Controller
       unset($hLowerConfig['database']);
     }
 
-    if (isset($hLowerConfig['moduleblacklist']) && is_array($hLowerConfig['moduleblacklist']))
-    {
-      \Limbonia\Module::generateDriverList($hLowerConfig['moduleblacklist']);
-    }
-
     $this->hConfig = array_merge($this->hConfig, $hLowerConfig);
 
     if (\is_null(self::$oDefaultController))
@@ -539,7 +534,7 @@ abstract class Controller
     }
 
     //if all else fails then use the current directory
-    return '.';
+    return '';
   }
 
   /**

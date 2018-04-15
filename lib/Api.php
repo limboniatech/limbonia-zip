@@ -126,12 +126,21 @@ class Api
   {
     $this->hData['method'] = 'get';
 
+    if (isset($hData['baseurl']))
+    {
+      $this->hData['baseurl'] = $hData['baseurl'];
+    }
+
     if (isset($hData['uri']))
     {
       $hUri = parse_url(strtolower($hData['uri']));
       $sWebTypes = implode('|', static::$aWebTypes);
 
-      if (preg_match("#(.*?)(($sWebTypes).*$)#", $hUri['path'], $aMatch))
+      if (isset($this->hData['baseurl']) && preg_match("#{$this->hData['baseurl']}/(.*$)#", $hUri['path'], $aMatch))
+      {
+        $this->hData['rawpath'] = $aMatch[1];
+      }
+      elseif (preg_match("#(.*?)(($sWebTypes).*$)#", $hUri['path'], $aMatch))
       {
         $this->hData['baseurl'] = $aMatch[1];
         $this->hData['rawpath'] = $aMatch[2];
@@ -141,7 +150,10 @@ class Api
         $this->hData['baseurl'] = '/';
         $this->hData['rawpath'] = preg_replace("#^/#", '', $hUri['path']);
       }
+    }
 
+    if (isset($this->hData['baseurl']) && isset($this->hData['rawpath']))
+    {
       $this->processRawPath();
 
       if (isset($hUri['query']))

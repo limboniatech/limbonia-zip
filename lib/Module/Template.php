@@ -11,6 +11,8 @@ namespace Limbonia\Module;
  */
 class Template extends \Limbonia\Module
 {
+  use \Limbonia\Traits\ItemModule;
+
   /**
    * The admin group that this module belongs to
    *
@@ -42,7 +44,7 @@ class Template extends \Limbonia\Module
     [
       'baseuri' => $this->oController->domain->uri,
       'basedir' => $this->oController->domain->path,
-      'templatedir' => $this->oController->getDir('templates'),
+      'templatedir' => $this->oController->getDir('template'),
       'defaulttemplate' => $this->oController->defaultTemplate
     ];
   }
