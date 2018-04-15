@@ -489,6 +489,34 @@ header a
 {
 }
 
+.release
+{
+  border: 0.1em outset black;
+  margin-bottom: 0.5em;
+  padding: 0.5em;
+}
+
+.progressWrapper
+{
+  border-bottom: 0.1em dashed black;
+}
+
+.release > .note
+{
+  font-size: 1.15em;
+}
+
+.release > .title
+{
+  font-size: 1.25em;
+}
+
+.release > .priority
+{
+  font-size: 1.15em;
+  margin: 0.25em 0;
+}
+
 .display
 {
 }
