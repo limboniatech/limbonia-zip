@@ -60,7 +60,7 @@ else
 
   if ($module->allow('edit'))
   {
-    echo "<form name=\"Edit\" id=\"Edit\" action=\"" . $module->generateUri('editcolumn') . "\" method=\"post\">\n";
+    echo "<form name=\"EditColumn\" id=\"EditColumn\" action=\"" . $module->generateUri('editcolumn') . "\" method=\"post\">\n";
     echo "<input type=\"hidden\" name=\"Column\" id=\"Limbonia_SortGrid_Edit\" value=\"\">\n";
   }
 

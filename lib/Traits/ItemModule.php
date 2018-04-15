@@ -792,7 +792,7 @@ trait ItemModule
     {
       if (!isset($this->oController->post['Check']))
       {
-        return $this->editDialog("Once deleted these items can <b>not</b> restored!  Continue anyway?\n", 'Check');
+        return $this->editDialog("<input name=\"Check\" id=\"Check\" value=\"1\" type=\"hidden\">\nOnce deleted these items can <b>not</b> restored!  Continue anyway?\n", 'Check');
       }
 
       $bSuccess = false;
