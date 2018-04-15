@@ -1,3 +1,33 @@
+CREATE TABLE IF NOT EXISTS Project (
+  ProjectID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(255) NOT NULL,
+  Description text,
+  PRIMARY KEY (ProjectID),
+  UNIQUE INDEX Unique_ProjectName (Name)
+);
+
+CREATE TABLE IF NOT EXISTS ProjectElement (
+  ElementID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  ProjectID INTEGER UNSIGNED NOT NULL,
+  Name VARCHAR(255) NOT NULL,
+  UserID INTEGER UNSIGNED NOT NULL DEFAULT '0',
+  PRIMARY KEY (ElementID),
+  UNIQUE INDEX Unique_ProjectElement (ProjectID,Name)
+);
+
+CREATE TABLE IF NOT EXISTS ProjectRelease (
+  ReleaseID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  ProjectID int(11) unsigned NOT NULL,
+  TicketID int(11) unsigned NOT NULL DEFAULT '0',
+  Major INTEGER UNSIGNED NOT NULL DEFAULT '0',
+  Minor INTEGER UNSIGNED NOT NULL DEFAULT '0',
+  Patch INTEGER UNSIGNED NOT NULL DEFAULT '0',
+  Note text,
+  PRIMARY KEY (ReleaseID),
+  UNIQUE INDEX Unique_ProjectVersion (ProjectID,Major,Minor,Patch),
+  INDEX Index_Project (ProjectID)
+);
+
 CREATE TABLE IF NOT EXISTS ResourceKey (
   KeyID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   Name VARCHAR(25) NOT NULL,
@@ -18,7 +48,7 @@ CREATE TABLE IF NOT EXISTS ResourceLock (
 CREATE TABLE IF NOT EXISTS Software (
   SoftwareID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   Name VARCHAR(255) NOT NULL,
-  CVSName VARCHAR(255) NOT NULL,
+  Repository VARCHAR(255) NOT NULL,
   Description text,
   PRIMARY KEY (SoftwareID),
   UNIQUE INDEX Unique_SoftwareName (Name)
@@ -45,8 +75,8 @@ CREATE TABLE IF NOT EXISTS SoftwareRelease (
   UNIQUE INDEX Unique_SoftwareVersion (SoftwareID,Major,Minor,Patch),
   INDEX Index_Software (SoftwareID)
 );
-
-CREATE TABLE IF NOT EXISTS Template (
+C
+REATE TABLE IF NOT EXISTS Template (
   TemplateID INTEGER UNSIGNED NOT NULL,
   Uri VARCHAR(255) NOT NULL,
   TemplateText TEXT NULL,
@@ -71,6 +101,7 @@ CREATE TABLE IF NOT EXISTS Ticket (
   CompletionTime TIMESTAMP NULL,
   `Status` ENUM('new','active','pending','closed') NOT NULL DEFAULT 'new',
   Priority ENUM('low','normal','high','critical') NOT NULL DEFAULT 'normal',
+  ProjectID INTEGER UNSIGNED NOT NULL,
   SoftwareID INTEGER UNSIGNED NOT NULL,
   ElementID INTEGER UNSIGNED NOT NULL,
   ReleaseID INTEGER UNSIGNED NOT NULL,
