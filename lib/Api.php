@@ -68,6 +68,12 @@ class Api
    */
   protected static $aJsonMethods = ['put', 'post'];
 
+  protected static $hLoginData =
+  [
+    'user' => '',
+    'pass' => ''
+  ];
+
   /**
    * The API data
    *
@@ -115,6 +121,39 @@ class Api
     $oApi = new self();
     $oApi->setAll($hApi);
     return $oApi;
+  }
+
+  public function __construct()
+  {
+    $oServer = Input::singleton('server');
+
+    if (isset($oServer['PHP_AUTH_USER']) && isset($oServer['PHP_AUTH_PW']))
+    {
+      self::$hLoginData['user'] = $oServer['PHP_AUTH_USER'];
+      unset($oServer['PHP_AUTH_USER']);
+
+      self::$hLoginData['pass'] = $oServer['PHP_AUTH_PW'];
+      unset($oServer['PHP_AUTH_PW']);
+    }
+    else
+    {
+      $oPost = Input::singleton('post');
+
+      if (isset($oPost['email']) && isset($oPost['password']))
+      {
+        self::$hLoginData['user'] = $oPost['email'];
+        unset($oPost['email']);
+
+        self::$hLoginData['pass'] = $oPost['password'];
+        unset($oPost['password']);
+      }
+    }
+
+    if (!empty(self::$hLoginData['user']) && !empty(self::$hLoginData['pass']))
+    {
+      $this->hData['user'] = self::$hLoginData['user'];
+      $this->hData['pass'] = self::$hLoginData['pass'];
+    }
   }
 
   /**
@@ -295,28 +334,6 @@ class Api
   {
     $oServer = Input::singleton('server');
     $this->hData['method'] = isset($oServer['http_x_http_method_override']) ? strtolower($oServer['http_x_http_method_override']) : strtolower($oServer['request_method']);
-
-    if (isset($oServer['PHP_AUTH_USER']) && isset($oServer['PHP_AUTH_PW']))
-    {
-      $this->hData['user'] = $oServer['PHP_AUTH_USER'];
-      unset($oServer['PHP_AUTH_USER']);
-
-      $this->hData['pass'] = $oServer['PHP_AUTH_PW'];
-      unset($oServer['PHP_AUTH_PW']);
-    }
-    else
-    {
-      $oPost = Input::singleton('post');
-
-      if (isset($oPost['email']) && isset($oPost['password']))
-      {
-        $this->hData['user'] = $oPost['email'];
-        unset($oPost['email']);
-
-        $this->hData['pass'] = $oPost['password'];
-        unset($oPost['password']);
-      }
-    }
 
     $oGet = Input::singleton('get');
     $this->processGet($oGet);
