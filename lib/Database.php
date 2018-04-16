@@ -311,8 +311,7 @@ class Database extends \PDO
 
   	if (isset($hConfig['host']))
   	{
-  	  $hDSN['dsn'] .= 'host=';
-  	  $hDSN['dsn'] .= $hConfig['host'] == 'localhost' ? '127.0.0.1' : $hConfig['host'];
+  	  $hDSN['dsn'] .= "host={$hConfig['host']}";
   	  unset($hConfig['host']);
 
   	  if (isset($hConfig['port']))
