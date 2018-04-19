@@ -49,7 +49,7 @@ foreach ($currentItem->getReleaseList('roadmap') as $release)
 
         foreach ($ticketList as $incompleteBug)
         {
-          echo "    <li class=\"ticket\">[" . ucwords($incompleteBug->qualityStatus) . "] " . ucwords($incompleteBug->severity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $incompleteBug->id) . "\" title=\"[$incompleteBug->devStatus] " . htmlentities($incompleteBug->subject) . "\">#$incompleteBug->id</a>: <span class=\"incomplete\">{$incompleteBug->element->name} - " . htmlentities($incompleteBug->subject) . "</span> ({$incompleteBug->owner->name}) - $incompleteBug->devStatus</div>\n";
+          echo "    <li class=\"ticket\">[" . ucwords($incompleteBug->qualityStatus) . "] " . ucwords($incompleteBug->severity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $incompleteBug->id) . "\" title=\"[$incompleteBug->devStatus] " . htmlentities($incompleteBug->subject) . "\">#$incompleteBug->id</a>: <span class=\"incomplete\">{$incompleteBug->element->name} - " . htmlentities($incompleteBug->subject) . "</span> ({$incompleteBug->owner->name}) - $incompleteBug->devStatus</li>\n";
         }
 
         echo "</ul>\n";
