@@ -95,7 +95,7 @@ header a
   vertical-align: top;
 }
 
-#admin > nav > .group
+#admin > nav > .moduleGroup
 {
   font-weight: bold;
   border-width: 0.1em;
@@ -290,7 +290,7 @@ header a
 {
   display: inline-block;
   width: 10em;
-  margin-right: 0.125em;
+  margin-right: 0.5em;
 }
 
 .field > .label
@@ -314,7 +314,7 @@ header a
 .ticketContent
 {
   border-top: 0.1em dashed #888888;
-  width: 50em;
+  width: 80em;
 }
 
 .ticketContent > .label
@@ -332,6 +332,7 @@ header a
 .ticketContent > .data
 {
   padding: 0.5em;
+  width: 67em;
 }
 
 .ticketContent > .data  > .history

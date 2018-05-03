@@ -79,6 +79,26 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   protected $hItemObjects = [];
 
+
+  public static function outputTimeInterval($iMinutes)
+  {
+    $sOutput = "$iMinutes minute" . ($iMinutes > 1 ? 's' : '');
+
+    if ($iMinutes > 59)
+    {
+      $iHours = floor($iMinutes / 60);
+      $sOutput = "$iHours hour" . ($iHours > 1 ? 's' : '');
+      $iRemainderMinutes = $iMinutes % 60;
+
+      if ($iRemainderMinutes > 0)
+      {
+        $sOutput .= " and $iRemainderMinutes minute" . ($iRemainderMinutes > 1 ? 's' : '');
+      }
+    }
+
+    return $sOutput;
+  }
+
   /**
    * Generate and return an empty item object based on the specified table.
    *
@@ -89,6 +109,12 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   public static function factory($sTable, Database $oDatabase = null)
   {
     $sTypeClass = self::driverClass($sTable);
+    $sOverrideClass = $sTypeClass . 'Override';
+
+    if (\class_exists($sOverrideClass, true))
+    {
+      return new $sOverrideClass(null, $oDatabase);
+    }
 
     if (\class_exists($sTypeClass, true))
     {
@@ -104,6 +130,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * @param string $sTable
    * @param integer $iItem
    * @param Database $oDatabase (optional)
+   * @throws \Limbonia\Exception\Database
    * @return Item
    */
   public static function fromId($sTable, $iItem, Database $oDatabase = null)
@@ -170,7 +197,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
 
     if (empty($this->sTable))
     {
-      $this->sTable = empty($sType) ? str_replace(__CLASS__ . '\\', '', get_class($this)) : $sType;
+      $this->sTable = empty($sType) ? preg_replace("/Override$/", '', str_replace(__CLASS__ . '\\', '', get_class($this))) : $sType;
     }
 
     if (empty($this->sIdColumn))
@@ -213,7 +240,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function getColumns()
   {
-      return $this->getDatabase()->getColumns($this->sTable);
+    return $this->getDatabase()->getColumns($this->sTable);
   }
 
   /**

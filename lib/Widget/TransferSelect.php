@@ -35,11 +35,11 @@ class TransferSelect extends \Limbonia\Widget
   {
     parent::__construct($sName, $oController);
     $this->oFrom = $this->getController()->widgetFactory('Select', 'From_' . $this->sName);
-    $this->sFrom = $this->oFrom->getID();
+    $this->sFrom = $this->oFrom->getId();
     $this->oFrom->isMultiple(TRUE);
     $this->oTo = $this->getController()->widgetFactory('Select', $this->sName);
     $this->oTo->isMultiple(TRUE);
-    $this->sTo = $this->oTo->getID();
+    $this->sTo = $this->oTo->getId();
   }
 
    /**

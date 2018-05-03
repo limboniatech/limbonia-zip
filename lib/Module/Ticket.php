@@ -17,7 +17,24 @@ class Ticket extends \Limbonia\Module
     \Limbonia\Traits\ItemModule::processApiGetList as originalProcessApiGetList;
     \Limbonia\Traits\ItemModule::processCreateGetData as originalProcessCreateGetData;
     \Limbonia\Traits\ItemModule::editGetData as originalEditGetData;
+    \Limbonia\Traits\ItemModule::getColumns as originalGetColumns;
   }
+
+  /**
+   * List of fields used by module settings
+   *
+   * @var array
+   */
+  protected static $hSettingsFields =
+  [
+    'server' => ['Type' => 'char'],
+    'secure' => ['Type' => "enum('Off','SSL','TLS')"],
+    'port' => ['Type' => 'int'],
+    'user' => ['Type' => 'char'],
+    'password' => ['Type' => 'password'],
+    'folder' => ['Type' => 'char'],
+    'timeout' => ['Type' => 'int'],
+  ];
 
   /**
    * Lists of columns to ignore when filling template data
@@ -36,7 +53,6 @@ class Ticket extends \Limbonia\Module
     'create' =>
     [
       'CreatorID',
-  		'TimeSpent',
       'CreateTime',
       'CompletionTime',
       'LastUpdate'
@@ -78,20 +94,6 @@ class Ticket extends \Limbonia\Module
   ];
 
   /**
-   * List of column names in the order required
-   *
-   * @var array
-   */
-  protected $aColumnOrder =
-  [
-    'Status',
-    'Priority',
-    'OwnerID',
-    'Subject',
-    'CategoryID'
-  ];
-
-  /**
    * List of quick search items to display
    *
    * @var array
@@ -119,7 +121,7 @@ class Ticket extends \Limbonia\Module
    *
    * @var array
    */
-  protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'attachments', 'relationships', 'watchers'];
+  protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'attachments', 'relationships', 'watchers', 'processemail'];
 
   /**
    * List of column names that are allowed to generate "edit" links
@@ -135,6 +137,54 @@ class Ticket extends \Limbonia\Module
     'DueDate',
     'StartDate'
   ];
+
+  /**
+   * List of column names in the order required
+   *
+   * @return array
+   */
+  protected function columnOrder()
+  {
+    $aColumnOrder =
+    [
+      'OwnerID',
+      'CustomerID',
+      'CategoryID',
+      'Type',
+      'Subject',
+      'TimeSpent',
+      'StartDate',
+      'DueDate',
+      'Status',
+      'Priority'
+    ];
+    /*
+    if ()
+    {
+
+    }
+    */
+    return [];
+  }
+
+  /**
+   * Return the default settings
+   *
+   * @return array
+   */
+  protected function defaultSettings()
+  {
+    return
+    [
+      'server' => '',
+      'user' => '',
+      'password' => '',
+      'secure' => 'SSL',
+      'port' => \Limbonia\Imap::SECURE_PORT,
+      'folder' => \Limbonia\Imap::DEFAULT_FOLDER,
+      'timeout' => \Limbonia\Imap::DEFAULT_TIMEOUT,
+    ];
+  }
 
   /**
    * Generate and return the default item data, filtered by API controls
@@ -315,7 +365,30 @@ class Ticket extends \Limbonia\Module
     $this->sCurrentAction = 'view';
   }
 
-  /**
+  protected function prepareTemplateProcessemail()
+  {
+    if ($this->oController->type == 'cli')
+    {
+      $this->oController->setDescription('Process incoming emails from the configured account and create or update tickets based on those emails');
+      $this->oController->addOption
+      ([
+        'short' => 'c',
+        'long' => 'display-config',
+        'desc' => 'Display the current email config',
+        'value' => \Limbonia\Controller\Cli::OPTION_VALUE_NONE
+      ]);
+      $this->oController->addOption
+      ([
+        'short' => 't',
+        'long' => 'test',
+        'desc' => 'Put this utility into test mode so that it outputs to the screen instead rather than actually creating and updating tickets',
+        'value' => \Limbonia\Controller\Cli::OPTION_VALUE_NONE
+      ]);
+      $this->oController->templateData('settings', $this->hSettings);
+    }
+  }
+
+   /**
    * Return the appropriate data for the current edit
    *
    * @return array
@@ -325,6 +398,126 @@ class Ticket extends \Limbonia\Module
     $hPost = $this->originalEditGetData();
     $hPost['UserID'] = $this->oController->user()->id;
     return $hPost;
+  }
+  protected function getAdminHeader()
+  {
+    $sHeader = parent::getAdminHeader();
+    $sHeader .= "\n<style>
+#TicketSoftwareIDField,
+#TicketReleaseIDField,
+#TicketElementIDField,
+#TicketSeverityField,
+#TicketProjectionField,
+#TicketDevStatusField,
+#TicketQualityStatusField,
+#TicketCategoryIDField,
+#TicketStepsToReproduceField
+{
+  display: none;
+}
+</style>\n
+<script type=\"text/javascript\">
+/**
+ * Toggle the associated data when the Asignment Method is changed
+ *
+ * @param {String} sOption
+ * @returns {Boolean}
+ */
+function toggleMethod(sOption)
+{
+  softwareDiv = document.getElementById('TicketSoftwareIDField');
+  releseDiv = document.getElementById('TicketReleaseIDField');
+  elementDiv = document.getElementById('TicketElementIDField');
+  severityDiv = document.getElementById('TicketSeverityField');
+  projDiv = document.getElementById('TicketProjectionField');
+  devDiv = document.getElementById('TicketDevStatusField');
+  qualityDiv = document.getElementById('TicketQualityStatusField');
+  catDiv = document.getElementById('TicketCategoryIDField');
+  stepsDiv = document.getElementById('TicketStepsToReproduceField');
+
+  switch (sOption)
+  {
+    case 'software':
+      catDiv.style.display = 'none';
+
+      softwareDiv.style.display = 'block';
+      releseDiv.style.display = 'block';
+      elementDiv.style.display = 'block';
+      severityDiv.style.display = 'block';
+      projDiv.style.display = 'block';
+      devDiv.style.display = 'block';
+      qualityDiv.style.display = 'block';
+      stepsDiv.style.display = 'block';
+      break;
+
+    case 'internal':
+    case 'contact':
+    case 'system':
+      catDiv.style.display = 'block';
+
+      softwareDiv.style.display = 'none';
+      releseDiv.style.display = 'none';
+      elementDiv.style.display = 'none';
+      severityDiv.style.display = 'none';
+      projDiv.style.display = 'none';
+      devDiv.style.display = 'none';
+      qualityDiv.style.display = 'none';
+      stepsDiv.style.display = 'none';
+      break;
+  }
+}
+
+$('#TicketType').change(function()
+{
+  toggleMethod($(this).val());
+});
+
+toggleMethod($('#TicketType').val());
+</script>\n";
+
+    return $sHeader;
+  }
+
+    /**
+   * Generate and return a list of columns based on the specified type
+   *
+   * @param string $sType (optional)
+   * @return array
+   */
+  public function getColumns($sType = null)
+  {
+    $sLowerType = strtolower($sType);
+
+    if ($sLowerType == 'view')
+    {
+      switch ($this->oItem->assignmentMethod)
+      {
+        case 'internal':
+        case 'contact':
+        case 'system':
+          $this->aIgnore['view'] =
+          [
+            'SoftwareID',
+            'ReleaseID',
+            'ElementID',
+            'Severity',
+            'Projection',
+            'DevStatus',
+            'QualityStatus',
+            'StepsToReproduce'
+          ];
+          break;
+
+        case 'software':
+          $this->aIgnore['view'] =
+          [
+            'CategoryID'
+          ];
+          break;
+      }
+    }
+
+    return $this->originalGetColumns($sType);
   }
 
   /**
@@ -387,11 +580,17 @@ class Ticket extends \Limbonia\Module
    * @param string $sName
    * @param string $sValue
    * @param array $hData
-   * @param boolean $bInTable - Should the returned HTML use a table to contain the data
    * @return string
    */
-  public function getFormField($sName, $sValue = null, $hData = [], $bInTable = false)
+  public function getFormField($sName, $sValue = null, $hData = [])
   {
+    $sLabel = preg_replace("/([A-Z])/", "$1", $sName);
+
+    if (is_null($sValue) && isset($hData['Default']) && !$this->isSearch())
+    {
+      $sValue = $hData['Default'];
+    }
+
     if ($sName == 'CategoryID')
     {
       $oList = \Limbonia\Item::search('TicketCategory');
@@ -409,12 +608,13 @@ class Ticket extends \Limbonia\Module
         $oSelect->setSelected($sValue);
       }
 
-      return "        <div class=\"field\"><span class=\"label\">Category</span><span class=\"data\">" . $oSelect . "</span></div>";
+      return static::widgetField($oSelect, 'Category');
     }
 
     if (in_array($sName, ['OwnerID', 'CreatorID']))
     {
-      $sType = strtolower(preg_replace('/id$/i', '', $sName));
+      $sLabel = preg_replace('/id$/i', '', $sName);
+      $sType = strtolower($sLabel);
       $oUsers = \Limbonia\Item::search('User', ['Visible' => true, 'Active' => true]);
       $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : "Select an $sType";
@@ -426,7 +626,7 @@ class Ticket extends \Limbonia\Module
       }
 
       $oSelect->setSelected($sValue);
-      return "        <div class=\"field\"><span class=\"label\">Owner</span><span class=\"data\">" . $oSelect . "</span></div>";
+      return static::widgetField($oSelect, $sLabel);
     }
 
     if ($sName == 'ParentID')
@@ -439,26 +639,26 @@ class Ticket extends \Limbonia\Module
       $oText = $this->oController->widgetFactory('Editor', "$this->sType[$sName]");
       $oText->setToolBar('Basic');
       $oText->setText($sValue);
-      return "        <div class=\"field\"><span class=\"label\">Update</span><span class=\"data\">" . $oText . "</span></div>";
+      return static::widgetField($oText, 'Update');
     }
 
     if ($sName == 'UpdateType')
     {
-      if (in_array($this->oItem->Type, ['internal', 'system']))
+      if (in_array($this->oItem->type, ['internal', 'system']))
       {
-        return "        <div class=\"field\"><span class=\"label\">Update Type</span><span class=\"data\">Private<input type=\"hidden\" name=\"UpdateType\" value=\"private\" /></span></div>";
+        return static::field("Private<input type=\"hidden\" name=\"$this->sType[$sName]\" id=\"$this->sType$sName\" value=\"private\" />", 'Update Type', "$this->sType$sName");
       }
 
       $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
       $oSelect->addOption('Public', 'public');
       $oSelect->addOption('Private', 'private');
       $oSelect->setSelected('public');
-      return "        <div class=\"field\"><span class=\"label\">Update Type</span><span class=\"data\">" . $oSelect . "</span></div>";
+      return static::widgetField($oSelect, 'Update Type');
     }
 
     if ($sName == 'TimeWorked')
     {
-      return "        <div class=\"field\"><span class=\"label\">Time Worked</span><span class=\"data\"><input type=\"text\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\" value=\"$sValue\"></span></div>";
+      return parent::getFormField($sName, $sValue, ['Type' => 'int']);
     }
 
     static $bSoftwareDone = false;
@@ -486,13 +686,13 @@ class Ticket extends \Limbonia\Module
       }
 
       $oSoftwareWidget = $this->oController->widgetFactory('Software', "$this->sType[SoftwareID]");
-      $sSoftwareID = $oSoftwareWidget->getID();
+      $sSoftwareID = $oSoftwareWidget->getId();
 
       $oReleaseWidget = $this->oController->widgetFactory('Select', "$this->sType[ReleaseID]");
-      $sReleaseID = $oReleaseWidget->getID();
+      $sReleaseID = $oReleaseWidget->getId();
 
       $oElementWidget = $this->oController->widgetFactory('Select', "$this->sType[ElementID]");
-      $sElementID = $oElementWidget->getID();
+      $sElementID = $oElementWidget->getId();
 
       $sGetReleases = $oSoftwareWidget->addAjaxFunction('getReleasesBySoftware', TRUE);
       $sGetElements = $oSoftwareWidget->addAjaxFunction('getElementsBySoftware', TRUE);
@@ -575,13 +775,13 @@ class Ticket extends \Limbonia\Module
       $oElementWidget->writeJavascript($sElementScript);
 
       $oSoftwareWidget->addEvent('change', $sGetReleases . "(this.options[this.selectedIndex].value, '$sReleaseID', releaseID);" . $sGetElements . "(this.options[this.selectedIndex].value, '$sElementID', elementID);");
-      $sFormField = "        <div class=\"field\"><span class=\"label\">Software</span><span class=\"data\">" . $oSoftwareWidget . "</span></div>";
+      $sFormField = static::widgetField($oSoftwareWidget, 'Software');
 
       $oReleaseWidget->addOption('Select a version', '0');
-      $sFormField .= "        <div class=\"field\"><span class=\"label\">Version</span><span class=\"data\">" . $oReleaseWidget . "</span></div>";
+      $sFormField .= static::widgetField($oReleaseWidget, 'Version');
 
       $oElementWidget->addOption('Select an element', '0');
-      $sFormField .= "        <div class=\"field\"><span class=\"label\">Element</span><span class=\"data\">" . $oElementWidget . "</span></div>";
+      $sFormField .= static::widgetField($oElementWidget, 'Element');
 
       $bSoftwareDone = TRUE;
       return $sFormField;
@@ -607,10 +807,18 @@ class Ticket extends \Limbonia\Module
       $sButtonText = $bCurrentlyWatching ? 'Stop watching this ticket' : 'Watch this ticket';
       $sSubAction = $bCurrentlyWatching ? 'remove' : 'add';
 
-      return "        <div class=\"field\"><span class=\"label\">Watchers</span><span class=\"data\">$sWatcherList<br /><form method=\"post\" action=\"" . $this->generateUri($this->oItem->id, 'watchers', $sSubAction) . "\"><button type=\"submit\">$sButtonText</button></form></span></div>";
+      return static::field("$sWatcherList<br /><form method=\"post\" action=\"" . $this->generateUri($this->oItem->id, 'watchers', $sSubAction) . "\"><button type=\"submit\">$sButtonText</button></form>", 'Watchers', 'Watchers');
     }
 
-    return parent::getFormField($sName, $sValue, $hData, $bInTable);
+    $sType = strtolower(preg_replace("/( |\().*/", "", $hData['Type']));
+
+    switch ($sType)
+    {
+      case 'password':
+        return static::field("<input type=\"password\" name=\"$this->sType[$sName]\" id=\"$this->sType$sName\" value=\"$sValue\">", $sLabel, "$this->sType$sName");
+    }
+
+    return parent::getFormField($sName, $sValue, $hData);
   }
 
   /**

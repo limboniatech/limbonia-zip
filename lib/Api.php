@@ -74,6 +74,14 @@ class Api
     'pass' => ''
   ];
 
+  protected $bCli = false;
+
+  protected $hDefault =
+  [
+    'method' => 'get',
+    'controller' => 'web'
+  ];
+
   /**
    * The API data
    *
@@ -125,27 +133,36 @@ class Api
 
   public function __construct()
   {
-    $oServer = Input::singleton('server');
-
-    if (isset($oServer['PHP_AUTH_USER']) && isset($oServer['PHP_AUTH_PW']))
+    if (\Limbonia\Controller::isCLI())
     {
-      self::$hLoginData['user'] = $oServer['PHP_AUTH_USER'];
-      unset($oServer['PHP_AUTH_USER']);
-
-      self::$hLoginData['pass'] = $oServer['PHP_AUTH_PW'];
-      unset($oServer['PHP_AUTH_PW']);
+      $this->bCli = true;
+      $this->hDefault['method'] = 'cli';
+      $this->hDefault['controller'] = 'cli';
     }
     else
     {
-      $oPost = Input::singleton('post');
+      $oServer = Input::singleton('server');
 
-      if (isset($oPost['email']) && isset($oPost['password']))
+      if (isset($oServer['PHP_AUTH_USER']) && isset($oServer['PHP_AUTH_PW']))
       {
-        self::$hLoginData['user'] = $oPost['email'];
-        unset($oPost['email']);
+        self::$hLoginData['user'] = $oServer['PHP_AUTH_USER'];
+        unset($oServer['PHP_AUTH_USER']);
 
-        self::$hLoginData['pass'] = $oPost['password'];
-        unset($oPost['password']);
+        self::$hLoginData['pass'] = $oServer['PHP_AUTH_PW'];
+        unset($oServer['PHP_AUTH_PW']);
+      }
+      else
+      {
+        $oPost = Input::singleton('post');
+
+        if (isset($oPost['email']) && isset($oPost['password']))
+        {
+          self::$hLoginData['user'] = $oPost['email'];
+          unset($oPost['email']);
+
+          self::$hLoginData['pass'] = $oPost['password'];
+          unset($oPost['password']);
+        }
       }
     }
 
@@ -163,7 +180,7 @@ class Api
    */
   protected function setAll(array $hData)
   {
-    $this->hData['method'] = 'get';
+    $this->hData['method'] = isset($hData['method']) ? (string)$hData['method'] : $this->hDefault['method'];
 
     if (isset($hData['baseurl']))
     {
@@ -172,14 +189,14 @@ class Api
 
     if (isset($hData['uri']))
     {
-      $hUri = parse_url(strtolower($hData['uri']));
+      $hUri = parse_url($hData['uri']);
       $sWebTypes = implode('|', static::$aWebTypes);
 
       if (isset($this->hData['baseurl']) && preg_match("#{$this->hData['baseurl']}/(.*$)#", $hUri['path'], $aMatch))
       {
         $this->hData['rawpath'] = $aMatch[1];
       }
-      elseif (preg_match("#(.*?)(($sWebTypes).*$)#", $hUri['path'], $aMatch))
+      elseif (preg_match("#(.*?)(($sWebTypes).*$)#i", $hUri['path'], $aMatch))
       {
         $this->hData['baseurl'] = $aMatch[1];
         $this->hData['rawpath'] = $aMatch[2];
@@ -217,6 +234,7 @@ class Api
    */
   public function processRawPath()
   {
+    $this->hData['rawcall'] = explode('/', $this->hData['rawpath']);
     $this->hData['path'] = strtolower($this->hData['rawpath']);
     $this->hData['call'] = explode('/', $this->hData['path']);
 
@@ -226,8 +244,8 @@ class Api
     }
     else
     {
-      $this->hData['controller'] = 'web';
-      array_unshift($this->hData['call'], 'web');
+      $this->hData['controller'] = $this->hDefault['controller'];
+      array_unshift($this->hData['call'], $this->hDefault['controller']);
     }
 
     $this->hData['module'] = $this->hData['call'][1] ?? null;
@@ -309,7 +327,7 @@ class Api
     if (count($hGet) > 0)
     {
       $this->hData['search'] = [];
-      $hTemp = $hGet->getRaw();
+      $hTemp = is_array($hGet) ? $hGet : $hGet->getRaw();
 
       foreach ($hTemp as $sKey => $sValue)
       {
@@ -333,14 +351,26 @@ class Api
   protected function generate()
   {
     $oServer = Input::singleton('server');
-    $this->hData['method'] = isset($oServer['http_x_http_method_override']) ? strtolower($oServer['http_x_http_method_override']) : strtolower($oServer['request_method']);
 
-    $oGet = Input::singleton('get');
-    $this->processGet($oGet);
+    if ($this->bCli)
+    {
+      $this->hData['method'] = $this->hDefault['method'];
+      $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
+      $hOptions = getopt('', ['api::']);
+      $this->hData['rawpath'] = $hOptions['api'] ?? '' ;
+      $this->processRawPath();
+    }
+    else
+    {
+      $this->hData['method'] = isset($oServer['http_x_http_method_override']) ? strtolower($oServer['http_x_http_method_override']) : strtolower($oServer['request_method']);
 
-    $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
-    $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
-    $this->processRawPath();
+      $oGet = Input::singleton('get');
+      $this->processGet($oGet);
+
+      $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
+      $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
+      $this->processRawPath();
+    }
   }
 
   /**

@@ -54,11 +54,11 @@ class Email
   protected $sBody = '';
 
   /**
-   * The path of any attachments
+   * The path of the attachment
    *
    * @var string
    */
-  protected $sAttachmentPath = '';
+  protected $sAttachment = '';
 
   /**
    * The mime boundary used  attachments
@@ -67,7 +67,231 @@ class Email
    */
   protected $sMimeBoundary = '';
 
-  /**
+  public static function decodeBody($hHeaders, $sBody)
+  {
+    if (empty($hHeaders['content-transfer-encoding']))
+    {
+      return $sBody;
+    }
+
+    switch (strtolower($hHeaders['content-transfer-encoding']))
+    {
+      case '7bit':
+      case '8bit':
+        return $sBody;
+
+      case 'base64':
+        return base64_decode($sBody);
+
+      case 'quoted_printable':
+      case 'quoted-printable':
+        return quoted_printable_decode($sBody);
+    }
+
+    echo "\nInvalid transfer-encoding found: {$hHeaders['content-transfer-encoding']}\n";
+    return $sBody;
+  }
+
+  public static function isText(array $hHeaders = [])
+  {
+    if (isset($hHeaders['content-type']) && preg_match("#text/(plain|html)#", $hHeaders['content-type'], $aMatch))
+    {
+      return $aMatch[1] == 'html' ? 'html' : 'text';
+    }
+
+    return false;
+  }
+
+  public static function isAttachment($hHeaders)
+  {
+    if (isset($hHeaders['content-disposition']) && preg_match("#attachment; filename=\"(.*?)\"#", $hHeaders['content-disposition'], $aMatch))
+    {
+      return $aMatch[1];
+    }
+
+    return false;
+  }
+
+  public static function isMultiPart($hHeaders)
+  {
+    if (isset($hHeaders['content-type']) && preg_match("#multipart/.*?; boundary=\"(.*?)\"#", $hHeaders['content-type'], $aMatch))
+    {
+      return $aMatch[1];
+    }
+
+    return false;
+  }
+
+  public static function processHeaders($xRawHeader)
+  {
+    $aRawHeader = is_array($xRawHeader) ? $xRawHeader : explode("\n", $xRawHeader);
+    $aHeaders = [];
+    $sPrevMatch = '';
+
+    foreach ($aRawHeader as $sLine)
+    {
+      if (preg_match('/^([a-z][a-z0-9-_]+):/is', $sLine, $aMatch))
+      {
+        $sHeaderName = strtolower($aMatch[1]);
+        $sPrevMatch = $sHeaderName;
+        $aHeaders[$sHeaderName] = trim(substr($sLine, strlen($sHeaderName) + 1));
+      }
+      else
+      {
+        if (!empty($sPrevMatch))
+        {
+          $aHeaders[$sPrevMatch] .= ' ' . $sLine;
+        }
+      }
+    }
+
+    return $aHeaders;
+  }
+
+  public static function breakMessage($xMessage)
+  {
+    $aBody = is_array($xMessage) ? $xMessage : explode("\n", $xMessage);
+    $aHeaders = [];
+
+    while ($sLine = array_shift($aBody))
+    {
+      if (empty($sLine))
+      {
+        break;
+      }
+
+      $aHeaders[] = $sLine;
+    }
+
+    return
+    [
+      'headers' => self::processHeaders($aHeaders),
+      'body' => implode("\n", $aBody)
+    ];
+  }
+
+  public static function processMessage($xEmail)
+  {
+    $hEmail = self::breakMessage($xEmail);
+
+    $sBody = trim($hEmail['body']);
+    unset($hEmail['body']);
+
+    if ($sFileName = self::isAttachment($hEmail['headers']))
+    {
+      $hEmail['attachment'] =
+      [
+        'filename' => $sFileName,
+        'data' => self::decodeBody($hEmail['headers'], $sBody)
+      ];
+
+      if (isset($hEmail['headers']['content-type']) && preg_match("#^(.*?);#", $hEmail['headers']['content-type'], $aMatch))
+      {
+        $hEmail['content-type'] = $aMatch[1];
+      }
+
+      $hEmail['type'] = 'attachment';
+      return $hEmail;
+    }
+
+    if ($sBodyType = self::isText($hEmail['headers']))
+    {
+      $hEmail[$sBodyType] = self::decodeBody($hEmail['headers'], $sBody);
+      $hEmail['type'] = $sBodyType;
+      return $hEmail;
+    }
+
+    if ($sBoundary = self::isMultiPart($hEmail['headers']))
+    {
+      $aPartList = explode('--' . $sBoundary, $sBody);
+      array_shift($aPartList);
+
+      foreach ($aPartList as $sPart)
+      {
+        $hProcessedMessage = self::processMessage(trim($sPart));
+
+        if (!isset($hProcessedMessage['type']))
+        {
+
+          if (count($hProcessedMessage) == 1 && isset($hProcessedMessage['headers']))
+          {
+            continue;
+          }
+
+          unset($hProcessedMessage['headers']);
+
+          if (!isset($hEmail['part']))
+          {
+            $hEmail['part'] = [];
+          }
+
+          $hEmail['part'][] = $hProcessedMessage;
+          continue;
+        }
+
+        $sType = $hProcessedMessage['type'];
+        unset($hProcessedMessage['type']);
+
+        if (empty($hProcessedMessage))
+        {
+          continue;
+        }
+
+        if (isset($hEmail[$sType]))
+        {
+          if (!is_array($hEmail[$sType]) || !isset($hEmail[$sType][0]))
+          {
+            $xTemp = $hEmail[$sType];
+            unset($hEmail[$sType]);
+            $hEmail[$sType] = [$xTemp];
+          }
+
+          $hEmail[$sType][] = $hProcessedMessage[$sType];
+        }
+        else
+        {
+          $hEmail[$sType] = $hProcessedMessage[$sType];
+        }
+      }
+
+      if (!isset($hEmail['text']) && !isset($hEmail['email']) && isset($hEmail['part'][0]))
+      {
+        if (isset($hEmail['part'][0]['text']))
+        {
+          $hEmail['text'] = $hEmail['part'][0]['text'];
+          unset($hEmail['part'][0]['text']);
+        }
+
+        if (isset($hEmail['part'][0]['html']))
+        {
+          $hEmail['html'] = $hEmail['part'][0]['html'];
+          unset($hEmail['part'][0]['html']);
+        }
+
+        if (empty($hEmail['part'][0]))
+        {
+          unset($hEmail['part'][0]);
+        }
+
+        if (empty($hEmail['part']))
+        {
+          unset($hEmail['part']);
+        }
+      }
+
+      return $hEmail;
+    }
+
+    if (!empty($sBody))
+    {
+      $hEmail['body'] = $sBody;
+      $hEmail['type'] = 'body';
+    }
+
+    return $hEmail;
+  }
+
+    /**
    * Validate the specified email address
    *
    * @param string $sEmailAddress
@@ -173,9 +397,44 @@ class Email
   /**
    * Constructor
    */
-  public function __construct()
+  public function __construct(array $hConfig = [])
   {
-    $this->sMimeBoundary = "::[" . md5(time()) . "]::";
+    if (isset($hConfig['from']))
+    {
+      $this->setFrom($hConfig['from']);
+    }
+
+    if (isset($hConfig['to']))
+    {
+      $this->addTo($hConfig['to']);
+    }
+
+    if (isset($hConfig['cc']))
+    {
+      $this->addCC($hConfig['cc']);
+    }
+
+    if (isset($hConfig['bcc']))
+    {
+      $this->addBCC($hConfig['bcc']);
+    }
+
+    if (isset($hConfig['subject']))
+    {
+      $this->setSubject($hConfig['subject']);
+    }
+
+    if (isset($hConfig['body']))
+    {
+      $this->addBody($hConfig['body']);
+    }
+
+    $this->sMimeBoundary = isset($hConfig['mimeboundary']) ? $hConfig['mimeboundary'] : "::[" . md5(time()) . "]::";
+
+    if (isset($hConfig['body']))
+    {
+      $this->addBody($hConfig['body']);
+    }
   }
 
   /**
@@ -296,11 +555,11 @@ class Email
    */
   public function getBody()
   {
-    if (is_readable($this->sAttachmentPath))
+    if (is_readable($this->sAttachment))
     {
-      $sFileName = basename($this->sAttachmentPath);
-      $rFile = fopen($this->sAttachmentPath, 'r');
-      $sAttachmentRaw = fread($rFile, filesize($this->sAttachmentPath));
+      $sFileName = basename($this->sAttachment);
+      $rFile = fopen($this->sAttachment, 'r');
+      $sAttachmentRaw = fread($rFile, filesize($this->sAttachment));
       $sAttachment = chunk_split(base64_encode($sAttachmentRaw));
       fclose($rFile);
 
@@ -328,13 +587,13 @@ class Email
   }
 
   /**
-   * Set the attachment patch to the specified path
+   * Set the path to the specified attachment
    *
-   * @param string $sAttachmentPath
+   * @param string $sAttachment
    */
-  public function setAttachmentPath($sAttachmentPath)
+  public function setAttachment($sAttachment)
   {
-    $this->sAttachmentPath = trim($sAttachmentPath);
+    $this->sAttachment = trim($sAttachment);
   }
 
   public function getHeaders()
@@ -351,7 +610,7 @@ class Email
       $sHeader .= 'Bcc: ' . implode(', ', $this->aBCC) . "\r\n";
     }
 
-    if (is_readable($this->sAttachmentPath))
+    if (is_readable($this->sAttachment))
     {
       $sHeaders .= "MIME-Version: 1.0\r\n";
       $sHeaders .= "Content-Type: multipart/mixed; boundary=\"" . $this->sMimeBoundary . "\";\r\n";
@@ -370,7 +629,7 @@ class Email
    *
    * @return boolean - true on success and false on failure
    */
-  function send()
+  public function send()
   {
     if (empty($this->aTo))
     {

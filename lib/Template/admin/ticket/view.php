@@ -17,7 +17,7 @@ if ($currentItem->creatorID > 0)
 echo $controller->dataField('Status', $module->getColumnValue($currentItem, 'Status'));
 echo $controller->dataField('Priority', $module->getColumnValue($currentItem, 'Priority'));
 echo $controller->dataField('Owner', $module->getColumnValue($currentItem, 'OwnerID'));
-echo $module->getFormField('Watchers', '', [], false);
+echo $module->getFormField('Watchers');
 echo $controller->dataField('Subject', $module->getColumnValue($currentItem, 'Subject'));
 echo $controller->dataField('Category', $module->getColumnValue($currentItem, 'CategoryID'));
 echo $controller->dataField('Type', $module->getColumnValue($currentItem, 'Type'));
@@ -41,7 +41,7 @@ if ($currentItem->completionTime)
 
 if (!empty($currentItem->totalTime))
 {
-  echo $controller->dataField('Total Time Worked', $currentItem->totalTime . ' minutes');
+  echo $controller->dataField('Total Time Worked', \Limbonia\Item::outputTimeInterval($currentItem->totalTime));
 }
 
 if ($currentItem->type == 'software')
@@ -62,25 +62,27 @@ foreach ($currentItem->contentList as $content)
   echo "<div class=\"field ticketContent\">\n";
   echo "  <span class=\"label\">\n";
 
-  if ($content->userID > 0)
+  if ($content->user->id > 0)
   {
-    echo "<a class=\"item\" href=\"" . $controller->generateUri('user', $content->userID) . "\">{$content->user->name}</a>\n";
+    echo "<a class=\"item\" href=\"" . $controller->generateUri('user', $content->user->id) . "\">{$content->user->name}</a>\n";
   }
   else
   {
     echo "Auto Created";
   }
+
   echo ' [' . ucwords($content->updateType) . ']';
   echo "  <br>\n";
   echo $content->updateTime;
 
   if (!empty($content->timeWorked))
   {
-    echo "<br>$content->timeWorked minutes";
+    echo '<br>' . \Limbonia\Item::outputTimeInterval($content->timeWorked);
   }
+
   echo "</span>\n";
   echo "<span class=\"$content->updateType data\">\n";
-  echo $content->updateText . "\n";
+  echo preg_replace("/\n/", "<br>\n", $content->updateText) . "\n";
   $historyList = $content->getHistory();
 
   if (count($historyList) > 0)

@@ -13,7 +13,7 @@ if ($iGroup > 0)
   {
     if ($iGroup > $iMinGroups && $sGroup !== 'Hidden')
     {
-      $sAdminNav .= "      <div class=\"group\">$sGroup</div>\n";
+      $sAdminNav .= "      <div class=\"moduleGroup\">$sGroup</div>\n";
     }
 
     foreach ($hModuleList as $sLabel => $sModuleName)
@@ -62,21 +62,22 @@ if ($iGroup > 0)
 
 if (isset($moduleOutput))
 {
-  $aAdminOutput = $module->getAdminOutput();
+  $sTemp = $moduleOutput;
+  $moduleOutput = "<script type=\"text/javascript\">
+ updateAdminNav('" . $module->getType() . "');\n";
 
-  if (!empty($aAdminOutput))
+  if ($module->getItem()->id > 0)
   {
-    $moduleOutput = "<script type=\"text/javascript\">
-   updateAdminNav('" . $module->getType() . "');
-   buildItem(" . json_encode($aAdminOutput) . ");
-   $('#item > #page').html(" . json_encode($moduleOutput) . ");
-</script>\n";
+    $moduleOutput .= "   buildItem(" . json_encode($module->getAdminOutput()) . ");
+ $('#item > #page').html(" . json_encode($sTemp) . ");\n";
   }
   else
   {
     $sPageTitle = ucwords($module->getType() . " > $method");
-    $moduleOutput .= "<script type=\"text/javascript\">updateAdminNav('" . $module->getType() . "');</script>\n";
+    $moduleOutput .= "   $('#moduleOutput').html(" . json_encode($sTemp) . ");\n";
   }
+
+  $moduleOutput .= "\n</script>\n";
 }
 else
 {
@@ -93,7 +94,22 @@ else
   <meta name="build-date" content="<?= \Limbonia\Controller::buildDate() ?>">
   <title><?= $sPageTitle ?></title>
   <link rel="stylesheet" type="text/css" href="<?= $controller->domain->uri . '/' . $controller->getDir('share') ?>/admin.css" />
-  <script type="text/javascript" src="<?= $controller->domain->uri . '/' . $controller->getDir('share') ?>/admin-all-min.js"></script>
+<?php
+if ($controller->debug)
+{
+  echo "  <script type=\"text/javascript\" src=\"" . $controller->domain->uri . '/' . $controller->getDir('share') . "/node_modules/jquery/dist/jquery.js\"></script>\n";
+  echo "  <script type=\"text/javascript\" src=\"" . $controller->domain->uri . '/' . $controller->getDir('share') . "/node_modules/slideout/dist/slideout.js\"></script>\n";
+  echo "  <script type=\"text/javascript\" src=\"" . $controller->domain->uri . '/' . $controller->getDir('share') . "/admin.js\"></script>\n";
+  echo "  <script type=\"text/javascript\" src=\"" . $controller->domain->uri . '/' . $controller->getDir('share') . "/ajax.js\"></script>\n";
+  echo "  <script type=\"text/javascript\" src=\"" . $controller->domain->uri . '/' . $controller->getDir('share') . "/select.js\"></script>\n";
+  echo "  <script type=\"text/javascript\" src=\"" . $controller->domain->uri . '/' . $controller->getDir('share') . "/sorttable.js\"></script>\n";
+  echo "  <script type=\"text/javascript\" src=\"" . $controller->domain->uri . '/' . $controller->getDir('share') . "/window.js\"></script>\n";
+}
+else
+{
+  echo "  <script type=\"text/javascript\" src=\"" . $controller->domain->uri . '/' . $controller->getDir('share') . "/admin-all-min.js\"></script>\n";
+}
+?>
   <script type="text/javascript">
   $(function()
   {

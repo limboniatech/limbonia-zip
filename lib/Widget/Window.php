@@ -90,7 +90,7 @@ class Window extends \Limbonia\Widget
   public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
-    $this->sOnClick = " onClick=\"show{$this->sID}()\"";
+    $this->sOnClick = " onClick=\"show{$this->sId}()\"";
     //$this->aScript = [$this->sWebShareDir . '/window.js'];
   }
 
@@ -101,8 +101,8 @@ class Window extends \Limbonia\Widget
    */
   protected function init()
   {
-    $this->sScript .= "var {$this->sID}Target = document.getElementById('{$this->sID}');\n";
-    $this->sScript .= "function show{$this->sID}(sURL)\n";
+    $this->sScript .= "var {$this->sId}Target = document.getElementById('{$this->sId}');\n";
+    $this->sScript .= "function show{$this->sId}(sURL)\n";
     $this->sScript .= "{\n";
     $sURL = null;
 
@@ -118,8 +118,8 @@ class Window extends \Limbonia\Widget
     }
 
     $this->sScript .= "  sURL = (arguments.length > 0) ? sURL : '$sURL';\n";
-    $this->sScript .= "  var {$this->sID} = window.open(sURL, '{$this->sID}', 'top={$this->iTop},left={$this->iLeft},width={$this->iWidth},height={$this->iHeight},toolbar={$this->sToolbar},menubar={$this->sMenubar},location={$this->sLocation},status={$this->sStatus},scrollbars={$this->sScrollBars},resizable={$this->sResizable}');\n";
-    $this->sScript .= "  ".$this->sID.".opener = self;\n";
+    $this->sScript .= "  var {$this->sId} = window.open(sURL, '{$this->sId}', 'top={$this->iTop},left={$this->iLeft},width={$this->iWidth},height={$this->iHeight},toolbar={$this->sToolbar},menubar={$this->sMenubar},location={$this->sLocation},status={$this->sStatus},scrollbars={$this->sScrollBars},resizable={$this->sResizable}');\n";
+    $this->sScript .= "  ".$this->sId.".opener = self;\n";
 
     if (!empty($this->sContent))
     {
@@ -128,7 +128,7 @@ class Window extends \Limbonia\Widget
 
     $this->sScript .= "  if (window.focus)\n";
     $this->sScript .= "  {\n";
-    $this->sScript .= "    {$this->sID}.focus();\n";
+    $this->sScript .= "    {$this->sId}.focus();\n";
     $this->sScript .= "  }\n";
     $this->sScript .= "}\n";
     return TRUE;
@@ -148,10 +148,10 @@ class Window extends \Limbonia\Widget
       }
     }
 
-    $this->sScript .= "var {$this->sID}Target = document.getElementById('{$this->sID}');\n";
-    $this->sScript .= "function show{$this->sID}()\n";
+    $this->sScript .= "var {$this->sId}Target = document.getElementById('{$this->sId}');\n";
+    $this->sScript .= "function show{$this->sId}()\n";
     $this->sScript .= "{\n";
-    $this->sScript .= "  {$this->sID}Target = showLimboniawindow('$sURL', $this->iTop, $this->iLeft, $this->iWidth, $this->iHeight, $this->sToolbar, $this->sMenubar, $this->sLocation, $this->sStatus, $this->sScrollBars, $this->sResizable);\n";
+    $this->sScript .= "  {$this->sId}Target = showLimboniawindow('$sURL', $this->iTop, $this->iLeft, $this->iWidth, $this->iHeight, $this->sToolbar, $this->sMenubar, $this->sLocation, $this->sStatus, $this->sScrollBars, $this->sResizable);\n";
     $this->sScript .= "}\n";
     return TRUE;
   }
@@ -164,7 +164,7 @@ class Window extends \Limbonia\Widget
   public function button($sText)
   {
     static $iButtonCount = 0;
-    $sButton = "<input type=\"Button\" name=\"".$this->sName."Button$iButtonCount\" id=\"".$this->sID."Button$iButtonCount\" value=\"$sText\"$this->sOnClick>";
+    $sButton = "<input type=\"Button\" name=\"".$this->sName."Button$iButtonCount\" id=\"".$this->sId."Button$iButtonCount\" value=\"$sText\"$this->sOnClick>";
     $iButtonCount++;
 
     if ($this->bInit)
@@ -180,7 +180,7 @@ class Window extends \Limbonia\Widget
   public function image($sSrc)
   {
     static $iImageCount = 0;
-    $sImage = "<img src=\"$sSrc\" name=\"" . $this->sName . "Image$iImageCount\" id=\"" .$this->sID. "Image$iImageCount\"$this->sOnClick>";
+    $sImage = "<img src=\"$sSrc\" name=\"" . $this->sName . "Image$iImageCount\" id=\"" .$this->sId. "Image$iImageCount\"$this->sOnClick>";
     $iImageCount++;
 
     if ($this->bInit)
@@ -195,7 +195,7 @@ class Window extends \Limbonia\Widget
 
   public function text($sText)
   {
-    $sText = "<a href=\"javascript:show" . $this->sID . "();\">$sText</a>";
+    $sText = "<a href=\"javascript:show" . $this->sId . "();\">$sText</a>";
 
     if ($this->bInit)
     {

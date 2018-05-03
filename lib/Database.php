@@ -53,7 +53,7 @@ class Database extends \PDO
    *
    * @var array
    */
-  protected $hColumnList = [];
+  protected static $hColumnList = [];
 
   /**
    * List of alternate column names that tie back to the canonical column name
@@ -619,15 +619,15 @@ class Database extends \PDO
    */
   public function getColumns($sTable, $bUseTableName = false)
   {
-    if (isset($this->hColumnList[$sTable]))
+    if (isset(self::$hColumnList[$sTable]))
     {
-      return $this->hColumnList[$sTable];
+      return self::$hColumnList[$sTable];
     }
 
     if (SessionManager::isStarted() && isset($_SESSION['LimboniaTableColumns'][$sTable]))
     {
-      $this->hColumnList[$sTable] = $_SESSION['LimboniaTableColumns'][$sTable];
-      return $this->hColumnList[$sTable];
+      self::$hColumnList[$sTable] = $_SESSION['LimboniaTableColumns'][$sTable];
+      return self::$hColumnList[$sTable];
     }
 
     switch ($this->getType())
@@ -649,26 +649,26 @@ class Database extends \PDO
       return [];
     }
 
-    $this->hColumnList[$sTable] = [];
+    self::$hColumnList[$sTable] = [];
 
     foreach ($oGetColumns as $hRow)
     {
       $sName = $bUseTableName ? "$sTable.{$hRow['Field']}" : $hRow['Field'];
-      $this->hColumnList[$sTable][$sName]['Type'] = $hRow['Type'];
+      self::$hColumnList[$sTable][$sName]['Type'] = $hRow['Type'];
       $hRow['Key'] = trim($hRow['Key']);
 
       if (!empty($hRow['Key']))
       {
-        $this->hColumnList[$sTable][$sName]['Key'] = str_replace('PRI', 'Primary', $hRow['Key']);
-        $this->hColumnList[$sTable][$sName]['Key'] = str_replace('MUL', 'Multi', $this->hColumnList[$sTable][$sName]['Key']);
+        self::$hColumnList[$sTable][$sName]['Key'] = str_replace('PRI', 'Primary', $hRow['Key']);
+        self::$hColumnList[$sTable][$sName]['Key'] = str_replace('MUL', 'Multi', self::$hColumnList[$sTable][$sName]['Key']);
       }
 
-      $this->hColumnList[$sTable][$sName]['Default'] = trim($hRow['Default']);
+      self::$hColumnList[$sTable][$sName]['Default'] = trim($hRow['Default']);
       $hRow['Extra'] = trim($hRow['Extra']);
 
       if (!empty($hRow['Extra']))
       {
-        $this->hColumnList[$sTable][$sName]['Extra'] = $hRow['Extra'];
+        self::$hColumnList[$sTable][$sName]['Extra'] = $hRow['Extra'];
       }
     }
 
@@ -679,10 +679,10 @@ class Database extends \PDO
         $_SESSION['LimboniaTableColumns'] = [];
       }
 
-      $_SESSION['LimboniaTableColumns'][$sTable] = $this->hColumnList[$sTable];
+      $_SESSION['LimboniaTableColumns'][$sTable] = self::$hColumnList[$sTable];
     }
 
-    return $this->hColumnList[$sTable];
+    return self::$hColumnList[$sTable];
   }
 
   /**
@@ -992,7 +992,11 @@ class Database extends \PDO
     if (empty($iRowsAffected))
     {
       $aError = $this->errorInfo();
-      throw new \Limbonia\Exception\DBResult("Item #$iID not update in $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
+
+      if ($aError[0] != '00000')
+      {
+        throw new \Limbonia\Exception\DBResult("Item #$iID not updated in $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSQL, $aError[1]);
+      }
     }
 
     return $iID;

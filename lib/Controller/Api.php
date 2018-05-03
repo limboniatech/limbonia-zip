@@ -13,25 +13,29 @@ namespace Limbonia\Controller;
 class Api extends \Limbonia\Controller\Web
 {
   /**
-   * Handle any Exceptions thrown while generating the current user
+   * Generate and return the current user
    *
-   * @param \Exception $oException
+   * @return \Limbonia\Item\User
+   * @throws \Exception
    */
-  protected function handleGenerateUserException(\Exception $oException)
+  protected function generateUser()
   {
-    throw new \Exception($oException->getMessage(), 401);
-  }
-
-  /**
-   * Run everything needed to react and display data in the way this controller is intended
-   */
-  public function run()
-  {
-    ob_start();
     try
     {
-      parent::run();
+      return parent::generateUser();
+    }
+    catch (\Exception $e)
+    {
+      http_response_code(401);
+      die(parent::outputJson($e->getMessage()));
+    }
+  }
 
+  protected function renderPage()
+  {
+    try
+    {
+      ob_start();
       if ($this->oUser->id == 0)
       {
         throw new \Exception('Authentication failed', 401);
@@ -49,7 +53,7 @@ class Api extends \Limbonia\Controller\Web
 
       if (is_null($xResult))
       {
-        die();
+        return null;
       }
 
       if ($xResult instanceof \Limbonia\ItemList)
@@ -61,20 +65,20 @@ class Api extends \Limbonia\Controller\Web
           $hList[$oItem->id] = $oItem->getAll();
         }
 
-        parent::outputJson($hList);
+        return parent::outputJson($hList);
       }
 
       if ($xResult instanceof \Limbonia\Item)
       {
-        parent::outputJson($xResult->getAll());
+        return parent::outputJson($xResult->getAll());
       }
 
       if ($xResult instanceof \Limbonia\Interfaces\Result)
       {
-        parent::outputJson($xResult->getAll());
+        return parent::outputJson($xResult->getAll());
       }
 
-      die(json_encode($xResult));
+      return json_encode($xResult);
     }
     catch (\Exception $e)
     {
@@ -83,7 +87,7 @@ class Api extends \Limbonia\Controller\Web
       //if the exception didn't have numeric code or at least 400, then use 400 instead...
       $iResponseCode = empty($iExceptionCode) || !is_numeric($iExceptionCode) || $iExceptionCode < 400 ? 400 : $iExceptionCode;
       http_response_code($iResponseCode);
-      parent::outputJson($e->getMessage());
+      return parent::outputJson($e->getMessage());
     }
   }
 }

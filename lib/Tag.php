@@ -438,7 +438,7 @@ class Tag
   }
 
   /**
-   * Remove the specified tage from the tag's content
+   * Remove the specified tag from the tag's content
    *
    * @param Tag $oTag
    */

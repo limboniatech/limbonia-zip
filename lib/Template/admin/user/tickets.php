@@ -9,7 +9,7 @@ else
 {
   $table = $controller->widgetFactory('Table');
   $ticketModule = $controller->moduleFactory('Ticket');
-  $columnList = $ticketModule->getColumns('userTickets');
+  $columnList = array_keys($ticketModule->getColumns('userTickets'));
   $table->makeSortable();
   $table->startHeader();
   $table->addCell('&nbsp;', false);

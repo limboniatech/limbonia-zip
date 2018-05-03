@@ -199,12 +199,12 @@ class Report extends \Limbonia\Module
    */
   public function prepareTemplate()
   {
-    parent::prepareTemplate();
-
     if ($this->oReport instanceof \Limbonia\Report)
     {
       $this->oController->templateData('report', $this->oReport);
     }
+
+    parent::prepareTemplate();
   }
 
   /**

@@ -9,7 +9,4 @@ if (isset($failure))
   echo "<div class=\"methodFailure\">$failure</div>\n";
 }
 
-foreach ($module->getColumns('view') as $sColumnName)
-{
-  echo $controller->dataField($module->getColumnTitle($sColumnName), $module->getColumnValue($currentItem, $sColumnName));
-}
+echo $module->getFields($fields, $currentItem->getAll());

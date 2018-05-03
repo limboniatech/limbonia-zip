@@ -53,10 +53,10 @@ class User extends \Limbonia\Item
 
     if (count($oUserList) == 0)
     {
-      throw new \Exception('Unkown user');
+      throw new \Exception("Unkown user: $sEmail");
     }
 
-    return  $oUserList[0];
+    return $oUserList[0];
   }
 
   /**
@@ -137,7 +137,7 @@ class User extends \Limbonia\Item
       return true;
     }
 
-    $oResult = $this->getDatabase()->prepare("SELECT COUNT(1) FROM User_Key uk NATURAL JOIN ResourceKey rk WHERE rk.Name='Admin' AND uk.Level = 1000 AND uk.UserID = :UserID");
+    $oResult = $this->getDatabase()->prepare("SELECT COUNT(1) FROM User_Role u_r NATURAL JOIN Role_Key r_k NATURAL JOIN ResourceKey rk WHERE rk.Name='Admin' AND r_k.Level = 1000 AND u_r.UserID = :UserID");
     $oResult->execute([':UserID' => $this->hData['UserID']]);
     $iAdminCount = $oResult->fetchColumn();
     $this->bAdmin = $iAdminCount > 0;
@@ -148,7 +148,7 @@ class User extends \Limbonia\Item
     }
     else
     {
-      $oResult = $this->getDatabase()->prepare("SELECT rl.Resource, rl.Component, rk.Name, uk.Level FROM ResourceLock rl, User_Key uk, ResourceKey rk WHERE rk.KeyID = uk.KeyID AND (rl.KeyID = uk.KeyID OR rk.Name = 'Admin') AND rl.MinKey <= uk.Level AND uk.UserID = :UserID");
+      $oResult = $this->getDatabase()->prepare("SELECT rl.Resource, rl.Component, rk.Name, r_k.Level FROM ResourceLock rl, Role_Key r_k, ResourceKey rk, User_Role u_r WHERE rk.KeyID = r_k.KeyID AND (rl.KeyID = r_k.KeyID OR rk.Name = 'Admin') AND rl.MinKey <= r_k.Level AND r_k.RoleID =u_r.RoleID AND  u_r.UserID = :UserID");
       $bSuccess = $oResult->execute([':UserID' => $this->hData['UserID']]);
       $this->hResource = [];
 
@@ -198,14 +198,13 @@ class User extends \Limbonia\Item
   }
 
   /**
-   * Return the list of resource keys and their levels that this user has
+   * Return the list of resource keys and their levels that this role has
    *
    * @return array
    */
-  public function getResourceKeys()
+  public function getRoles()
   {
-    $oResult = $this->getDatabase()->query("SELECT KeyID, Level FROM User_Key WHERE UserID = $this->id");
-    return $oResult->fetchAssoc();
+    return parent::getList('Role', "SELECT r.* FROM Role r NATURAL JOIN User_Role u_r WHERE u_r.UserID = $this->id ORDER BY NAME", $this->getDatabase());
   }
 
   /**
@@ -213,27 +212,27 @@ class User extends \Limbonia\Item
    *
    * @return \Limbonia\ItemList
    */
-  public function getResourceList()
+  public function getRoleList()
   {
-    return parent::search('ResourceKey', null, 'Name', $this->getDatabase());
+    return parent::search('Role', null, 'Name', $this->getDatabase());
   }
 
   /**
-   * Set the specified list of resource keys for this user
+   * Set the specified list of resource keys for this role
    *
-   * @param array $hResource
+   * @param array $aRole
    */
-  public function setResourceKeys($hResource)
+  public function setRoles($aRole)
   {
-    $this->getDatabase()->exec('DELETE FROM User_Key WHERE UserID = ' . $this->id);
+    $this->getDatabase()->exec('DELETE FROM User_Role WHERE UserID = ' . $this->id);
 
-    if (count($hResource) > 0)
+    if (count($aRole) > 0)
     {
-      $oResult = $this->getDatabase()->prepare("INSERT INTO User_Key VALUES ($this->id, :Key, :Level)");
+      $oResult = $this->getDatabase()->prepare("INSERT INTO User_Role VALUES ($this->id, :Role)");
 
-      foreach ($hResource as $iKey => $iLevel)
+      foreach ($aRole as $iRole)
       {
-        $oResult->execute([':Key' => $iKey, ':Level' => $iLevel]);
+        $oResult->execute([':Role' => $iRole]);
       }
     }
   }
@@ -275,6 +274,11 @@ class User extends \Limbonia\Item
       return trim("$this->firstName $this->lastName");
     }
 
+    if (strtolower($sName) == 'iscontact')
+    {
+      return 'contact' == parent::__get('type');
+    }
+
     return parent::__get($sName);
   }
 
@@ -302,5 +306,29 @@ class User extends \Limbonia\Item
   public function getTickets()
   {
     return parent::search('Ticket', ['OwnerID' => $this->id, 'Status' => '!=:closed'], ['Priority', 'DueDate DESC'], $this->getDatabase());
+  }
+
+  public function isContact()
+  {
+    return 'contact' === $this->type;
+  }
+
+  public function canAccessTicket($iTicket)
+  {
+    if (!$this->isContact())
+    {
+      return true;
+    }
+
+    $oResult = $this->getController()->getDB()->prepare("SELECT COUNT(1) FROM Ticket WHERE TicketID = :TicketID AND (OwnerID = $this->id OR CreatorID = $this->id)");
+    $oResult->bindValue(':TicketID', $iTicket, \PDO::PARAM_INT);
+
+    if (!$oResult->execute())
+    {
+      $aError = $oResult->errorInfo();
+      throw new \Exception("Failed to load data from $this->sTable: {$aError[2]}");
+    }
+
+    return $oResult->fetch() > 0;
   }
 }

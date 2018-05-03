@@ -1,5 +1,5 @@
 <?php
-if ($failure)
+if (isset($failure))
 {
   echo "<div class=\"LimboniaMethodFailure\">$failure</div>\n";
 }

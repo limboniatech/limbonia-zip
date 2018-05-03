@@ -41,6 +41,39 @@ class TicketContent extends \Limbonia\Item
   ];
 
   /**
+   * Sets the specified values if possible
+   *
+   * @param string $sName
+   * @param mixed $xValue
+   */
+  public function __set($sName, $xValue)
+  {
+    $sRealName = $this->hasColumn($sName);
+
+    if ($sRealName == 'TimeWorked')
+    {
+      if (!is_numeric($xValue) && !is_null($xValue))
+      {
+        $iNow = strtotime('now');
+        $iIntervalInSeconds = strtotime($xValue, $iNow) - $iNow;
+        $xValue = round($iIntervalInSeconds / 60);
+      }
+    }
+
+    return parent::__set($sName, $xValue);
+  }
+
+  public function setAll(array $hItem = array())
+  {
+    $hLowerItem = parent::setAll($hItem);
+
+    if (isset($hLowerItem['history']))
+    {
+      $this->setHistory($hLowerItem['history']);
+    }
+  }
+
+    /**
    * Either create or update this object depending on if it's already been created or not
    *
    * @return integer The ID of this content object on success or false on failure

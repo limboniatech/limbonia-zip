@@ -13,30 +13,43 @@ namespace Limbonia\Controller;
 class Ajax extends \Limbonia\Controller\Web
 {
   /**
-   * Run everything needed to react and display data in the way this controller is intended
+   * Generate and return the current user
+   *
+   * @return \Limbonia\Item\User
+   * @throws \Exception
    */
-  public function run()
+  protected function generateUser()
+  {
+    try
+    {
+      return parent::generateUser();
+    }
+    catch (\Exception $e)
+    {
+      die(parent::outputJson($e->getMessage()));
+    }
+  }
+
+  protected function renderPage()
   {
     ob_start();
-    $sApiPath = trim(preg_replace("#\?.*#", '', str_replace($this->baseUri, '', $this->server['request_uri'])), '/');
-    $aApiCall = explode('/', $sApiPath);
+    $aApiCall = $this->oApi->rawcall;
     $sFunction = 'ajax_' . urldecode(array_pop($aApiCall));
-    array_unshift($aApiCall, 'Limbonia');
+    $aApiCall[0] = 'Limbonia';
     $sClass = implode('\\', $aApiCall);
 
     try
     {
-      \Limbonia\Controller::run();
       $oRequest = new $sClass();
     }
     catch (\Limbonia\Exception\Object $oException)
     {
-      die("alert('Could not create an object from \"$sClass\":  " . $oException->getMessage() . "');");
+      return "alert('Could not create an object from \"$sClass\":  " . $oException->getMessage() . "');";
     }
 
     if (!method_exists($oRequest, $sFunction))
     {
-      die("alert('Class \"$sClass\" does *not* contain the method \"$sFunction\"!');");
+      return "alert('Class \"$sClass\" does *not* contain the method \"$sFunction\"!');";
     }
 
     $sReslult = call_user_func_array([&$oRequest, $sFunction], $this->post->getRaw());
@@ -47,6 +60,6 @@ class Ajax extends \Limbonia\Controller\Web
     }
 
     ob_end_clean();
-    die($sReslult);
+    return $sReslult;
   }
 }

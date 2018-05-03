@@ -43,6 +43,13 @@ abstract class Controller
   protected static $aLibList = [__DIR__];
 
   /**
+   * List of Limbonia lib directories
+   *
+   * @var array
+   */
+  protected static $aTemplateDir = [__DIR__ . '/Template'];
+
+  /**
    * The list of input types that are allowed to be auto generated
    *
    * @var array
@@ -55,6 +62,13 @@ abstract class Controller
    * @var array
    */
   protected static $hModuleList = [];
+
+  /**
+   * All the data that will be used by the templates
+   *
+   * @var array
+   */
+  protected $hTemplateData = [];
 
   /**
    * @var \Limbonia\Domain - The default domain for this controller instance
@@ -115,6 +129,15 @@ abstract class Controller
    * @var \Limbonia\Item\User
    */
   protected $oUser = null;
+
+  /**
+   * The type of controller that has been instantiated
+   *
+   * @var string
+   */
+  protected $sType = '';
+
+  protected $bDebug = false;
 
   /**
    * Generate the build data so it can be used in other places
@@ -263,6 +286,7 @@ abstract class Controller
     if (is_dir($sLibDir) && !in_array($sLibDir, self::$aLibList))
     {
       array_unshift(self::$aLibList, $sLibDir);
+      array_unshift(self::$aTemplateDir, "$sLibDir/Template");
     }
   }
 
@@ -276,6 +300,11 @@ abstract class Controller
     return self::$aLibList;
   }
 
+  public static function templateDirs()
+  {
+    return self::$aTemplateDir;
+  }
+
   /**
    * Generate and return a valid, configured controller
    *
@@ -285,14 +314,10 @@ abstract class Controller
    */
   public static function factory(array $hConfig = [])
   {
-    if (self::isCLI())
-    {
-      return new \Limbonia\Controller\Cli($hConfig);
-    }
-
-    $oApi = \Limbonia\Api::singleton();
+    $hLowerConfig = \array_change_key_case($hConfig, CASE_LOWER);
+    $oApi = $hLowerConfig['api'] ?? \Limbonia\Api::singleton();
     $sControllerClass = __CLASS__ . '\\' . ucfirst($oApi->controller);
-    return new $sControllerClass($hConfig);
+    return new $sControllerClass($oApi, $hConfig);
   }
 
   /**
@@ -300,68 +325,80 @@ abstract class Controller
    *
    * NOTE: This constructor should only be used by the factory and *never* directly
    *
+   * @param \Limbonia\Api $oApi
    * @param array $hConfig - A hash of configuration data
    */
-  protected function __construct(array $hConfig = [])
+  protected function __construct(\Limbonia\Api $oApi, array $hConfig = [])
   {
-    $hLowerConfig = \array_change_key_case($hConfig, CASE_LOWER);
-
-    if (isset($hLowerConfig['domaindirtemplate']))
+    if (isset($hConfig['debug']))
     {
-      Domain::setDirTemplate($hLowerConfig['domaindirtemplate']);
-      unset($hLowerConfig['domaindirtemplate']);
+      $this->bDebug = (boolean)$hConfig['debug'];
     }
 
-    if (isset($hLowerConfig['domain']))
+    $this->oApi = $oApi;
+    $this->sType = strtolower(str_replace(__CLASS__ . "\\", '', get_class($this)));
+
+    if (isset($hConfig['domaindirtemplate']))
     {
-      if ($hLowerConfig['domain'] instanceof \Limbonia\Domain)
+      Domain::setDirTemplate($hConfig['domaindirtemplate']);
+      unset($hConfig['domaindirtemplate']);
+    }
+
+    if (isset($hConfig['domain']))
+    {
+      if ($hConfig['domain'] instanceof \Limbonia\Domain)
       {
-        $this->oDomain = $hLowerConfig['domain'];
+        $this->oDomain = $hConfig['domain'];
       }
-      elseif (is_string($hLowerConfig['domain']))
+      elseif (is_string($hConfig['domain']))
       {
-        $this->oDomain = \Limbonia\Domain::factory($hLowerConfig['domain']);
+        $this->oDomain = \Limbonia\Domain::factory($hConfig['domain']);
       }
 
-      unset($hLowerConfig['domain']);
+      unset($hConfig['domain']);
     }
 
     $this->hConfig['baseuri'] = $this->oDomain ? $this->oDomain->uri : '';
     $this->hDirectories['root'] = \dirname(__DIR__);
 
-    if (isset($hLowerConfig['directories']))
+    if (isset($hConfig['directories']))
     {
-      foreach ($hLowerConfig['directories'] as $sName => $sDir)
+      foreach ($hConfig['directories'] as $sName => $sDir)
       {
         $this->hDirectories[\strtolower($sName)] = $sDir;
       }
 
-      unset($hLowerConfig['directories']);
+      unset($hConfig['directories']);
     }
 
-    $this->hDirectories['libs'] = \array_unique($this->hDirectories['libs']);
+    $sTemplateDir = $this->getDir('template');
+
+    if (is_readable($sTemplateDir) && !in_array($sTemplateDir, self::$aTemplateDir))
+    {
+      array_unshift(self::$aTemplateDir, $sTemplateDir);
+    }
 
     $sTimeZone = 'UTC';
 
-    if (isset($hLowerConfig['timezone']))
+    if (isset($hConfig['timezone']))
     {
-      $sTimeZone = $hLowerConfig['timezone'];
-      unset($hLowerConfig['timezone']);
+      $sTimeZone = $hConfig['timezone'];
+      unset($hConfig['timezone']);
     }
 
     date_default_timezone_set($sTimeZone);
 
-    if (isset($hLowerConfig['database']) && count($hLowerConfig['database']) > 0)
+    if (isset($hConfig['database']) && count($hConfig['database']) > 0)
     {
-      foreach ($hLowerConfig['database'] as $sName => $hDatabase)
+      foreach ($hConfig['database'] as $sName => $hDatabase)
       {
         $this->hDatabaseConfig[\strtolower($sName)] = array_change_key_case($hDatabase, CASE_LOWER);
       }
 
-      unset($hLowerConfig['database']);
+      unset($hConfig['database']);
     }
 
-    $this->hConfig = array_merge($this->hConfig, $hLowerConfig);
+    $this->hConfig = array_merge($this->hConfig, $hConfig);
 
     if (\is_null(self::$oDefaultController))
     {
@@ -407,6 +444,16 @@ abstract class Controller
       return $this->oDomain;
     }
 
+    if ($sLowerName == 'type')
+    {
+      return $this->sType;
+    }
+
+    if ($sLowerName == 'debug')
+    {
+      return $this->bDebug;
+    }
+
     if (preg_match("#^(.+?)dir$#", $sLowerName, $aMatch))
     {
       return $this->getDir($aMatch[1]);
@@ -443,6 +490,11 @@ abstract class Controller
       return !empty($this->oDomain);
     }
 
+    if ($sLowerName == 'type' || $sLowerName == 'debug')
+    {
+      return true;
+    }
+
     if (preg_match("#^(.+?)dir$#", $sLowerName))
     {
       return true;
@@ -467,6 +519,7 @@ abstract class Controller
    * Generate and return a database object based on the specified database config section
    *
    * @param string $sSection (optional)
+   * @throws \Limbonia\Exception\Database
    * @return \Limbonia\Database
    */
   public function getDB($sSection = 'default')
@@ -487,7 +540,7 @@ abstract class Controller
   /**
    * Return the Domain object that is associated with this Controller, if there is one
    *
-   * @return Domain
+   * @return \Limbonia\Domain
    */
   public function getDomain()
   {
@@ -550,6 +603,130 @@ abstract class Controller
   }
 
   /**
+   * Save the specified settings for the specified type to the database
+   *
+   * @param string $sType
+   * @param array $hSettings
+   * @return boolean - True on success or false on failure
+   */
+  public function saveSettings($sType, array $hSettings = [])
+  {
+    $sSettings = addslashes(serialize($hSettings));
+    $oStatement = $this->getDB()->prepare('UPDATE Settings SET Data = :Data WHERE Type = :Type');
+    $oStatement->bindParam(':Data', $sSettings);
+    $oStatement->bindParam(':Type', $sType);
+    return $oStatement->execute();
+  }
+
+  /**
+   *
+   * @param type $sType
+   * @return type
+   * @throws \Exception
+   */
+  public function getSettings($sType)
+  {
+    $oStatement = $this->getDB()->prepare('SELECT Data FROM Settings WHERE Type = :Type LIMIT 1');
+    $oStatement->bindParam(':Type', $sType);
+
+    if (!$oStatement->execute())
+    {
+      throw new \Exception("Failed to get settings for $sType");
+    }
+
+    $sSettings = $oStatement->fetchColumn();
+    return empty($sSettings) ? [] : unserialize(stripslashes($sSettings));
+  }
+
+    /**
+   * Add the specified data to the template under the specified name
+   *
+   * @param string $sName
+   * @param mixed $xValue
+   */
+  public function templateData($sName, $xValue)
+  {
+    $this->hTemplateData[$sName] = $xValue;
+  }
+
+  /**
+   * Render and return specified template
+   *
+   * @param string $sTemplateName
+   * @return string The rendered template
+   */
+  public function templateRender($sTemplateName)
+  {
+    $sTemplateFile = $this->templateFile($sTemplateName);
+
+    if (empty($sTemplateFile))
+    {
+      return '';
+    }
+
+    ob_start();
+    $this->templateInclude($sTemplateFile);
+    return ob_get_clean();
+  }
+
+  /**
+   * Return the full file path of the specified template, if it exists
+   *
+   * @param string $sTemplateName
+   * @return string
+   */
+  public function templateFile($sTemplateName)
+  {
+    if (empty($sTemplateName))
+    {
+      return '';
+    }
+
+    if (is_readable($sTemplateName))
+    {
+      return $sTemplateName;
+    }
+
+    foreach (self::templateDirs() as $sLib)
+    {
+      $sFilePath = $sLib . '/' . $this->sType . '/' .$sTemplateName;
+
+      if (is_readable($sFilePath))
+      {
+        return $sFilePath;
+      }
+
+      if (is_readable("$sFilePath.php"))
+      {
+        return "$sFilePath.php";
+      }
+
+      if (is_readable("$sFilePath.html"))
+      {
+        return "$sFilePath.html";
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Find then include the specified template if it's found
+   *
+   * @param srtring $sTemplateName
+   */
+  protected function templateInclude($sTemplateName)
+  {
+    $sTemplateFile = $this->templateFile($sTemplateName);
+
+    if ($sTemplateFile)
+    {
+      extract($this->hTemplateData);
+      include $sTemplateFile;
+    }
+  }
+
+  /**
    * Generate and return a cache object
    *
    * @param string $sCacheDir (optional)- The directory the cache object will use, if empty it will default to the controller's cache directory
@@ -579,6 +756,7 @@ abstract class Controller
    *
    * @param string $sTable
    * @param integer $iItem
+   * @throws \Limbonia\Exception\Database
    * @return \Limbonia\Item
    */
   public function itemFromId($sTable, $iItem): \Limbonia\Item
@@ -686,6 +864,13 @@ abstract class Controller
     return \Limbonia\Report::resultFactory($sType, $hParam, $this);
   }
 
+  public function userByEmail($sEmail)
+  {
+    $oUser = \Limbonia\Item\User::getByEmail($sEmail, $this->getDB());
+    $oUser->setController($this);
+    return $oUser;
+  }
+
   /**
    * Return the currently logged in user
    *
@@ -704,16 +889,7 @@ abstract class Controller
    */
   protected function generateUser()
   {
-    $oUserList = $this->itemSearch('User', ['Email' => 'MasterAdmin']);
-
-    if (count($oUserList) == 0)
-    {
-      throw new \Exception('Master user not found!');
-    }
-
-    $oUser = $oUserList[0];
-    $oUser->setController($this);
-    return $oUser;
+    return $this->userByEmail('MasterAdmin');
   }
 
   /**

@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS ProjectElement (
   ElementID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   ProjectID INTEGER UNSIGNED NOT NULL,
   Name VARCHAR(255) NOT NULL,
-  UserID INTEGER UNSIGNED NOT NULL DEFAULT '0',
+  UserID INTEGER UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (ElementID),
   UNIQUE INDEX Unique_ProjectElement (ProjectID,Name)
 );
@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS ProjectElement (
 CREATE TABLE IF NOT EXISTS ProjectRelease (
   ReleaseID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   ProjectID int(11) unsigned NOT NULL,
-  TicketID int(11) unsigned NOT NULL DEFAULT '0',
-  Major INTEGER UNSIGNED NOT NULL DEFAULT '0',
-  Minor INTEGER UNSIGNED NOT NULL DEFAULT '0',
-  Patch INTEGER UNSIGNED NOT NULL DEFAULT '0',
+  TicketID int(11) unsigned NOT NULL DEFAULT 0,
+  Major INTEGER UNSIGNED NOT NULL DEFAULT 0,
+  Minor INTEGER UNSIGNED NOT NULL DEFAULT 0,
+  Patch INTEGER UNSIGNED NOT NULL DEFAULT 0,
   Note text,
   PRIMARY KEY (ReleaseID),
   UNIQUE INDEX Unique_ProjectVersion (ProjectID,Major,Minor,Patch),
@@ -50,6 +50,23 @@ CREATE TABLE IF NOT EXISTS ResourceLock (
   Component VARCHAR(255) NULL,
   PRIMARY KEY(LockID)
 );
+
+CREATE TABLE IF NOT EXISTS Role (
+  RoleID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(255) NOT NULL,
+  Description text,
+  PRIMARY KEY (RoleID),
+  UNIQUE INDEX Unique_RoleName (Name)
+);
+INSERT INTO Role (Name, Description) VALUES ('Admin', 'This is the main administrator role, a user with this has access to everything!');
+
+CREATE TABLE IF NOT EXISTS Role_Key (
+  RoleID INTEGER UNSIGNED NOT NULL,
+  KeyID INTEGER UNSIGNED NOT NULL,
+  Level INTEGER UNSIGNED NOT NULL DEFAULT 0,
+  INDEX Unique_RoleKey(RoleID, KeyID)
+);
+INSERT INTO Role_Key (RoleID, KeyID, `Level`) VALUES ((SELECT r.RoleID FROM Role r WHERE r.Name = 'Admin'), (SELECT r.KeyID FROM ResourceKey r WHERE r.Name = 'Admin'), 1000);
 
 CREATE TABLE IF NOT EXISTS Settings (
   Type VARCHAR(255) NOT NULL,
@@ -130,11 +147,13 @@ CREATE TABLE IF NOT EXISTS Ticket (
 
 CREATE TABLE IF NOT EXISTS TicketCategory (
   CategoryID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  ParentID INTEGER UNSIGNED DEFAULT NULL,
   Name VARCHAR(255) NOT NULL DEFAULT '',
   UserID INTEGER UNSIGNED NOT NULL DEFAULT 0,
+  RoleID INTEGER UNSIGNED NOT NULL DEFAULT 0,
   KeyID INTEGER UNSIGNED NOT NULL DEFAULT 0,
   Level INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  AssignmentMethod ENUM('leasttickets','unassigned','direct','roundrobin') NOT NULL DEFAULT 'unassigned',
+  AssignmentMethod ENUM('unassigned','direct','least tickets by role','round robin by role','least tickets by resource','round robin by resource') NOT NULL DEFAULT 'unassigned',
   INDEX Index_CategoryName (Name),
   PRIMARY KEY (CategoryID)
 );
@@ -228,12 +247,11 @@ CREATE TABLE IF NOT EXISTS User (
   UNIQUE INDEX Unique_Email (Email)
 );
 
-CREATE TABLE IF NOT EXISTS User_Key (
+CREATE TABLE IF NOT EXISTS User_Role (
   UserID INTEGER UNSIGNED NOT NULL,
-  KeyID INTEGER UNSIGNED NOT NULL,
-  Level INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  INDEX Unique_UserKey(UserID, KeyID)
+  RoleID INTEGER UNSIGNED NOT NULL,
+  INDEX Unique_UserRole(UserID, RoleID)
 );
 
 INSERT INTO User (Email, FirstName, LastName, Visible) VALUES ('MasterAdmin', 'Master', 'Admin', 0);
-INSERT INTO User_Key (UserID, KeyID, `Level`) VALUES ((SELECT u.UserID FROM `User` u WHERE u.Email = 'MasterAdmin'), (SELECT r.KeyID FROM ResourceKey r WHERE r.Name = 'Admin'), 1000);
+INSERT INTO User_Role (RoleID, UserID) VALUES ((SELECT r.RoleID FROM Role r WHERE r.Name = 'Admin'), (SELECT u.UserID FROM `User` u WHERE u.Email = 'MasterAdmin'));

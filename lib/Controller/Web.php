@@ -13,13 +13,6 @@ namespace Limbonia\Controller;
 class Web extends \Limbonia\Controller
 {
   /**
-   * All the data that will be used by the templates
-   *
-   * @var array
-   */
-  protected $hTemplateData = [];
-
-  /**
    * Data to be appended to the HTML header before display
    *
    * @var string
@@ -36,27 +29,7 @@ class Web extends \Limbonia\Controller
     header("Cache-Control: no-cache, must-revalidate");
     header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
     header("Content-Type: application/json");
-    die(json_encode($xData));
-  }
-
-  public static function templateDirs()
-  {
-    if (!isset($_SESSION['TemplateDirs']))
-    {
-      $_SESSION['TemplateDirs'] = [];
-
-      foreach (parent::getLibs() as $sLibDir)
-      {
-        $sTemplateDir = "$sLibDir/Template";
-
-        if (is_readable($sTemplateDir))
-        {
-          $_SESSION['TemplateDirs'][] = $sTemplateDir;
-        }
-      }
-    }
-
-    return $_SESSION['TemplateDirs'];
+    return json_encode($xData);
   }
 
   /**
@@ -64,11 +37,12 @@ class Web extends \Limbonia\Controller
    *
    * NOTE: This constructor should only be used by the factory and *never* directly
    *
+   * @param \Limbonia\Api $oApi
    * @param array $hConfig - A hash of configuration data
    */
-  public function __construct(array $hConfig = [])
+  public function __construct(\Limbonia\Api $oApi, array $hConfig = [])
   {
-    parent::__construct($hConfig);
+    parent::__construct($oApi, $hConfig);
 
     if (isset($this->hConfig['sessionname']))
     {
@@ -77,18 +51,19 @@ class Web extends \Limbonia\Controller
     }
 
     \Limbonia\SessionManager::start();
-
-    self::templateDirs();
-    $sTemplateDir = $this->getDir('template');
-
-    if (is_readable($sTemplateDir) && !in_array($sTemplateDir, $_SESSION['TemplateDirs']))
-    {
-      array_unshift($_SESSION['TemplateDirs'], $sTemplateDir);
-    }
+    $oServer = \Limbonia\Input::singleton('server');
 
     if (empty($this->oDomain))
     {
-      $this->oDomain = \Limbonia\Domain::getByDirectory($this->server['document_root']);
+      if (isset($oServer['context_prefix']) && isset($oServer['context_document_root']))
+      {
+         $this->oDomain = new \Limbonia\Domain($oServer . $oServer['context_prefix'], $oServer['context_document_root']);
+      }
+      else
+      {
+        $this->oDomain = \Limbonia\Domain::getByDirectory($this->server['document_root']);
+      }
+
       $this->hConfig['baseuri'] = $this->oDomain->uri;
     }
 
@@ -99,94 +74,16 @@ class Web extends \Limbonia\Controller
       $this->hConfig['baseuri'] .= '/' . strtolower(preg_replace("#.*\\\#", '', get_class($this)));
     }
 
-    $this->oApi = $this->oDomain->uri ? \Limbonia\Api::fromArray(['uri' => $this->server['request_uri'], 'baseurl' => $this->oDomain->uri]) : \Limbonia\Api::singleton();
-  }
-
-  /**
-   * Add the specified data to the template under the specified name
-   *
-   * @param string $sName
-   * @param mixed $xValue
-   */
-  public function templateData($sName, $xValue)
-  {
-    $this->hTemplateData[$sName] = $xValue;
-  }
-
-  /**
-   * Render and return specified template
-   *
-   * @param string $sTemplateName
-   * @return string The rendered template
-   */
-  public function templateRender($sTemplateName)
-  {
-    $sTemplateFile = $this->templateFile($sTemplateName);
-
-    if (empty($sTemplateFile))
+    //if the requiest is coming from a URI
+    if (!empty($this->oDomain->uri))
     {
-      return '';
-    }
-
-    ob_start();
-    $this->templateInclude($sTemplateFile);
-    return ob_get_clean();
-  }
-
-  /**
-   * Return the full file path of the specified template, if it exists
-   *
-   * @param string $sTemplateName
-   * @return string
-   */
-  public function templateFile($sTemplateName)
-  {
-    if (empty($sTemplateName))
-    {
-      return '';
-    }
-
-    if (is_readable($sTemplateName))
-    {
-      return $sTemplateName;
-    }
-
-    foreach (self::templateDirs() as $sLib)
-    {
-      $sFilePath = $sLib . '/' . $this->oApi->controller . '/' .$sTemplateName;
-
-      if (is_readable($sFilePath))
-      {
-        return $sFilePath;
-      }
-
-      if (is_readable("$sFilePath.php"))
-      {
-        return "$sFilePath.php";
-      }
-
-      if (is_readable("$sFilePath.html"))
-      {
-        return "$sFilePath.html";
-      }
-    }
-
-    return '';
-  }
-
-  /**
-   * Find then include the specified template if it's found
-   *
-   * @param srtring $sTemplateName
-   */
-  protected function templateInclude($sTemplateName)
-  {
-    $sTemplateFile = $this->templateFile($sTemplateName);
-
-    if ($sTemplateFile)
-    {
-      extract($this->hTemplateData);
-      include $sTemplateFile;
+      //then override the default API object
+      $this->oApi = \Limbonia\Api::fromArray
+      ([
+        'uri' => $this->server['request_uri'],
+        'baseurl' => $this->oDomain->uri,
+        'method' => strtolower($oServer['request_method'])
+      ]);
     }
   }
 
@@ -212,80 +109,77 @@ class Web extends \Limbonia\Controller
    */
   protected function generateUser()
   {
-    try
+    if (isset($_SESSION['LoggedInUser']))
     {
-      if (isset($_SESSION['LoggedInUser']))
+      return $this->itemFromId('user', $_SESSION['LoggedInUser']);
+    }
+
+    if (!isset($this->oApi->user) || !isset($this->oApi->pass))
+    {
+      return $this->itemFactory('user');
+    }
+
+    if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $this->oApi->user === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && $this->oApi->pass === $this->hConfig['master']['Password'])
+    {
+      $oUser = parent::generateUser();
+
+      if (!isset($_SESSION['LoggedInUser']))
       {
-        return $this->itemFromId('user', $_SESSION['LoggedInUser']);
+        $_SESSION['LoggedInUser'] = $oUser->id;
+        \Limbonia\Module::overrideDriverList($this, $oUser);
       }
 
-      if (!isset($this->oApi->user) || !isset($this->oApi->pass))
-      {
-        return $this->itemFactory('user');
-      }
-
-      if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $this->oApi->user === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && $this->oApi->pass === $this->hConfig['master']['Password'])
-      {
-        return parent::generateUser();
-      }
-
-      $oUser = \Limbonia\Item\User::getByEmail($this->oApi->user, $this->getDB());
-      $oUser->setController($this);
-      $oUser->authenticate($this->oApi->pass);
       return $oUser;
     }
-    catch (\Exception $e)
-    {
-      throw new \Exception('Invalid Login:  ' . $e->getMessage(), null, $e);
-    }
-  }
 
-  /**
-   * Handle any Exceptions thrown while generating the current user
-   *
-   * @param \Exception $oException
-   */
-  protected function handleGenerateUserException(\Exception $oException)
-  {
-    echo $oException->getMessage();
+    $oUser = $this->userByEmail($this->oApi->user);
+    $oUser->authenticate($this->oApi->pass);
+
+    if (!isset($_SESSION['LoggedInUser']))
+    {
+      $_SESSION['LoggedInUser'] = $oUser->id;
+      \Limbonia\Module::overrideDriverList($this, $oUser);
+    }
+
+    return $oUser;
   }
 
   protected function renderPage()
   {
     $sTemplate = $this->templateFile($this->oApi->module);
 
-    if (!empty($sTemplate))
+    if (empty($sTemplate))
     {
-      try
-      {
-        if (isset($this->oApi->ajax))
-        {
-          self::outputJson
-          ([
-            'pageTitle' => '???',
-            'main' => $this->templateRender($sTemplate)
-          ]);
-        }
-
-        $this->templateData('main', $this->templateRender($sTemplate));
-      }
-      catch (Exception $e)
-      {
-        $this->templateData('failure', 'Failed to generate the requested data: ' . $e->getMessage());
-
-        if (isset($this->oApi->search['click']))
-        {
-          self::outputJson
-          ([
-            'error' => $this->templateRender('error'),
-          ]);
-        }
-
-        die($this->templateRender('error'));
-      }
+      return $this->templateRender('index');
     }
 
-    die($this->templateRender('index'));
+    try
+    {
+      if (isset($this->oApi->ajax))
+      {
+        return self::outputJson
+        ([
+          'pageTitle' => '???',
+          'main' => $this->templateRender($sTemplate)
+        ]);
+      }
+
+      return $this->templateRender($sTemplate);
+    }
+    catch (Exception $e)
+    {
+      $this->templateData('failure', 'Failed to generate the requested data: ' . $e->getMessage());
+
+      if (isset($this->oApi->search['click']))
+      {
+        return self::outputJson
+        ([
+          'error' => $this->templateRender('error'),
+        ]);
+      }
+
+      return $this->templateRender('error');
+    }
   }
 
   /**
@@ -304,13 +198,15 @@ class Web extends \Limbonia\Controller
     try
     {
       $this->oUser = $this->generateUser();
-      $this->templateData('currentUser', $this->oUser);
-      $this->renderPage();
     }
     catch (\Exception $e)
     {
       $this->logOut();
-      $this->handleGenerateUserException($e);
+      echo 'Invalid Login:  ' . $e->getMessage();
     }
+
+
+    $this->templateData('currentUser', $this->oUser);
+    die($this->renderPage());
   }
 }

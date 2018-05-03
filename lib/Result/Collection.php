@@ -32,7 +32,7 @@ class Collection implements \Limbonia\Interfaces\Result, \ArrayAccess, \Countabl
     $this->iRowCount = \count($this->aData);
 
     //if the data is an array of arrays
-    if (is_array($this->aData[0]))
+    if (isset($this->aData[0]) && is_array($this->aData[0]))
     {
       //then the fields are the keys of the sub rows
       $this->aFields = array_keys($this->aData[0]);

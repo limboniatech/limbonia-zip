@@ -59,10 +59,17 @@ class User extends \Limbonia\Module
   [
     'view' => 'View',
     'edit' => 'Edit',
-    'resources' => 'Resources',
+    'roles' => 'Roles',
     'tickets' => 'Tickets',
     'resetpassword' => 'Reset Password'
   ];
+
+  /**
+   * List of actions that are allowed to run
+   *
+   * @var array
+   */
+  protected $aAllowedActions = ['search', 'create', 'editcolumn', 'edit', 'list', 'view', 'roles', 'resetpassword', 'tickets'];
 
   /**
    * Generate and return the default item data, filtered by API controls
@@ -74,17 +81,8 @@ class User extends \Limbonia\Module
   {
     switch ($this->oApi->action)
     {
-      case 'resources':
-        $hResourceList = [];
-        $hKeys = $this->oItem->getResourceKeys();
-
-        foreach ($this->oItem->getResourceList() as $oResource)
-        {
-          $hResourceList[$oResource->id] = $oResource->getAll();
-          $hResourceList[$oResource->id]['Level'] = $hKeys[$oResource->id];
-        }
-
-        return $hResourceList;
+      case 'roles':
+        return $this->oItem->getRoles();
 
       case 'tickets':
         return $this->oItem->getTickets();
@@ -94,26 +92,20 @@ class User extends \Limbonia\Module
   }
 
   /**
-   * List of actions that are allowed to run
-   *
-   * @var array
-   */
-  protected $aAllowedActions = ['search', 'create', 'editcolumn', 'edit', 'list', 'view', 'resources', 'resetpassword', 'tickets'];
-
-  /**
    * Process the posted resource data and display the result
    */
-  protected function prepareTemplatePostResources()
+  protected function prepareTemplatePostRoles()
   {
     try
     {
       $hData = $this->editGetData();
-      $this->oItem->setResourceKeys($hData['ResourceKey']);
-      $this->oController->templateData('success', "This user's resource update has been successful.");
+      $aRoleList = isset($hData['RoleID']) ? $hData['RoleID'] : [];
+      $this->oItem->setRoles($aRoleList);
+      $this->oController->templateData('success', "This user's role list update has been successful.");
     }
     catch (\Exception $e)
     {
-      $this->oController->templateData('failure', "This user's resource update has failed. <!--" . $e->getMessage() . '-->');
+      $this->oController->templateData('failure', "This user's role list update has failed. <!--" . $e->getMessage() . '-->');
     }
 
     if (isset($_SESSION['EditData']))
@@ -138,7 +130,7 @@ class User extends \Limbonia\Module
       $oEmail->setFrom($this->oController->user()->email);
       $oEmail->addTo($this->oItem->email);
       $oEmail->setSubject("The password for the $sDomain has been reset.");
-      $oEmail->addBody("Your new password is $sNewPassword, please login and change it ass soon as possible.");
+      $oEmail->addBody("Your new password is $sNewPassword, please login and change it as soon as possible.");
 
       if ($oEmail->send())
       {
@@ -178,6 +170,43 @@ class User extends \Limbonia\Module
     }
 
     return $this->originalProcessSearchGetData($hSearch);
+  }
+
+  /**
+   * Generate and return the HTML for the specified form field based on the specified information
+   *
+   * @param string $sName
+   * @param string $sValue
+   * @param array $hData
+   * @return string
+   */
+  public function getFormField($sName, $sValue = null, $hData = [])
+  {
+    if (is_null($sValue) && isset($hData['Default']) && !$this->isSearch())
+    {
+      $sValue = $hData['Default'];
+    }
+
+    if ($sName == 'RoleID')
+    {
+      $aCurrentRoles = [];
+      $sRoleIdField = parent::getFormField('ForceSubmit', '1', ['Type' => 'hidden']);
+
+      foreach ($this->oItem->getRoles() as $oRole)
+      {
+        $aCurrentRoles[] = $oRole->id;
+      }
+
+      foreach ($this->oItem->getRoleList() as $oRole)
+      {
+        $sChecked = in_array($oRole->id, $aCurrentRoles) ? ' checked' : '';
+        $sRoleIdField .= "<div class=\"field\"><label class=\"label\" for=\"UserRole-$oRole->name\">$oRole->name</label><span class=\"data\"><input type=\"checkbox\" id=\"UserRole-$oRole->name\" name=\"User[RoleID][]\" value=\"$oRole->id\"$sChecked></span></div>";
+      }
+
+      return $sRoleIdField;
+    }
+
+    return parent::getFormField($sName, $sValue, $hData);
   }
 
   /**

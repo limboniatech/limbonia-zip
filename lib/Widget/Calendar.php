@@ -26,8 +26,8 @@ class Calendar extends \Limbonia\Widget\Window
   public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
     parent::__construct($sName, $oController);
-    $this->setConfig('Target', $this->sID);
-    $this->setURL($this->sWebShareDir . "/calendar.php?Date='+" . $this->sID . "Target.value+'");
+    $this->setConfig('Target', $this->sId);
+    $this->setURL($this->sWebShareDir . "/calendar.php?Date='+" . $this->sId . "Target.value+'");
   }
 
   protected function init()
@@ -35,7 +35,7 @@ class Calendar extends \Limbonia\Widget\Window
     $sReadOnly = $this->bReadOnly ? ' readonly' : NULL;
     $sOnClick = $this->bClickable ? $this->sOnClick : NULL;
     $sDisabled = $this->bActive ? NULL : " disabled";
-    $this->sPreScript .= "<input type=\"text\" name=\"$this->sName\" id=\"$this->sID\" value=\"$this->sStartDate\" size=\"$this->iFieldSize\"$sReadOnly$sDisabled$sOnClick>\n";
+    $this->sPreScript .= "<input type=\"text\" name=\"$this->sName\" id=\"$this->sId\" value=\"$this->sStartDate\" size=\"$this->iFieldSize\"$sReadOnly$sDisabled$sOnClick>\n";
     return parent::init();
   }
 

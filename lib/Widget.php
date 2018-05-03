@@ -32,7 +32,7 @@ class Widget extends Tag
   /**
    * @var string $sID - unique object id for use in the scripts.
    */
-  protected $sID = 'LimboniaWidget';
+  protected $sId = 'LimboniaWidget';
 
   /**
    * @var string $sType - The type of widget this object represents
@@ -237,8 +237,8 @@ class Widget extends Tag
     self::$iCount++;
     $this->sName = empty($sName) ? 'Limbonia' . $this->sType . self::widgetCount() : $sName;
     $this->setParam('name', $this->sName);
-    $this->sID = preg_replace("/\[|\]/", "", $this->sName);
-    $this->setParam('id', $this->sID);
+    $this->sId = preg_replace("/\[|\]/", "", $this->sName);
+    $this->setParam('id', $this->sId);
   }
 
   /**
@@ -536,11 +536,11 @@ class Widget extends Tag
   /**
    * Return this widget's ID
    *
-   * @return intgeger
+   * @return string
    */
-  public function getID()
+  public function getId()
   {
-    return $this->sID;
+    return $this->sId;
   }
 
   /**

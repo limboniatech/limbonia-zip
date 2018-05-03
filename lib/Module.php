@@ -72,13 +72,6 @@ class Module
   ];
 
   /**
-   * List of column names in the order required
-   *
-   * @var array
-   */
-  protected $aColumnOrder =[];
-
-  /**
    * List of column names that are allowed to generate "edit" links
    *
    * @var array
@@ -255,6 +248,17 @@ class Module
     return self::driverFactory($sType, $oController);
   }
 
+  public static function field($sContent, $sLabel = '', $sFieldId = '')
+  {
+    $sId = empty($sFieldId) ? '' : " id=\"{$sFieldId}Field\"";
+    return "<div class=\"field\"$sId><span class=\"label\">$sLabel</span><span class=\"data\">$sContent</span></div>";
+  }
+
+  public static function widgetField(\Limbonia\Widget $oWiget, $sLabel = '')
+  {
+    return self::field($oWiget, $sLabel, $oWiget->getId());
+  }
+
   /**
    * Instantiate a module
    *
@@ -271,24 +275,13 @@ class Module
       $this->hMenuItems['settings'] = 'Settings';
       $this->aAllowedActions[] = 'settings';
       $this->hComponent['configure'] = "The ability to alter the module's configuration.";
+      $this->hSettings = $this->oController->getSettings($this->sType);
 
-      $oStatement = $this->oController->getDB()->prepare('SELECT Data FROM Settings WHERE Type = :Type LIMIT 1');
-      $oStatement->bindParam(':Type', $this->sType);
-      $oStatement->execute();
-      $sSettings = $oStatement->fetchColumn();
-
-      if (empty($sSettings))
+      if (empty($this->hSettings))
       {
         $this->hSettings = $this->defaultSettings();
-        $sSettings = addslashes(serialize($this->hSettings));
-        $oStatement = $this->oController->getDB()->prepare('INSERT INTO Settings (Type, Data) values (:Type, :Data)');
-        $oStatement->bindParam(':Type', $this->sType);
-        $oStatement->bindParam(':Data', $sSettings);
-        $oStatement->execute();
-      }
-      else
-      {
-        $this->hSettings = unserialize(stripslashes($sSettings));
+        $this->bChangedSettings = true;
+        $this->saveSettings();
       }
     }
 
@@ -557,6 +550,8 @@ class Module
    */
   public function prepareTemplate()
   {
+    $this->oController->templateData('module', $this);
+    $this->oController->templateData('method', $this->sCurrentAction);
     $aMethods = [];
     $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction) . ucfirst($this->oApi->subAction);
     $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction);
@@ -569,22 +564,9 @@ class Module
       //run every template method can be found
       if (method_exists($this, $sMethod))
       {
-        try
-        {
-          $this->$sMethod();
-        }
-        catch (\Exception $e)
-        {
-          $this->oController->templateData('failure', "Method ($sMethod) failed: " . $e->getMessage());
-
-          //stop looking for a template method after an error occurs
-          break;
-        }
+        $this->$sMethod();
       }
     }
-
-    $this->oController->templateData('module', $this);
-    $this->oController->templateData('method', $this->sCurrentAction);
   }
 
   /**
@@ -671,12 +653,13 @@ class Module
       return true;
     }
 
-    $sSettings = addslashes(serialize($this->hSettings));
-    $oStatement = $this->oController->getDB()->prepare('UPDATE Settings SET Data = :Data WHERE Type = :Type');
-    $oStatement->bindParam(':Data', $sSettings);
-    $oStatement->bindParam(':Type', $this->sType);
-    $oStatement->execute();
-    $this->bChangedSettings = false;
+    if ($this->oController->saveSettings($this->sType, $this->hSettings))
+    {
+      $this->bChangedSettings = false;
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -806,7 +789,7 @@ class Module
    */
   public function getTitle()
   {
-    return ucwords(trim(preg_replace("/([A-Z])/", " $1", str_replace("_", " ", $this->sType))));
+    return ucwords(trim(preg_replace("/(([a-z])[A-Z])/", "$1 $2", str_replace("_", " ", $this->sType))));
   }
 
   public function getCurrentAction()
@@ -914,7 +897,7 @@ class Module
    */
   public function getFormField($sName, $sValue = null, $hData = [])
   {
-    $sLabel = preg_replace("/([A-Z])/", "$1", $sName);
+    $sLabel = preg_replace("/([a-z])([A-Z])/", "$1 $2", $sName);
 
     if (is_null($sValue) && isset($hData['Default']) && !$this->isSearch())
     {
@@ -944,13 +927,13 @@ class Module
       }
 
       $oStates = $this->oController->widgetFactory('States', "$this->sType[State]");
-      $sStatesID = $oStates->getID();
+      $sStatesID = $oStates->getId();
 
       $oCities = $this->oController->widgetFactory('Select', "$this->sType[City]");
-      $sCitiesID = $oCities->getID();
+      $sCitiesID = $oCities->getId();
 
       $oZips = $this->oController->widgetFactory('Select', "$this->sType[Zip]");
-      $sZipID = $oZips->getID();
+      $sZipID = $oZips->getId();
 
       $sGetCities = $oStates->addAjaxFunction('getCitiesByState', true);
       $sGetZips = $oStates->addAjaxFunction('getZipsByCity', true);
@@ -1034,16 +1017,16 @@ class Module
 
       $oStates->addEvent('change', $sGetCities."(this.options[this.selectedIndex].value, '$sCitiesID', cityName)");
 
-      $sFormField = "<div class=\"field\"><span class=\"label\">State</span><span class=\"data\">" . $oStates . "</span></div>";
+      $sFormField = self::widgetField($oStates, 'State');
 
       $oCities->addOption('Select a city', '0');
       $oCities->addEvent('change', $sGetZips."(this.options[this.selectedIndex].value, stateSelect.options[stateSelect.selectedIndex].value, '$sZipID', zipNum)");
 
-      $sFormField .= "<div class=\"field\"><span class=\"label\">City</span><span class=\"data\">" . $oCities . "</span></div>";
+      $sFormField .= self::widgetField($oCities, 'City');
 
       $oZips->addOption('Select a zip', '0');
 
-      $sFormField .= "<div class=\"field\"><span class=\"label\">Zip</span><span class=\"data\">" . $oZips . "</span></div>";
+      $sFormField .= self::widgetField($oZips, 'Zip');
 
       $this->bCityStateZipDone = true;
       return $sFormField;
@@ -1062,7 +1045,7 @@ class Module
       }
 
       $oSelect->setSelected($sValue);
-      return "<div class=\"field\"><span class=\"label\">User</span><span class=\"data\">" . $oSelect . "</span></div>";
+      return self::widgetField($oSelect, 'User');
     }
 
     if ($sName == 'KeyID')
@@ -1082,7 +1065,7 @@ class Module
         $oSelect->addOption($hKey['Name'], $hKey['KeyID']);
       }
 
-      return "<div class=\"field\"><span class=\"label\">Required resource</span><span class=\"data\">" . $oSelect . "</span></div>";
+      return self::widgetField($oSelect, 'Required resource');
     }
 
     if (preg_match('/(.+?)id$/i', $sName, $aMatch))
@@ -1109,7 +1092,7 @@ class Module
             $oSelect->setSelected($sValue);
           }
 
-          return "<div class=\"field\"><span class=\"label\">{$aMatch[1]}</span><span class=\"data\">" . $oSelect . "</span></div>";
+          return self::widgetField($oSelect, $aMatch[1]);
         }
       }
       catch (\Exception $e)
@@ -1121,7 +1104,7 @@ class Module
     {
       $oFile = $this->oController->widgetFactory('Input', "$this->sType[FileName]");
       $oFile->setParam('type', 'file');
-      return "<div class=\"field\"><span class=\"label\">File Name</span><span class=\"data\">" . $oFile . "</span></div>";
+      return self::widgetField($oSelect, 'File Name');
     }
 
     $sType = strtolower(preg_replace("/( |\().*/", "", $hData['Type']));
@@ -1129,7 +1112,8 @@ class Module
     switch ($sType)
     {
       case 'hidden':
-        $oHidden = \Limbonia\Tag::factory('hidden');
+        $oHidden = \Limbonia\Tag::factory('input');
+        $oHidden->setParam('type', 'hidden');
         $oHidden->setParam('name', "$this->sType[$sName]");
         $oHidden->setParam('id', $this->sType . $sName);
         $oHidden->setParam('value', $sValue);
@@ -1148,7 +1132,7 @@ class Module
       case 'hash':
         $oSelect = $this->oController->widgetFactory('select', "$this->sType[$sName]");
 
-        if ($this->isSearch())
+        if ($this->isSearch() || (isset($hData['Multiple']) && true == $hData['Multiple']))
         {
           $oSelect->isMultiple(true);
         }
@@ -1167,7 +1151,7 @@ class Module
           $oSelect->setSelected($sValue);
         }
 
-        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">" . $oSelect . "</span></div>";
+        return self::widgetField($oSelect, $sLabel);
 
       case 'text':
       case 'mediumtext':
@@ -1176,7 +1160,7 @@ class Module
         $oText = $this->oController->widgetFactory('Editor', "$this->sType[$sName]");
         $oText->setToolBar('Basic');
         $oText->setText($sValue);
-        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">" . $oText . "</span></div>";
+        return self::widgetField($oText, $sLabel);
 
       case 'radio':
         $sFormField = '';
@@ -1186,17 +1170,17 @@ class Module
           if (preg_match("/^Value/", $sKey))
           {
             $sChecked = ($sButtonValue == $sValue ? ' checked' : null);
-            $sFormField .= "$sButtonValue:  <input type=\"radio\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\"value=\"$sButtonValue\"$sChecked><br />";
+            $sFormField .= "$sButtonValue:  <input type=\"radio\" name=\"$this->sType[$sName]\" id=\"$this->sType$sName\"value=\"$sButtonValue\"$sChecked><br />";
           }
         }
 
-        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">$sFormField</span></div>\n";
+        return self::field($sFormField, $sLabel);
 
       case 'float':
       case 'int':
       case 'varchar':
       case 'char':
-        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\"><input type=\"text\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\" value=\"" . htmlentities($sValue) . "\"></span></div>";
+        return self::field("<input type=\"text\" name=\"$this->sType[$sName]\" id=\"$this->sType$sName\" value=\"" . htmlentities($sValue) . "\">", $sLabel, "$this->sType$sName");
 
       case 'timestamp':
       case 'date':
@@ -1210,24 +1194,77 @@ class Module
           $oDate->setStartDate($sValue);
         }
 
-        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\">$sSearchDate" . $oDate . "</span></div>";
+        return self::field("$sSearchDate$oDate", $sLabel, $oDate->getId());
 
       case 'password':
-        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\"><input type=\"password\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\" value=\"$sValue\"></span></div>
-<div class=\"field\"><span class=\"label\">$sLabel(double check)</span><span class=\"data\"><input type=\"password\" name=\"$this->sType[{$sName}2]\" id=\"$this->sType[{$sName}2]\" value=\"$sValue\"></span></div>";
+        return self::field("<input type=\"password\" name=\"$this->sType[$sName]\" id=\"$this->sType$sName\" value=\"$sValue\">", $sLabel, "$this->sType{$sName}") .
+        self::field("<input type=\"password\" name=\"$this->sType[{$sName}2]\" id=\"$this->sType{$sName}2\" value=\"$sValue\">", $sLabel, "$this->sType{$sName}2");
 
       case 'swing':
         return null;
 
       case 'tinyint':
         $sChecked = $sValue ? ' checked="checked"' : '';
-        return "<div class=\"field\"><span class=\"label\">$sLabel</span><span class=\"data\"><input type=\"checkbox\" name=\"$this->sType[$sName]\" id=\"$this->sType[$sName]\" value=\"1\"$sChecked></span></div>";
+        return self::field("<input type=\"checkbox\" name=\"$this->sType[$sName]\" id=\"$this->sType$sName\" value=\"1\"$sChecked>", $sLabel, "$this->sType$sName");
 
       default:
-        return "<div class=\"field\"><span class=\"label\">Not valid</span><span class=\"data\">$sName :: $sType</span></div>";
+        return self::field("$sName :: $sType", 'Not valid');
     }
 
     return '';
+  }
+
+  /**
+   * Generate and return the HTML for the specified form field based on the specified information
+   *
+   * @param string $sName
+   * @param string $sValue
+   * @param array $hData
+   * @return string
+   */
+  public function getField($sName, $sValue = null, $hData = [])
+  {
+    $sLabel = $this->getColumnTitle($sName);
+
+    if ($sName == 'KeyID')
+    {
+      $sLabel = 'Required resource';
+    }
+
+    if (preg_match('/(.+?)id$/i', $sName, $aMatch) && Item::driver($aMatch[1]))
+    {
+      try
+      {
+        $oItem = $this->oController->itemFromId($aMatch[1], $sValue);
+        return self::field($oItem->name, $sLabel, $this->sType . $sName);
+      }
+      catch (\Exception $e)
+      {
+        return self::field('None<!-- ' . $e->getMessage() . ' -->', $sLabel, $this->sType . $sName);
+      }
+    }
+
+    $sType = strtolower(preg_replace("/( |\().*/", "", $hData['Type']));
+
+    switch ($sType)
+    {
+      case 'hidden':
+        $oHidden = \Limbonia\Tag::factory('input');
+        $oHidden->setParam('type', 'hidden');
+        $oHidden->setParam('name', "$this->sType[$sName]");
+        $oHidden->setParam('id', $this->sType . $sName);
+        $oHidden->setParam('value', $sValue);
+        return $oHidden->__toString();
+
+      case 'password':
+      case 'swing':
+        return '';
+
+      case 'tinyint':
+        $sValue = (boolean)(integer)$sValue ? 'Yes' : 'No';
+    }
+
+    return self::field($sValue, $sLabel, $this->sType . $sName);
   }
 
   /**
@@ -1238,16 +1275,14 @@ class Module
    */
   public function getColumnTitle($sColumn)
   {
-    //if this is an ID column
-    if (preg_match("/^(.+?)ID$/", $sColumn, $aMatch))
+    //if this is an ID column and there is a driver for it
+    if (preg_match("/^(.+?)ID$/", $sColumn, $aMatch) && Item::driver($aMatch[1]))
     {
-      $sItemDriver = Item::driver($aMatch[1]);
-
-      //if there is a driver, then use the match otherwise use the original column
-      return empty($sItemDriver) ? $sColumn : $aMatch[1];
+      //then use the match otherwise use the original column
+      $sColumn = $aMatch[1];
     }
 
-    return preg_replace("/([A-Z])/", " $1", $sColumn);
+    return preg_replace("/([a-z])([A-Z])/", "$1 $2", $sColumn);
   }
 
   /**
@@ -1307,6 +1342,36 @@ class Module
   }
 
   /**
+   * Generate and return the HTML for all the specified form fields
+   *
+   * @param array $hFields - List of the fields to generate HTML for
+   * @param array $hValues (optional) - List of field data, if there is any
+   * @return string
+   */
+  public function getFields($hFields, $hValues = [])
+  {
+    if (!is_array($hFields))
+    {
+      return '';
+    }
+
+    $sFields = '';
+
+    foreach ($hFields as $sName => $hData)
+    {
+      $sValue = $hValues[$sName] ?? null;
+      $sFields .= $this->getField($sName, $sValue, $hData);
+    }
+
+    return $sFields;
+  }
+
+  protected function getAdminHeader()
+  {
+    return '';
+  }
+
+  /**
    * Echo the form generated by the specified data
    *
    * @param string $sType
@@ -1315,11 +1380,20 @@ class Module
    */
   public function getForm($sType, $hFields, $hValues = [])
   {
-    $sButtonValue = ucwords($sType);
+    if (strtolower($sType) == 'edit')
+    {
+      $sButton = "<input type=\"submit\" name=\"Update\" value=\"Update\">&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" name=\"No\" value=\"No\" onclick=\"parent.location='" . $this->generateUri($this->oItem->id) . "'\">";
+    }
+    else
+    {
+      $sButtonValue = ucwords($sType);
+      $sButton = "<button type=\"submit\">$sButtonValue</button>";
+    }
+
     $sType = preg_replace('/ /', '', $sType);
-    return "<form name=\"$sType\" action=\"" . $this->generateUri($sType) . "\" method=\"post\">
+    return $this->getAdminHeader() . "<form name=\"$sType\" action=\"" . $this->generateUri($sType) . "\" method=\"post\">
 " . $this->getFormFields($hFields, $hValues) . "
-<div class=\"field\"><span class=\"blankLabel\"></span><span><button type=\"submit\">$sButtonValue</button></span></div>
+<div class=\"field\"><span class=\"blankLabel\"></span><span>$sButton</span></div>
 </form>\n";
   }
 

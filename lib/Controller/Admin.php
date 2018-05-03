@@ -26,52 +26,43 @@ class Admin extends \Limbonia\Controller\Web
             </div>\n";
   }
 
-  /**
-   * Handle any Exceptions thrown while generating the current user
-   *
-   * @param \Exception $oException
-   */
-  protected function handleGenerateUserException(\Exception $oException)
-  {
-    $this->printPasswordForm($oException->getMessage());
-  }
-
   protected function renderPage()
   {
     $sModuleDriver = isset($this->oApi->module) ? \Limbonia\Module::driver($this->oApi->module) : '';
 
-    if (!empty($sModuleDriver))
+    if (empty($sModuleDriver))
     {
-      try
-      {
-        $oCurrentModule = $this->moduleFactory($sModuleDriver);
-        $oCurrentModule->prepareTemplate();
-        $sModuleTemplate = $oCurrentModule->getTemplate();
-
-        if (isset($this->oApi->ajax))
-        {
-           parent::outputJson(array_merge(['moduleOutput' => $this->templateRender($sModuleTemplate)], $oCurrentModule->getAdminOutput()));
-        }
-
-        $this->templateData('moduleOutput', $this->templateRender($sModuleTemplate));
-      }
-      catch (\Exception $e)
-      {
-        $this->templateData('failure', "The module {$this->oApi->module} could not be instaniated: " . $e->getMessage());
-
-        if (isset($this->oApi->search['click']))
-        {
-          parent::outputJson
-          ([
-            'error' => $this->templateRender('error'),
-          ]);
-        }
-
-        die($this->templateRender('error'));
-      }
+      return $this->templateRender('index');
     }
 
-    die($this->templateRender('index'));
+    try
+    {
+      $oCurrentModule = $this->moduleFactory($sModuleDriver);
+      $oCurrentModule->prepareTemplate();
+      $sModuleTemplate = $oCurrentModule->getTemplate();
+
+      if (isset($this->oApi->ajax))
+      {
+         return parent::outputJson(array_merge(['moduleOutput' => $this->templateRender($sModuleTemplate)], $oCurrentModule->getAdminOutput()));
+      }
+
+      $this->templateData('moduleOutput', $this->templateRender($sModuleTemplate));
+      return $this->templateRender('index');
+    }
+    catch (\Exception $e)
+    {
+      $this->templateData('failure', "The module {$this->oApi->module} could not be instaniated: " . $e->getMessage());
+
+      if (isset($this->oApi->search['click']))
+      {
+        return parent::outputJson
+        ([
+          'error' => $this->templateRender('error'),
+        ]);
+      }
+
+      return $this->templateRender('error');
+    }
   }
 
   /**
@@ -82,17 +73,18 @@ class Admin extends \Limbonia\Controller\Web
    */
   protected function generateUser()
   {
-    $oUser = parent::generateUser();
+    try
+    {
+      $oUser = parent::generateUser();
+    }
+    catch (\Exception $e)
+    {
+      $this->printPasswordForm($e->getMessage());
+    }
 
     if ($oUser->id == 0)
     {
       $this->printPasswordForm();
-    }
-
-    if (!isset($_SESSION['LoggedInUser']))
-    {
-      $_SESSION['LoggedInUser'] = $oUser->id;
-      \Limbonia\Module::overrideDriverList($this, $oUser);
     }
 
     return $oUser;

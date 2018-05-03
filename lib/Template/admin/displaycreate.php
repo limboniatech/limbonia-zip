@@ -1,2 +1,2 @@
 <?php
-echo $module->getForm('create', $createColumns, $controller->get);
+echo $module->getForm('create', $fields, $controller->get);

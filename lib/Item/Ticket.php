@@ -74,27 +74,131 @@ class Ticket extends \Limbonia\Item
     'children' => 'getChildren'
   ];
 
-  /**
-   * The list of columns in the TicketContent table
-   *
-   * @var array
-   */
-  protected static $aContentColumns = [];
-
-  /**
-   * The ticket constructor
-   *
-   * @param string $sType (optional)
-   * @param \Limbonia\Database $oDatabase (optional)
-   */
-  public function __construct($sType = null, \Limbonia\Database $oDatabase = null)
+  public static function generateTicketContentFromEmail($sEmail, \Limbonia\Controller $oController = null, $cOutput = null)
   {
-    parent::__construct($sType, $oDatabase);
-
-    if (empty(self::$aContentColumns))
+    if (!($oController instanceof \Limbonia\Controller))
     {
-      self::$aContentColumns = \array_keys(\array_change_key_case($this->getDatabase()->getColumns('TicketContent'), CASE_LOWER));
+      $oController = \Limbonia\Controller::getDefault();
     }
+
+    if (!is_callable($cOutput))
+    {
+      $cOutput = function($sData)
+      {
+        //throw any data away...
+      };
+    }
+    $hEmail = \Limbonia\Email::processMessage($sEmail);
+    $sDomain = $oController->getDomain()->name;
+    $hData = [];
+
+    if (!isset($hEmail['headers']['subject']))
+    {
+      throw new \Exception('Subject not found');
+    }
+
+    if (!isset($hEmail['headers']['from']))
+    {
+      throw new \Exception('Email address not found');
+    }
+
+    $hData['from'] = preg_match("/<(.+?)>/i", $hEmail['headers']['from'], $aMatch) ? trim($aMatch[1]) : trim($hEmail['headers']['from']);
+    $sText = isset($hEmail['text']) ? trim($hEmail['text']) : trim(strip_tags($hEmail['html']));
+
+    //Remove email signitures
+    $sText = trim(preg_replace("/-- \n.*/s", '', $sText));
+
+    //remove "On" line
+    $sText = trim(preg_replace("/On .*? wrote:\n/", '', $sText));
+
+    //remove reply lines
+    $sText = trim(preg_replace("/> ?.*?(\n|$)/", '', $sText));
+
+    if (empty($sText))
+    {
+      throw new \Exception("Valid ticket text not found in an email from {$hData['from']}.");
+    }
+
+    $hData['user'] = $oController->userByEmail($hData['from']);
+
+    if (preg_match("/\[$sDomain Ticket #(\d+)/i", $hEmail['headers']['subject'], $aMatch))
+    {
+      $hData['ticket'] = $oController->itemFromId('ticket', $aMatch[1]);
+
+      if (!$hData['user']->canAccessTicket($hData['ticket']->id))
+      {
+        throw new \Exception("Contact '{$hData['from']}' does not have access to the ticket");
+      }
+
+      $hData['ticketid'] = $hData['ticket']->id;
+      $hData['userid'] = $hData['user']->id;
+      $hData['updatetype'] = 'public';
+      $hData['updatetext'] = $sText;
+    }
+    else
+    {
+      $hData['ticketid'] = 0;
+      $hData['subject'] = $hEmail['headers']['subject'];
+      $hData['ownerid'] = $hData['user']->id;
+      $hData['type'] = $hData['user']->type;
+      $hData['description'] = $sText;
+      //parse the subject to get the CategoryID
+      //parse the first line for hashtag controls
+    }
+
+    return $hData;
+  }
+
+  public static function processEmail($sEmail, \Limbonia\Controller $oController = null, $cOutput = null)
+  {
+    if (!($oController instanceof \Limbonia\Controller))
+    {
+      $oController = \Limbonia\Controller::getDefault();
+    }
+
+    if (!is_callable($cOutput))
+    {
+      $cOutput = function($sData)
+      {
+        //throw any data away...
+      };
+    }
+
+    $hData = self::generateTicketContentFromEmail($sEmail, $oController, $cOutput);
+
+    $oUser = $hData['user'];
+    unset($hData['user']);
+    unset($hData['from']);
+
+    if (isset($hData['ticket']))
+    {
+      $oTicket = $hData['ticket'];
+      unset($hData['ticket']);
+
+      if ($oUser->isContact() && $oTicket->status == 'pending')
+      {
+        $hData['status'] = 'open';
+      }
+
+      $oTicket->setAll($hData);
+    }
+    else
+    {
+      $oTicket = $oController->itemFromArray('ticket', $hData);
+    }
+
+    return $oTicket->save();
+  }
+
+  /**
+   * Does the specified column exist in TicketContent?
+   *
+   * @param string $sColumn
+   * @return mixed Returns the real column name if it exists or false if it doesn't
+   */
+  public function contentColumn($sColumn)
+  {
+    return $this->getDatabase()->hasColumn('TicketContent', $sColumn);
   }
 
   /**
@@ -105,6 +209,14 @@ class Ticket extends \Limbonia\Item
    */
   public function __set($sName, $xValue)
   {
+    $sContentName = $this->contentColumn($sName);
+
+    if (!empty($sContentName) && $sContentName !== 'TicketID')
+    {
+      $this->hContent[$sContentName] = $xValue;
+      return;
+    }
+
     $sRealName = $this->hasColumn($sName);
 
     //this object is not allowed to change either of these after it's created...
@@ -118,87 +230,85 @@ class Ticket extends \Limbonia\Item
       return parent::__set($sName, $xValue);
     }
 
-    if ($this->hData['Type'] == 'software' || !in_array($sRealName, $this->aSoftwareColumn))
+    //if the ticket is *not* software but the column *is* a software column
+    if ($this->hData['Type'] != 'software' && in_array($sRealName, $this->aSoftwareColumn))
     {
-      if ($this->bSkipHistory)
+      //then skip it...
+      return;
+    }
+
+    $xPrevious = $this->__get($sName);
+    parent::__set($sName, $xValue);
+    $xCurrent = $this->__get($sName);
+
+    if (!empty($xPrevious) && !empty($xCurrent) && $xCurrent != $xPrevious)
+    {
+      //if they are closing the ticket then set the completion time to now...
+      if ($sRealName == 'Status')
       {
-        parent::__set($sName, $xValue);
-        return;
+        $sClosedTime = $xCurrent == 'closed' ? 'now' : null;
+        $this->hData['CompletionTime'] = $this->formatInput('CompletionTime', $sClosedTime);
       }
 
-      $xPrevious = $this->__get($sName);
-      parent::__set($sName, $xValue);
-      $xCurrent = $this->__get($sName);
-
-      if (!empty($xPrevious) && !empty($xCurrent) && $xCurrent != $xPrevious)
+      if (preg_match("/(.*?)ID$/i", $sRealName, $aMatch))
       {
-        //if they are closing the ticket then set the completion time to now...
-        if ($sRealName == 'Status')
+        $sLowerMatch = strtolower($aMatch[1]);
+        $sType = isset($this->hAutoExpand[$sLowerMatch]) ? $this->hAutoExpand[$sLowerMatch] : $aMatch[1];
+        $sLabel = ucfirst($aMatch[1]);
+
+        try
         {
-          $sClosedTime = $xCurrent == 'closed' ? 'now' : null;
-          $this->hData['CompletionTime'] = $this->formatInput('CompletionTime', $sClosedTime);
-        }
+          $oPrevious = parent::fromId($sType, $xPrevious, $this->getDatabase());
 
-        if (preg_match("/(.*?)ID$/i", $sRealName, $aMatch))
-        {
-          $sLowerMatch = strtolower($aMatch[1]);
-          $sType = isset($this->hAutoExpand[$sLowerMatch]) ? $this->hAutoExpand[$sLowerMatch] : $aMatch[1];
-          $sLabel = ucfirst($aMatch[1]);
-
-          try
+          if ($sRealName == 'ReleaseID')
           {
-            $oPrevious = parent::fromId($sType, $xPrevious, $this->getDatabase());
-
-            if ($sRealName == 'ReleaseID')
-            {
-              $sPrevious = $oPrevious->version;
-            }
-            else
-            {
-              $sPrevious = $oPrevious->name;
-            }
+            $sPrevious = $oPrevious->version;
           }
-          catch (\Exception $e)
+          else
           {
-            $sPrevious = 'None';
-          }
-
-          try
-          {
-            $oCurrent = parent::fromId($sType, $xCurrent, $this->getDatabase());
-
-            if ($sRealName == 'ReleaseID')
-            {
-              parent::__set('ParentID', $oCurrent->ticketId);
-              $sCurrent = $oCurrent->version;
-            }
-            else
-            {
-              $sCurrent = $oCurrent->name;
-            }
-          }
-          catch (\Exception $e)
-          {
-            parent::__set($sName, null);
-            $sCurrent = 'None';
-
-            if ($sRealName == 'ReleaseID')
-            {
-              parent::__set('ParentID', 0);
-            }
+            $sPrevious = $oPrevious->name;
           }
         }
-        else
+        catch (\Exception $e)
         {
-          $sLabel = ucfirst($sRealName);
-          $sPrevious = (string)$xPrevious;
-          $sCurrent = (string)$xCurrent;
+          $sPrevious = 'None';
         }
 
-        if ($sCurrent != $sPrevious)
+        try
         {
-          $this->aHistory[] = [$sRealName . 'From' => $sPrevious, $sRealName . 'To' => $sCurrent, 'Note' => "$sLabel changed from <b>$sPrevious</b> to <b>$sCurrent</b>."];
+          $oCurrent = parent::fromId($sType, $xCurrent, $this->getDatabase());
+
+          if ($sRealName == 'ReleaseID')
+          {
+            parent::__set('ParentID', $oCurrent->ticketId);
+            $sCurrent = $oCurrent->version;
+          }
+          else
+          {
+            $sCurrent = $oCurrent->name;
+          }
         }
+        catch (\Exception $e)
+        {
+          parent::__set($sName, null);
+          $sCurrent = 'None';
+
+          if ($sRealName == 'ReleaseID')
+          {
+            parent::__set('ParentID', 0);
+          }
+        }
+      }
+      else
+      {
+        $sLabel = ucfirst($sRealName);
+        $sPrevious = (string)$xPrevious;
+        $sCurrent = (string)$xCurrent;
+      }
+
+      if ($sCurrent != $sPrevious)
+      {
+        $this->aHistory[] = [$sRealName . 'From' => $sPrevious, $sRealName . 'To' => $sCurrent, 'Note' => "$sLabel changed from <b>$sPrevious</b> to <b>$sCurrent</b>."];
       }
     }
   }
@@ -235,6 +345,11 @@ class Ticket extends \Limbonia\Item
       }
     }
 
+    if (!empty($this->hContent))
+    {
+      $hData['content'] = $this->hContent;
+    }
+
     return $hData;
   }
 
@@ -252,12 +367,12 @@ class Ticket extends \Limbonia\Item
     $this->hContent = [];
 
     //grab what we need for the content object and leave the rest...
-    foreach (self::$aContentColumns as $sContentColumn)
+    foreach (array_keys($hExtra) as $sColumn)
     {
-      if (isset($hExtra[$sContentColumn]))
+      if ($sContentColumn = $this->contentColumn($sColumn))
       {
-        $this->hContent[$sContentColumn] = $hExtra[$sContentColumn];
-        unset($hExtra[$sContentColumn]);
+        $this->hContent[$sContentColumn] = $hExtra[$sColumn];
+        unset($hExtra[$sColumn]);
       }
     }
 
@@ -291,14 +406,32 @@ class Ticket extends \Limbonia\Item
   }
 
   /**
-   * Generate and return the list of valid potential ticket owners, even if that list is empty
+   * Generate and return the list of valid potential ticket owners by resource, even if that list is empty
    *
    * @return array List of potential valid ticket owners on success or false on failure
    */
-  protected function getPotentialOwnerList()
+  protected function getPotentialOwnerListByResource()
   {
     $oResult = $this->getDatabase()->prepare("SELECT U.UserID FROM User U, User_Key K WHERE U.Active = 1 AND U.Type = 'internal' AND U.UserID = K.UserID AND K.Level >= ? AND K.KeyID = ?");
     $bSuccess = $oResult->execute([$this->category->level, $this->category->keyId]);
+
+    if (!$bSuccess)
+    {
+      return false;
+    }
+
+    return $oResult->fetchColumn();
+  }
+
+  /**
+   * Generate and return the list of valid potential ticket owners by resource, even if that list is empty
+   *
+   * @return array List of potential valid ticket owners on success or false on failure
+   */
+  protected function getPotentialOwnerListByRole()
+  {
+    $oResult = $this->getDatabase()->prepare("SELECT u.UserID FROM User u, User_Role u_r WHERE u.Active = 1 AND u.Type = 'internal' AND u.UserID = u_r.UserID AND u_r.RoleID = ?");
+    $bSuccess = $oResult->execute([$this->category->roleid]);
 
     if (!$bSuccess)
     {
@@ -346,8 +479,9 @@ class Ticket extends \Limbonia\Item
         $this->hData['OwnerID'] = 0;
         break;
 
-      case 'roundrobin':
-        $aUserList = $this->getPotentialOwnerList();
+      case 'round robin by resource':
+      case 'round robin by role':
+        $aUserList = $this->category->assignmentMethod == 'round robin by role' ? $this->getPotentialOwnerListByRole() : $this->getPotentialOwnerListByResource();
 
         //if there is an error getting the list
         if ($aUserList === false)
@@ -380,8 +514,9 @@ class Ticket extends \Limbonia\Item
         $this->hData['OwnerID'] = $iNextPosition < count($aUserList) ? $aUserList[$iNextPosition] : $aUserList[0];
         break;
 
-      case 'leasttickets':
-        $aUserList = $this->getPotentialOwnerList();
+      case 'least tickets by resource':
+      case 'least tickets by role':
+        $aUserList = $this->category->assignmentMethod == 'least tickets by role' ? $this->getPotentialOwnerListByRole() : $this->getPotentialOwnerListByResource();
 
         //if there is an error getting the list
         if ($aUserList === false)
@@ -432,20 +567,20 @@ class Ticket extends \Limbonia\Item
       return false;
     }
 
-    $hContent['ticketid'] = $this->id;
-    $hContent['updatetime'] = 'now';
+    $hContent['TicketID'] = $this->id;
+    $hContent['UpdateTime'] = 'now';
 
-    if (!isset($hContent['userid']))
+    if (empty($hContent['UserID']))
     {
-      $hContent['userid'] = 0;
+      $hContent['UserID'] = 0;
     }
 
-    if (!isset($hContent['updatetype']))
+    if (!isset($hContent['UpdateType']))
     {
-      $hContent['updatetype'] = empty($hContent['userid']) == 0 ? 'system' : 'private';
+      $hContent['UpdateType'] = $hContent['UserID'] === 0 ? 'system' : 'private';
     }
 
-    $oContent = parent::fromArray('TicketContent', $hContent, $this->getDatabase());
+    $oContent = $this->oController->itemFromArray('TicketContent', $hContent);
     $oContent->setHistory($this->aHistory);
     $oContent->save();
     $aHistory = $oContent->getHistory();
@@ -483,10 +618,13 @@ class Ticket extends \Limbonia\Item
       return $iTicket;
     }
 
-    $sDomain = $this->getDatabase()->getController()->getDomain()->name;
-    $oEmail->setFrom("ticket_system@{$sDomain}");
-    $oEmail->setSubject("$this->subject [{$sDomain} Ticket #{$this->id}: $this->status]");
-    $sBody = "The ticket has the follwing updates: \n\n";
+    $oDomain = $this->getController()->getDomain();
+    $hTicketSettings = $this->getController()->getSettings('ticket');
+    $sEmail = isset($hTicketSettings['user']) ? $hTicketSettings['user'] : "ticket_system@{$oDomain->name}";
+    $oEmail->setFrom($sEmail);
+    $oEmail->setSubject("$this->subject [{$oDomain->name} Ticket #{$this->id}: $this->status]");
+    $oEmail->isText();
+    $sBody = "The ticket has the following updates: \n\n";
 
     foreach ($aHistory as $hHistory)
     {
@@ -501,7 +639,7 @@ class Ticket extends \Limbonia\Item
       $sBody .= "\n{$oContent->updateText}\n\n";
     }
 
-    $sBody .= "To see this ticket click <a href=\"https://{$sDomain}/" . $this->getDatabase()->getController()->generateUri('ticket', $this->id) . ">here</a>.";
+    $sBody .= "To see this ticket click <a href=\"{$oDomain->url}" . $this->getController()->generateUri('ticket', $this->id) . "\">here</a><br>\n";
     $oEmail->addBody($sBody);
     $oEmail->send();
     return $iTicket;

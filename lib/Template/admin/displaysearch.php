@@ -1,2 +1,2 @@
 <?php
-echo $module->getForm('search', $searchColumns, $controller->post);
+echo $module->getForm('search', $fields, $controller->post);

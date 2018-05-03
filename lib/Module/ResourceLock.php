@@ -46,7 +46,7 @@ class ResourceLock extends \Limbonia\Module
         $oSelect->addOption($sResource);
       }
 
-      return "<div class=\"field\"><span class=\"label\">Resource</span><span class=\"data\">" . $oSelect . "</span></div>";
+      return static::widgetField($oSelect, 'Resource');
     }
 
     if ($sName == 'Component')
@@ -98,7 +98,7 @@ class ResourceLock extends \Limbonia\Module
       $sScript .= "}\n";
 
       $oSelect->writeJavascript($sScript);
-      return "<div class=\"field\"><span class=\"label\">Component</span><span class=\"data\">" . $oSelect . "</span></div>";
+      return static::widgetField($oSelect, 'Component');
     }
 
     return parent::getFormField($sName, $sValue, $hData);

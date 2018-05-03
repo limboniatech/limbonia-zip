@@ -30,7 +30,7 @@ else
     {
       $table->addCell('Leave Unassigned');
     }
-    elseif ($item->assignmentMethod == 'roundrobin')
+    elseif ($item->assignmentMethod == 'round robin by resource')
     {
       if ($item->keyID == 0)
       {
@@ -38,11 +38,21 @@ else
       }
       else
       {
-        $resourceKey = $controller->itemFromId('ResourceKey', $item->keyID);
-        $table->addCell('Round Robin between internal users with ' . $resourceKey->name . ' access ' . ($item->level > 0 ? ' at level ' . $item->level . ' or above' : ''));
+        $table->addCell('Round Robin between internal users with ' . $item->key->name . ' access ' . ($item->level > 0 ? ' at level ' . $item->level . ' or above' : ''));
       }
     }
-    elseif ($item->assignmentMethod == 'leasttickets')
+    elseif ($item->assignmentMethod == 'round robin by role')
+    {
+      if ($item->roleId == 0)
+      {
+        $table->addCell('Round Robin between all internal users');
+      }
+      else
+      {
+        $table->addCell('Round Robin between internal users with role: ' . $item->role->name);
+      }
+    }
+    elseif ($item->assignmentMethod == 'least tickets by resource')
     {
       if ($item->keyID == 0)
       {
@@ -50,8 +60,18 @@ else
       }
       else
       {
-        $resourceKey = $controller->itemFromId('ResourceKey', $item->keyID);
-        $table->addCell('Least Tickets between internal users with ' . $resourceKey->name . ' access ' . ($item->level > 0 ? ' at level ' . $item->level . ' or above' : ''));
+        $table->addCell('Least Tickets between internal users with ' . $item->key->name . ' access ' . ($item->level > 0 ? ' at level ' . $item->level . ' or above' : ''));
+      }
+    }
+    elseif ($item->assignmentMethod == 'least tickets by role')
+    {
+      if ($item->roleId == 0)
+      {
+        $table->addCell('Least Tickets between all internal users');
+      }
+      else
+      {
+        $table->addCell('Least Tickets between internal users with the role: ' . $item->role->name);
       }
     }
 

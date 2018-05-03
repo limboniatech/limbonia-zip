@@ -19,6 +19,16 @@ trait ItemModule
   protected $oItem = null;
 
   /**
+   * List of column names in the order required
+   *
+   * @return array
+   */
+  protected function columnOrder()
+  {
+    return [];
+  }
+
+  /**
    * Initialize this module's custom data, if there is any
    */
   protected function init()
@@ -438,27 +448,7 @@ trait ItemModule
    */
   protected function prepareTemplateGetCreate()
   {
-    $sIDColumn = $this->oItem->getIDColumn();
-    $hTemp = $this->oItem->getColumns();
-
-    if (isset($hTemp[$sIDColumn]))
-    {
-      unset($hTemp[$sIDColumn]);
-    }
-
-    $hColumn = [];
-
-    foreach ($hTemp as $sKey => $hValue)
-    {
-      if ((in_array($sKey, $this->aIgnore['create'])) || (isset($hValue['Key']) && preg_match("/Primary/", $hValue['Key'])))
-      {
-        continue;
-      }
-
-      $hColumn[preg_replace("/^.*?\./", "", $sKey)] = $hValue;
-    }
-
-    $this->oController->templateData('createColumns', $hColumn);
+    $this->oController->templateData('fields', $this->getColumns('Create'));
   }
 
   /**
@@ -472,22 +462,10 @@ trait ItemModule
       return null;
     }
 
-    $hTemp = $this->oItem->getColumns();
-    $aColumn = $this->getColumns('Edit');
-    $hColumn = [];
-
-    foreach ($aColumn as $sColumnName)
-    {
-      if (isset($hTemp[$sColumnName]))
-      {
-        $hColumn[$sColumnName] = $hTemp[$sColumnName];
-      }
-    }
-
     $sIDColumn = preg_replace("/.*?\./", "", $this->oItem->getIDColumn());
     $this->oController->templateData('idColumn', $sIDColumn);
     $this->oController->templateData('noID', $this->oItem->id == 0);
-    $this->oController->templateData('editColumns', $hColumn);
+    $this->oController->templateData('fields', $this->getColumns('Edit'));
   }
 
   /**
@@ -495,29 +473,12 @@ trait ItemModule
    */
   protected function prepareTemplateGetSearch()
   {
-    $hTemp = $this->oItem->getColumns();
-    $aColumn = $this->getColumns('search');
-    $hColumn = [];
+    $this->oController->templateData('fields', $this->getColumns('search'));
+  }
 
-    foreach ($aColumn as $sColumnName)
-    {
-      if (isset($hTemp[$sColumnName]) && $hTemp[$sColumnName] != 'password')
-      {
-        $hColumn[$sColumnName] = $hTemp[$sColumnName];
-
-        if ($hColumn[$sColumnName]['Type'] == 'text')
-        {
-          $hColumn[$sColumnName]['Type'] = 'varchar';
-        }
-
-        if ($hColumn[$sColumnName]['Type'] == 'date')
-        {
-          $hColumn[$sColumnName]['Type'] = 'searchdate';
-        }
-      }
-    }
-
-    $this->oController->templateData('searchColumns', $hColumn);
+  protected function prepareTemplateGetView()
+  {
+    $this->oController->templateData('fields', $this->getColumns('View'));
   }
 
   /**
@@ -534,15 +495,15 @@ trait ItemModule
    */
   protected function prepareTemplatePostEdit()
   {
-    $this->oItem->setAll($this->editGetData());
-
-    if ($this->oItem->save())
+    try
     {
+      $this->oItem->setAll($this->editGetData());
+      $this->oItem->save();
       $this->oController->templateData('success', "This " . $this->getType() . " update has been successful.");
     }
-    else
+    catch (\Exception $e)
     {
-      $this->oController->templateData('failure', "This " . $this->getType() . " update has failed.");
+      $this->oController->templateData('failure', "This " . $this->getType() . " update has failed: " . $e->getMessage());
     }
 
     if (isset($_SESSION['EditData']))
@@ -551,6 +512,7 @@ trait ItemModule
     }
 
     $this->sCurrentAction = 'view';
+    $this->prepareTemplateGetView();
   }
 
   /**
@@ -566,10 +528,10 @@ trait ItemModule
       if (isset($this->oApi->ajax))
       {
         $this->oItem = $oData[0];
-        $this->oController->templateData('currentItem', $this->oItem);
         $this->hMenuItems['item'] = 'Item';
         $this->aAllowedActions[] = 'item';
         $this->sCurrentAction = 'view';
+        $this->prepareTemplateGetView();
         return true;
       }
 
@@ -582,14 +544,14 @@ trait ItemModule
 
     $this->oController->templateData('data', $oData);
     $this->oController->templateData('idColumn', preg_replace("/.*?\./", '', $this->oItem->getIDColumn()));
-    $hColumns = $this->getColumns('Search');
+    $aColumns = array_keys($this->getColumns('Search'));
 
-    foreach (array_keys($hColumns) as $sKey)
+    foreach (array_keys($aColumns) as $sKey)
     {
-      $this->processSearchColumnHeader($hColumns, $sKey);
+      $this->processSearchColumnHeader($aColumns, $sKey);
     }
 
-    $this->oController->templateData('dataColumns', $hColumns);
+    $this->oController->templateData('dataColumns', $aColumns);
     $this->oController->templateData('table', $this->oController->widgetFactory('Table'));
   }
 
@@ -598,8 +560,8 @@ trait ItemModule
    */
   public function prepareTemplate()
   {
-    parent::prepareTemplate();
     $this->oController->templateData('currentItem', $this->oItem);
+    parent::prepareTemplate();
   }
 
   /**
@@ -651,16 +613,75 @@ trait ItemModule
       unset($hColumn[$sIDColumn]);
     }
 
-    if (empty($sLowerType) || !isset($this->aIgnore[$sLowerType]))
+    if (!empty($sLowerType) && !empty($this->aIgnore[$sLowerType]))
     {
-      return array_keys($hColumn);
+      foreach ($this->aIgnore[$sLowerType] as $sIgnoreColumn)
+      {
+        if (isset($hColumn[$sIgnoreColumn]))
+        {
+          unset($hColumn[$sIgnoreColumn]);
+        }
+      }
     }
 
-    //get the column names and remove the ignored columns
-    $aColumn = array_diff(array_keys($hColumn), $this->aIgnore[$sLowerType]);
+    if ($sLowerType == 'search')
+    {
+      foreach (array_keys($hColumn) as $sColumn)
+      {
+        if ($hColumn[$sColumn]['Type'] == 'text')
+        {
+          $hColumn[$sColumn]['Type'] = 'varchar';
+        }
+
+        if ($hColumn[$sColumn]['Type'] == 'date')
+        {
+          $hColumn[$sColumn]['Type'] = 'searchdate';
+        }
+      }
+    }
+
+    $aColumnOrder = $this->columnOrder();
+
+    if (empty($aColumnOrder))
+    {
+      return $hColumn;
+    }
 
     //reorder the columns
-    return array_unique(array_merge($this->aColumnOrder, $aColumn));
+    $hOrderedColumn = [];
+
+    //only order the columns that are in the list
+    foreach ($aColumnOrder as $sColumn)
+    {
+      if (isset($hColumn[$sColumn]))
+      {
+        $hOrderedColumn[$sColumn] = $hColumn[$sColumn];
+        unset($hColumn[$sColumn]);
+      }
+    }
+
+    //add the rest of the columns at the end of the orderded columns
+    return array_merge($hOrderedColumn, $hColumn);
+  }
+
+  /**
+   * Echo the form generated by the specified data
+   *
+   * @param string $sType
+   * @param array $hFields
+   * @param array $hValues
+   */
+  public function getForm($sType, $hFields, $hValues = [])
+  {
+    $sForm = parent::getForm($sType, $hFields, $hValues);
+
+    if ($this->oItem->id == 0)
+    {
+      return $sForm;
+    }
+
+    $sType = preg_replace('/ /', '', $sType);
+    return preg_replace("/action=\".*?\"/", 'action="' . $this->generateUri($this->oItem->id, $sType) . '"', $sForm);
   }
 
   /**
