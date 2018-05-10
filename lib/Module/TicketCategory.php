@@ -35,6 +35,11 @@ class TicketCategory extends \Limbonia\Module
     ];
   }
 
+  /**
+   * Generate and return whatever HTML and JavaScript is needed to make the module run in the browser
+   *
+   * @return string
+   */
   protected function getAdminHeader()
   {
     $sHeader = parent::getAdminHeader();
@@ -96,7 +101,7 @@ toggleMethod($('#TicketCategoryAssignmentMethod').val());
     return $sHeader;
   }
 
-    /**
+  /**
    * Generate and return a list of columns based on the specified type
    *
    * @param string $sType (optional)
