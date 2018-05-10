@@ -246,12 +246,12 @@ class User extends \Limbonia\Item
    */
   protected function formatInput($sName, $xValue)
   {
-    if ($sName == 'Password' && $this->isCreated())
+    if ($sName == 'Password')
     {
       return password_hash($xValue, self::PASSWORD_ENCRYPTION_ALGO, ['cost' => self::PASSWORD_ENCRYPTION_COST]);
     }
 
-    if ($sName == 'Email' && $this->isCreated())
+    if ($sName == 'Email')
     {
       $xValue = trim($xValue);
       //if it validates successfully then let the normal value be returned...
