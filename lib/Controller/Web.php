@@ -15,6 +15,8 @@ class Web extends \Limbonia\Controller
   /**
    * Data to be appended to the HTML header before display
    *
+   * @TODO Either implement this feature fully or remove its unneeded detritus, like this variable...
+   *
    * @var string
    */
   protected $sHtmlHeader = '';
@@ -87,6 +89,13 @@ class Web extends \Limbonia\Controller
     }
   }
 
+  /**
+   * Data that should be injected into the HTML head
+   *
+   * @TODO Either implement this feature fully or remove its unneeded detritus, like this method...
+   *
+   * @param string $xData
+   */
   public function addToHtmlHeader($xData)
   {
     $this->sHtmlHeader .= $xData;
@@ -144,7 +153,12 @@ class Web extends \Limbonia\Controller
     return $oUser;
   }
 
-  protected function renderPage()
+  /**
+   * Render this controller instance for output and return that data
+   *
+   * @return string
+   */
+  protected function render()
   {
     $sTemplate = $this->templateFile($this->oApi->module);
 
@@ -183,7 +197,7 @@ class Web extends \Limbonia\Controller
   }
 
   /**
-   * Run everything needed to react and display data in the way this controller is intended
+   * Run everything needed to react to input and display data in the way this controller is intended
    */
   public function run()
   {
@@ -207,6 +221,6 @@ class Web extends \Limbonia\Controller
 
 
     $this->templateData('currentUser', $this->oUser);
-    die($this->renderPage());
+    die($this->render());
   }
 }
