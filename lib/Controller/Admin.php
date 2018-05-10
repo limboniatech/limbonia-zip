@@ -13,20 +13,11 @@ namespace Limbonia\Controller;
 class Admin extends \Limbonia\Controller\Web
 {
   /**
-   * Echo the data field generated from the specified data
+   * Render this controller instance for output and return that data
    *
-   * @param string $sLabel
-   * @param string $sValue
+   * @return string
    */
-  public function dataField($sLabel, $sValue)
-  {
-    return "        <div class=\"field\">
-              <span class=\"label\">$sLabel</span>
-              <span class=\"data\">$sValue</span>
-            </div>\n";
-  }
-
-  protected function renderPage()
+  protected function render()
   {
     $sModuleDriver = isset($this->oApi->module) ? \Limbonia\Module::driver($this->oApi->module) : '';
 
