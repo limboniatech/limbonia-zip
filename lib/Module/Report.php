@@ -81,6 +81,11 @@ class Report extends \Limbonia\Module
    */
   protected $aAllowedActions = ['list'];
 
+  /**
+   * The list of available reports
+   *
+   * @var array
+   */
   protected $hReportList = [];
 
   /**
@@ -104,6 +109,11 @@ class Report extends \Limbonia\Module
     $this->sDefaultAction = in_array($this->oApi->subaction, $this->aAllowedActions) ? $this->oApi->subaction : 'view';
   }
 
+  /**
+   * Return the current report
+   *
+   * @return \Limbonia\Report
+   */
   public function getReport()
   {
     return $this->oReport;
@@ -120,6 +130,13 @@ class Report extends \Limbonia\Module
     return true;
   }
 
+  /**
+   * Generate and return the parameters needed to process the requested report
+   *
+   * @TODO THIS IS NOT DONE!
+   *
+   * @return array
+   */
   protected function generateReportParams()
   {
     $hParam = [];
@@ -164,6 +181,11 @@ class Report extends \Limbonia\Module
     return null;
   }
 
+  /**
+   * Return the result of the finished report
+   *
+   * @return \Limbonia\Interfaces\Result
+   */
   protected function processApiGetReport()
   {
     $aReport = [];
