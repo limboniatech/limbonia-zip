@@ -98,6 +98,13 @@ class Widget extends Tag
    */
   protected $sWebShareDir = '';
 
+  /**
+   * Will this widget inject any thing into the HTML head via its controller
+   *
+   * @TODO Either implement this feature fully or remove its unneeded detritus, like this variable...
+   *
+   * @var boolean
+   */
   protected $bUseControllerHtmlHeader = false;
 
   /**

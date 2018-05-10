@@ -32,6 +32,11 @@ trait Result
    */
   protected $aFields = null;
 
+  /**
+   * Return all the fields this result set uses
+   *
+   * @return array
+   */
   public function getFields()
   {
     if (is_null($this->aFields))
