@@ -13,18 +13,56 @@ namespace Limbonia\Widget;
  */
 class Calendar extends \Limbonia\Widget\Window
 {
-  protected $iWidth = 200;
-  protected $iHeight = 195;
-  protected $iTop = 200;
-  protected $iLeft = 200;
+  /**
+   * The start date for this date field to display
+   *
+   * @var string
+   */
   protected $sStartDate = '';
+
+  /**
+   * The width of the date field
+   *
+   * @var type
+   */
   protected $iFieldSize = 25;
+
+  /**
+   * Is the date field currently active?
+   *
+   * @var type
+   */
   protected $bActive = TRUE;
+
+  /**
+   * Is the date field clickable?
+   *
+   * @var boolean
+   */
   protected $bClickable = FALSE;
+
+  /**
+   * Should the date field only be updated with results from the calendar popup?
+   *
+   * @var boolean
+   */
   protected $bReadOnly = FALSE;
 
+  /**
+   * Constructor
+   *
+   * It increments the widget counter and generates a unique (but human readable) name.
+   *
+   * @param string $sName (optional)
+   * @param \Limbonia\Controller $oController (optional)
+   * @throws Limbonia\Exception\Object
+   */
   public function __construct($sName = null, \Limbonia\Controller $oController = null)
   {
+    $this->hWindowParam['top'] = 200;
+    $this->hWindowParam['left'] = 200;
+    $this->hWindowParam['height'] = 195;
+    $this->hWindowParam['width'] = 200;
     parent::__construct($sName, $oController);
     $this->setConfig('Target', $this->sId);
     $this->setURL($this->sWebShareDir . "/calendar.php?Date='+" . $this->sId . "Target.value+'");

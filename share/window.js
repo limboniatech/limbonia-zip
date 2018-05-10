@@ -1,23 +1,40 @@
-function showLimboniawindow(sURL, iTop, iLeft, iWidth, iHeight, bToolbar, bMenubar, bLocation, bStatus, bScrollbars, bResizable)
+/**
+ * Open a browser window based on the passed parameters
+ *
+ * @param {Array} hConfig
+ * @returns {Window}
+ */
+function showLimboniaWindow(hConfig)
 {
-  sURL = (arguments.length > 0) ? sURL : '_blank';
-  iTop = (arguments.length > 1) ? iTop : 100;
-  iLeft = (arguments.length > 2) ? iLeft : 100;
-  iWidth = (arguments.length > 3) ? iWidth : 400;
-  iHeight = (arguments.length > 4) ? iHeight : 300;
-  bToolbar = (arguments.length > 5) ? bToolbar : 0;
-  bMenubar = (arguments.length > 6) ? bMenubar : 0;
-  bLocation = (arguments.length > 7) ? bLocation : 0;
-  bStatus = (arguments.length > 8) ? bStatus : 0;
-  bScrollbars = (arguments.length > 9) ?  bScrollbars: 0;
-  bResizable = (arguments.length > 10) ? bResizable : 0;
+  /**
+   * Return a string equivilant to the specified boolean variable
+   *
+   * @param {Bool} bVar
+   * @returns {String}
+   */
+  var processBoolean = function(bVar)
+  {
+    return bVar ? '1' : '0';
+  };
+  var sURL = (hConfig.url) ? hConfig.url : '_blank';
+  var iTop = (hConfig.top) ? hConfig.top : 100;
+  var iLeft = (hConfig.left) ? hConfig.left : 100;
+  var iWidth = (hConfig.width) ? hConfig.width : 400;
+  var iHeight = (hConfig.height) ? hConfig.height : 300;
+  var sToolbar = (hConfig.toolbar) ? processBoolean(hConfig.toolbar) : '0';
+  var sMenubar = (hConfig.menubar) ? processBoolean(hConfig.menubar) : '0';
+  var sLocation = (hConfig.location) ? processBoolean(hConfig.location) : '0';
+  var sStatus = (hConfig.status) ? processBoolean(hConfig.status) : '0';
+  var sScrollbars = (hConfig.scrollbars) ? processBoolean(hConfig.scrollbars) : '0';
+  var sResizable = (hConfig.resizable) ? processBoolean(hConfig.resizable) : '0';
 
-  var Limboniawindow = window.open(sURL, 'Limboniawindow', 'top='+iTop+',left='+iLeft+',width='+iWidth+',height='+iHeight+',toolbar='+bToolbar+',menubar='+bMenubar+',location='+bLocation+',status='+bStatus+',scrollbars='+bScrollbars+',resizable='+bResizable);
-  Limboniawindow.opener = self;
+  var LimboniaWindow = window.open(sURL, 'Limboniawindow', 'top='+iTop+',left='+iLeft+',width='+iWidth+',height='+iHeight+',toolbar='+sToolbar+',menubar='+sMenubar+',location='+sLocation+',status='+sStatus+',scrollbars='+sScrollbars+',resizable='+sResizable);
+  LimboniaWindow.opener = self;
+
   if (window.focus)
   {
-    Limboniawindow.focus();
+    LimboniaWindow.focus();
   }
 
-  return Limboniawindow;
+  return LimboniaWindow;
 }

@@ -21,32 +21,42 @@ class Window extends \Limbonia\Widget
   protected $hConfig = [];
 
   /**
-   * The window width
+   * The javascript window parameters
    *
-   * @var integer
+   * @var array
    */
-  protected $iWidth = 500;
+  protected  $hWindowParam =
+  [
+     //The y-coordinate of the top-left hand corner of the window
+    'top' => 100,
 
-  /**
-   * The window height
-   *
-   * @var integer
-   */
-  protected $iHeight = 300;
+    //The x-coordinate of the top-left hand corner of the window
+    'left' => 100,
 
-  /**
-   * The y-coordinate of the top-left hand corner of the window
-   *
-   * @var integer
-   */
-  protected $iTop = 100;
+    //The window height
+    'height' => 300,
 
-  /**
-   * The x-coordinate of the top-left hand corner of the window
-   *
-   * @var integer
-   */
-  protected $iLeft = 100;
+    //The window width
+    'width' => 500,
+
+    //Should the window tool bar be displayed?
+    'toolbar' => false,
+
+    //Should the window menu bar be displayed?
+    'menubar' => false,
+
+    //Should the window location line be displayed?
+    'location' => false,
+
+    //Should the window status bar be displayed?
+    'status' => false,
+
+    //Should the window scroll bars be displayed?
+    'scrollbars' => false,
+
+    //Should the window be resizable?
+    'resizable' => false
+  ];
 
   /**
    * The URL to be display in the window, if there is one
@@ -55,28 +65,32 @@ class Window extends \Limbonia\Widget
    */
   protected $sURL = '';
 
+  protected $sScriptName = '';
+
   /**
-   *
+   * The content to display, if not displaying a URL
    *
    * @var string
    */
-  protected $sStatus = '0';
+  protected $sContent = '';
 
-  protected $sResizable = '0';
+  /**
+   * The click handler for displaying this window
+   *
+   * @var string
+   */
+  protected $sOnClick = '';
 
-  protected $sScrollBars = '0';
-
-  protected $sToolbar = '0';
-
-  protected $sMenubar = '0';
-
-  protected $sLocation = '0';
-
-  protected $sScriptName = null;
-
-  protected $sContent = null;
-
-  protected $sOnClick = null;
+  /**
+   * Return the stringified numeric representation of the specified boolean variable
+   *
+   * @param boolean $bOption
+   * @return string
+   */
+  protected static function scriptBoolean($bOption)
+  {
+    return (boolean)$bOption ? '1' : '0';
+  }
 
   /**
    * Constructor
@@ -117,8 +131,15 @@ class Window extends \Limbonia\Widget
       }
     }
 
+    $sToolbar = self::scriptBoolean($this->hWindowParam['toolbar']);
+    $sMenubar = self::scriptBoolean($this->hWindowParam['menubar']);
+    $sLocation = self::scriptBoolean($this->hWindowParam['location']);
+    $sStatus = self::scriptBoolean($this->hWindowParam['status']);
+    $sScrollBars = self::scriptBoolean($this->hWindowParam['scrollbars']);
+    $sResizable = self::scriptBoolean($this->hWindowParam['resizable']);
+
     $this->sScript .= "  sURL = (arguments.length > 0) ? sURL : '$sURL';\n";
-    $this->sScript .= "  var {$this->sId} = window.open(sURL, '{$this->sId}', 'top={$this->iTop},left={$this->iLeft},width={$this->iWidth},height={$this->iHeight},toolbar={$this->sToolbar},menubar={$this->sMenubar},location={$this->sLocation},status={$this->sStatus},scrollbars={$this->sScrollBars},resizable={$this->sResizable}');\n";
+    $this->sScript .= "  var {$this->sId} = window.open(sURL, '{$this->sId}', 'top={$this->hWindowParam['top']},left={$this->hWindowParam['left']},width={$this->hWindowParam['width']},height={$this->hWindowParam['height']},toolbar={$sToolbar},menubar={$sMenubar},location={$sLocation},status={$sStatus},scrollbars={$sScrollBars},resizable={$sResizable}');\n";
     $this->sScript .= "  ".$this->sId.".opener = self;\n";
 
     if (!empty($this->sContent))
@@ -131,36 +152,55 @@ class Window extends \Limbonia\Widget
     $this->sScript .= "    {$this->sId}.focus();\n";
     $this->sScript .= "  }\n";
     $this->sScript .= "}\n";
-    return TRUE;
+    return true;
   }
 
-  protected function _create_BETA()
+  /**
+   * This is a new version of the init method that uses the "new" showLimboniaWindow JavaScript function...
+   *
+   * @todo This needs to be worked on... <b>or decide if it (and the showLimboniaWindow function) are even needed at all!</b>
+   *
+   * @return boolean
+   */
+  protected function initBeta()
   {
-    $sURL = null;
+    $hWindowParam = $this->hWindowParam;
 
     if (!empty($this->sURL))
     {
-      $sURL = $this->sURL;
+      $hWindowParam['url'] = $this->sURL;
+
       if (count($this->hConfig) > 0)
       {
-        $sURL .= (strrpos($this->sURL, "?") === FALSE ? '?' : '&');
-        $sURL .= 'Config='.rawurlencode(gzdeflate(serialize($this->hConfig)));
+        $hWindowParam['url'] .= (strrpos($this->sURL, "?") === FALSE ? '?' : '&');
+        $hWindowParam['url'] .= 'Config='.rawurlencode(gzdeflate(serialize($this->hConfig)));
       }
     }
 
     $this->sScript .= "var {$this->sId}Target = document.getElementById('{$this->sId}');\n";
     $this->sScript .= "function show{$this->sId}()\n";
     $this->sScript .= "{\n";
-    $this->sScript .= "  {$this->sId}Target = showLimboniawindow('$sURL', $this->iTop, $this->iLeft, $this->iWidth, $this->iHeight, $this->sToolbar, $this->sMenubar, $this->sLocation, $this->sStatus, $this->sScrollBars, $this->sResizable);\n";
+    $this->sScript .= "  {$this->sId}Target = showLimboniaWindow(" . json_encode($hWindowParam) . ");\n";
     $this->sScript .= "}\n";
-    return TRUE;
+    return true;
   }
 
-  public function setURL($sURL=null)
+  /**
+   * The URL to display in the window
+   *
+   * @param string $sURL
+   */
+  public function setURL($sURL = '')
   {
-    $this->sURL = $sURL;
+    $this->sURL = (string)$sURL;
   }
 
+  /**
+   * Add a button that will run the click handler
+   *
+   * @staticvar int $iButtonCount
+   * @param string $sText
+   */
   public function button($sText)
   {
     static $iButtonCount = 0;
@@ -177,6 +217,12 @@ class Window extends \Limbonia\Widget
     }
   }
 
+  /**
+   * Add a clickable image that will run the click handler
+   *
+   * @staticvar int $iImageCount
+   * @param string $sSrc
+   */
   public function image($sSrc)
   {
     static $iImageCount = 0;
@@ -193,6 +239,11 @@ class Window extends \Limbonia\Widget
     }
   }
 
+  /**
+   * Generate text that will open the window
+   *
+   * @param string $sText
+   */
   public function text($sText)
   {
     $sText = "<a href=\"javascript:show" . $this->sId . "();\">$sText</a>";
@@ -207,6 +258,12 @@ class Window extends \Limbonia\Widget
     }
   }
 
+  /**
+   * Set the named config variable with the specified value
+   *
+   * @param string $sName
+   * @param string $sValue
+   */
   public function setConfig($sName, $sValue)
   {
     if (!empty($sName) && !empty($sValue))
@@ -215,70 +272,115 @@ class Window extends \Limbonia\Widget
     }
   }
 
+  /**
+   * Set the width of the window
+   *
+   * @param integer $iWidth
+   */
   public function setWidth($iWidth)
   {
     if (is_numeric($iWidth))
     {
-      $this->iWidth = (integer)$iWidth;
+      $this->$this->hWindowParam['width'] = (integer)$iWidth;
     }
   }
 
+  /**
+   * Set the height of the window
+   *
+   * @param integer $iHeight
+   */
   public function setHeight($iHeight)
   {
     if (is_numeric($iHeight))
     {
-      $this->iHeight = (integer)$iHeight;
+      $this->$this->hWindowParam['height'] = (integer)$iHeight;
     }
   }
 
+  /**
+   * Set the top edge of the window
+   *
+   * @param integer $iTop
+   */
   public function setTop($iTop)
   {
     if (is_numeric($iTop))
     {
-      $this->iTop = (integer)$iTop;
+      $this->$this->hWindowParam['top'] = (integer)$iTop;
     }
   }
 
+  /**
+   * Set the left edge of the window
+   *
+   * @param integer $iLeft
+   */
   public function setLeft($iLeft)
   {
     if (is_numeric($iLeft))
     {
-      $this->iLeft = (integer)$iLeft;
+      $this->$this->hWindowParam['left'] = (integer)$iLeft;
     }
   }
 
-  protected static function scriptBoolean($bOption)
+  /**
+   * Should the status line be displayed?
+   *
+   * @param boolean $bOption (optional) - defaults to true
+   */
+  public function hasStatus($bOption = true)
   {
-    return $bOption ? '1' : '0';
+    $this->$this->hWindowParam['status'] = (boolean)$bOption;
   }
 
-  public function hasStatus($bOption=TRUE)
+  /**
+   * Should the menu bar be displayed?
+   *
+   * @param boolean $bOption (optional) - defaults to true
+   */
+  public function hasMenubar($bOption = true)
   {
-    $this->sStatus = self::scriptBoolean($bOption);
+    $this->$this->hWindowParam['menubar'] = (boolean)$bOption;
   }
 
-  public function hasMenubar($bOption=TRUE)
+  /**
+   * Should the location bar be displayed?
+   *
+   * @param boolean $bOption (optional) - defaults to true
+   */
+  public function hasLocation($bOption = true)
   {
-    $this->sMenubar = self::scriptBoolean($bOption);
+    $this->$this->hWindowParam['location'] = (boolean)$bOption;
   }
 
-  public function hasLocation($bOption=TRUE)
+  /**
+   * Should the tool bar be displayed?
+   *
+   * @param boolean $bOption (optional) - defaults to true
+   */
+  public function hasToolbar($bOption = true)
   {
-    $this->sLocation = self::scriptBoolean($bOption);
+    $this->$this->hWindowParam['toolbar'] = (boolean)$bOption;
   }
 
-  public function hasToolbar($bOption=TRUE)
+  /**
+   * Should the scroll bars be displayed?
+   *
+   * @param boolean $bOption (optional) - defaults to true
+   */
+  public function hasScrollBars($bOption = true)
   {
-    $this->sToolbar = self::scriptBoolean($bOption);
+    $this->$this->hWindowParam['scrollbars'] = (boolean)$bOption;
   }
 
-  public function hasScrollBars($bOption=TRUE)
+  /**
+   * Should the window allow resizing?
+   *
+   * @param boolean $bOption (optional) - defaults to true
+   */
+  public function allowResize($bOption = true)
   {
-    $this->sScrollBars = self::scriptBoolean($bOption);
-  }
-
-  public function allowResize($bOption=TRUE)
-  {
-    $this->sResizable = self::scriptBoolean($bOption);
+    $this->$this->hWindowParam['resizable'] = (boolean)$bOption;
   }
 }
