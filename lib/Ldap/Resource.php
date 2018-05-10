@@ -233,9 +233,8 @@ class Resource
    * Get the current value for given option
    *
    * @param int $iOption - The parameter to get
-   *
    * @return mixed The value of the selected option
-   *
+   * @throws \Exception
    * @link http://php.net/manual/en/function.ldap-get-option.php
    */
   public function getOption($iOption)
@@ -250,36 +249,92 @@ class Resource
     return $xVal;
   }
 
+  /**
+   * Set the specified option to specified value
+   *
+   * @param integer $iOption
+   * @param mixed $xVal
+   * @return boolean
+   * @throws \Exception
+   */
   public function setOption($iOption, $xVal)
   {
     return $this->processReturn(ldap_set_option($this->rLdapLink, $iOption, $xVal));
   }
 
+  /**
+   * Add attribute values to current attributes
+   *
+   * @param string $sDn - The distinguished name of an LDAP entity
+   * @param array $aEntry
+   * @return boolean
+   * @throws \Exception
+   */
   public function modAdd($sDn, array $aEntry)
   {
     return $this->processReturn(ldap_mod_add($this->rLdapLink, $sDn, $aEntry));
   }
 
+  /**
+   * Remove attribute values from current attributes
+   *
+   * @param string $sDn - The distinguished name of an LDAP entity
+   * @param array $aEntry
+   * @return boolean
+   * @throws \Exception
+   */
   public function modDelete($sDn, array $aEntry)
   {
     return $this->processReturn(ldap_mod_del($this->rLdapLink, $sDn, $aEntry));
   }
 
+  /**
+   * Replace attribute values with new ones
+   *
+   * @param string $sDn - The distinguished name of an LDAP entity
+   * @param array $aEntry
+   * @return boolean
+   * @throws \Exception
+   */
   public function modReplace($sDn, array $aEntry)
   {
     return $this->processReturn(ldap_mod_replace($this->rLdapLink, $sDn, $aEntry));
   }
 
+  /**
+   * Modify and existing entry
+   *
+   * @param string $sDn - The distinguished name of an LDAP entity
+   * @param array $aEntry
+   * @return boolean
+   * @throws \Exception
+   */
   public function modify($sDn, array $aEntry)
   {
     return $this->processReturn(ldap_modify($this->rLdapLink, $sDn, $aEntry));
   }
 
+  /**
+   * Replace attribute values with new ones
+   *
+   * @param string $sDn - The distinguished name of an LDAP entity
+   * @param array $aEntry
+   * @return boolean
+   * @throws \Exception
+   */
   public function modifyBatch($sDn, array $aEntry)
   {
     return $this->processReturn(ldap_modify_batch($this->rLdapLink, $sDn, $aEntry));
   }
 
+  /**
+   * Modify the name of an entry
+   *
+   * @param string $sDn - The distinguished name of an LDAP entity
+   * @param array $aEntry
+   * @return boolean
+   * @throws \Exception
+   */
   public function rename($sDn, $sNewRdn, $sNewParent, $bDeleteOldRdn)
   {
     return $this->processReturn(ldap_rename($this->rLdapLink, $sDn, $sNewRdn, $sNewParent, $bDeleteOldRdn));
@@ -394,11 +449,24 @@ class Resource
     return LdapResult::resultList($hResiltList, $this->rLdapLink);
   }
 
+  /**
+   * Set a callback function to do re-binds on referral chasing
+   *
+   * @param callable $cCallback - the callback to use
+   * @return boolean
+   * @throws \Exception
+   */
   public function setRebindProcedure(callable $cCallback)
   {
     return $this->processReturn(ldap_set_rebind_proc($this->rLdapLink, $cCallback));
   }
 
+  /**
+   * Start TLS
+   *
+   * @return boolean
+   * @throws \Exception
+   */
   public function startTls()
   {
     return $this->processReturn(ldap_start_tls($this->rLdapLink));
