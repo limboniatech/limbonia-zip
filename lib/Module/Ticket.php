@@ -365,6 +365,9 @@ class Ticket extends \Limbonia\Module
     $this->sCurrentAction = 'view';
   }
 
+  /**
+   * Prepare the Processemail template for use
+   */
   protected function prepareTemplateProcessemail()
   {
     if ($this->oController->type == 'cli')
@@ -384,8 +387,9 @@ class Ticket extends \Limbonia\Module
         'desc' => 'Put this utility into test mode so that it outputs to the screen instead rather than actually creating and updating tickets',
         'value' => \Limbonia\Controller\Cli::OPTION_VALUE_NONE
       ]);
-      $this->oController->templateData('settings', $this->hSettings);
     }
+
+    $this->oController->templateData('settings', $this->hSettings);
   }
 
    /**
@@ -399,6 +403,12 @@ class Ticket extends \Limbonia\Module
     $hPost['UserID'] = $this->oController->user()->id;
     return $hPost;
   }
+
+  /**
+   * Generate and return whatever HTML and JavaScript is needed to make the module run in the browser
+   *
+   * @return string
+   */
   protected function getAdminHeader()
   {
     $sHeader = parent::getAdminHeader();
