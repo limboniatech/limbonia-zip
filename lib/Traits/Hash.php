@@ -19,6 +19,11 @@ trait Hash
    */
   protected $hData = [];
 
+  /**
+   * Return a hash of the raw data stored by this object
+   *
+   * @return array
+   */
   public function getRaw()
   {
     return $this->hData;
