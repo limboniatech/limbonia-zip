@@ -308,11 +308,23 @@ class User extends \Limbonia\Item
     return parent::search('Ticket', ['OwnerID' => $this->id, 'Status' => '!=:closed'], ['Priority', 'DueDate DESC'], $this->getDatabase());
   }
 
+  /**
+   *  Is this user a contact?
+   *
+   * @return boolean
+   */
   public function isContact()
   {
     return 'contact' === $this->type;
   }
 
+  /**
+   * Is this user allowed to access the specified ticket?
+   *
+   * @param integer $iTicket - ID of the ticket to check
+   * @return boolean
+   * @throws \Exception
+   */
   public function canAccessTicket($iTicket)
   {
     if (!$this->isContact())

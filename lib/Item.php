@@ -79,7 +79,12 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   protected $hItemObjects = [];
 
-
+  /**
+   * Generate and return the interval string for the specified number of minutes
+   *
+   * @param integer $iMinutes - The number of minutes in the interval
+   * @return string
+   */
   public static function outputTimeInterval($iMinutes)
   {
     $sOutput = "$iMinutes minute" . ($iMinutes > 1 ? 's' : '');
@@ -213,6 +218,11 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
     }
   }
 
+  /**
+   * Return a string representation of the current object
+   *
+   * @return string
+   */
   public function __toString()
   {
     return $this->getAll();
