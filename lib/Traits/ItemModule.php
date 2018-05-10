@@ -54,6 +54,11 @@ trait ItemModule
     }
   }
 
+  /**
+   * Return the item object stored for use with this module
+   *
+   * @return /Limbonia/Item
+   */
   public function getItem()
   {
     return $this->oItem;
@@ -446,7 +451,7 @@ trait ItemModule
   /**
    * Run the code needed to display the default "create" template
    */
-  protected function prepareTemplateGetCreate()
+  protected function prepareTemplateCreate()
   {
     $this->oController->templateData('fields', $this->getColumns('Create'));
   }
@@ -454,7 +459,7 @@ trait ItemModule
   /**
    * Run the code needed to display the default "edit" template
    */
-  protected function prepareTemplateGetEdit()
+  protected function prepareTemplateEdit()
   {
     if (!$this->allow('edit') || isset($this->oController->post['No']))
     {
@@ -471,12 +476,15 @@ trait ItemModule
   /**
    * Run the code needed to display the default "search" template
    */
-  protected function prepareTemplateGetSearch()
+  protected function prepareTemplateSearch()
   {
     $this->oController->templateData('fields', $this->getColumns('search'));
   }
 
-  protected function prepareTemplateGetView()
+  /**
+   * Run the code needed to display the default "view" template
+   */
+  protected function prepareTemplateView()
   {
     $this->oController->templateData('fields', $this->getColumns('View'));
   }
@@ -512,7 +520,6 @@ trait ItemModule
     }
 
     $this->sCurrentAction = 'view';
-    $this->prepareTemplateGetView();
   }
 
   /**
@@ -531,7 +538,6 @@ trait ItemModule
         $this->hMenuItems['item'] = 'Item';
         $this->aAllowedActions[] = 'item';
         $this->sCurrentAction = 'view';
-        $this->prepareTemplateGetView();
         return true;
       }
 
