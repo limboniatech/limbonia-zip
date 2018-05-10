@@ -11,50 +11,50 @@ if (isset($failure))
 
 if ($currentItem->creatorID > 0)
 {
-  echo $controller->dataField('Created By', $module->getColumnValue($currentItem, 'CreatorID') . ' on ' . $currentItem->createTime);
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'CreatorID') . ' on ' . $currentItem->createTime, 'Created By');
 }
 
-echo $controller->dataField('Status', $module->getColumnValue($currentItem, 'Status'));
-echo $controller->dataField('Priority', $module->getColumnValue($currentItem, 'Priority'));
-echo $controller->dataField('Owner', $module->getColumnValue($currentItem, 'OwnerID'));
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Status'), 'Status');
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Priority'), 'Priority');
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'OwnerID'), 'Owner');
 echo $module->getFormField('Watchers');
-echo $controller->dataField('Subject', $module->getColumnValue($currentItem, 'Subject'));
-echo $controller->dataField('Category', $module->getColumnValue($currentItem, 'CategoryID'));
-echo $controller->dataField('Type', $module->getColumnValue($currentItem, 'Type'));
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Subject'), 'Subject');
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'CategoryID'), 'Category');
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Type'), 'Type');
 
 if ($currentItem->timeSpent > 0)
 {
-  echo $controller->dataField('Time Spent', $module->getColumnValue($currentItem, 'TimeSpent'));
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'TimeSpent'), 'Time Spent');
 }
 
-echo $controller->dataField('Last Update', $module->getColumnValue($currentItem, 'LastUpdate'));
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'LastUpdate'), 'Last Update');
 
 if ($currentItem->dueDate)
 {
-  echo $controller->dataField('Due Date', $module->getColumnValue($currentItem, 'DueDate'));
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'DueDate'), 'Due Date');
 }
 
 if ($currentItem->completionTime)
 {
-  echo $controller->dataField('Completion Time', $module->getColumnValue($currentItem, 'CompletionTime'));
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'CompletionTime'), 'Completion Time');
 }
 
 if (!empty($currentItem->totalTime))
 {
-  echo $controller->dataField('Total Time Worked', \Limbonia\Item::outputTimeInterval($currentItem->totalTime));
+  echo \Limbonia\Module::field(\Limbonia\Item::outputTimeInterval($currentItem->totalTime), 'Total Time Worked');
 }
 
 if ($currentItem->type == 'software')
 {
-  echo $controller->dataField('Software', $module->getColumnValue($currentItem, 'SoftwareID'));
-  echo $controller->dataField('Software Element', $module->getColumnValue($currentItem, 'ElementID'));
-  echo $controller->dataField('Software Version', $module->getColumnValue($currentItem, 'ReleaseID'));
-  echo $controller->dataField('Severity', $module->getColumnValue($currentItem, 'Severity'));
-  echo $controller->dataField('Projection', $module->getColumnValue($currentItem, 'Projection'));
-  echo $controller->dataField('Devopment Status', $module->getColumnValue($currentItem, 'DevStatus'));
-  echo $controller->dataField('Quality Status', $module->getColumnValue($currentItem, 'QualityStatus'));
-  echo $controller->dataField('Description', $module->getColumnValue($currentItem, 'Description'));
-  echo $controller->dataField('Steps To Reproduce', $module->getColumnValue($currentItem, 'StepsToReproduce'));
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'SoftwareID'), 'Software');
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'ElementID'), 'Software Element');
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'ReleaseID'), 'Software Version');
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Severity'), 'Severity');
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Projection'), 'Projection');
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'DevStatus'), 'Devopment Status');
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'QualityStatus'), 'Quality Status');
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Description'), 'Description');
+  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'StepsToReproduce'), 'Steps To Reproduce');
 }
 
 foreach ($currentItem->contentList as $content)
