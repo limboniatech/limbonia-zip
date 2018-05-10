@@ -68,14 +68,29 @@ class Api
    */
   protected static $aJsonMethods = ['put', 'post'];
 
+  /**
+   * Cached login data...
+   *
+   * @var array
+   */
   protected static $hLoginData =
   [
     'user' => '',
     'pass' => ''
   ];
 
+  /**
+   * Is this instance running from the command line?
+   *
+   * @var boolean
+   */
   protected $bCli = false;
 
+  /**
+   * Default API data
+   *
+   * @var array
+   */
   protected $hDefault =
   [
     'method' => 'get',
@@ -131,6 +146,9 @@ class Api
     return $oApi;
   }
 
+  /**
+   * The API object constructor
+   */
   public function __construct()
   {
     if (\Limbonia\Controller::isCLI())
