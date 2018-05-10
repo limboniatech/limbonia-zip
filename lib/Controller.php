@@ -137,6 +137,11 @@ abstract class Controller
    */
   protected $sType = '';
 
+  /**
+   * Is this controller running in debug mode?
+   *
+   * @var boolean
+   */
   protected $bDebug = false;
 
   /**
@@ -619,9 +624,10 @@ abstract class Controller
   }
 
   /**
+   * Return settings of the specified type
    *
-   * @param type $sType
-   * @return type
+   * @param string $sType
+   * @return array
    * @throws \Exception
    */
   public function getSettings($sType)
@@ -631,7 +637,8 @@ abstract class Controller
 
     if (!$oStatement->execute())
     {
-      throw new \Exception("Failed to get settings for $sType");
+      $aError = $oStatement->errorInfo();
+      throw new \Exception("Failed to get settings for $sType: " . $aError[2]);
     }
 
     $sSettings = $oStatement->fetchColumn();
@@ -893,7 +900,7 @@ abstract class Controller
   }
 
   /**
-   * Run everything needed to react and display data in the way this controller is intended
+   * Run everything needed to react to input and display data in the way this controller is intended
    */
   public function run()
   {
