@@ -31,7 +31,12 @@ class Api extends \Limbonia\Controller\Web
     }
   }
 
-  protected function renderPage()
+  /**
+   * Render this controller instance for output and return that data
+   *
+   * @return string
+   */
+  protected function render()
   {
     try
     {
