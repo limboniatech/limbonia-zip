@@ -294,37 +294,50 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function setAll(array $hItem = [])
   {
-    $iID = null;
-    $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
+    $bFromDatabase = false;
 
-    foreach (array_keys($hLowerItem) as $sName)
+    foreach (array_keys($hItem) as $sKey)
     {
-      //if the column exists the process it
-      $sRealName = $this->hasColumn($sName);
-
-      if ($sRealName)
+      //if the ID column is set then this data is coming from the database...
+      if ($this->hasColumn($sKey) == $this->sIdColumn)
       {
-        //don't do the id column until last
-        if ($sRealName == $this->sIdColumn)
+        $bFromDatabase = true;
+
+        //if it has already been loaded (created) and the new ID doesn't match the old one
+        if ($this->isCreated() && $hItem[$sKey] != $this->hData[$this->sIdColumn])
         {
-          $iID = $hLowerItem[$sName];
-        }
-        else
-        {
-          $this->__set($sRealName, $hLowerItem[$sName]);
+          //then this is an override...
+          throw new \Limbonia\Exception\Object("The existing $this->sType already has an ID of {$this->hData[$this->sIdColumn]} so it can't be changed to {$hItem[$sKey]}");
         }
 
-        unset($hLowerItem[$sName]);
+        $this->__set($this->sIdColumn, $hItem[$sKey]);
+        unset($hItem[$sKey]);
+        break;
       }
     }
 
-    //finally do the id column, but only if it not is already set...
-    if (!is_null($iID) && !$this->isCreated())
+    //run through all the data
+    foreach (array_keys($hItem) as $sName)
     {
-      $this->__set($this->sIdColumn, $iID);
+      //if the column exists
+      if ($sRealName = $this->hasColumn($sName))
+      {
+        //if the data is from the database
+        if ($bFromDatabase)
+        {
+          //then set it directly
+          $this->hData[$sRealName] = $hItem[$sName];
+        }
+        else
+        {
+          //otherwise process it
+          $this->__set($sRealName, $hItem[$sName]);
+        }
+        unset($hItem[$sName]);
+      }
     }
 
-    return $hLowerItem;
+    return $hItem;
   }
 
   /**
