@@ -67,6 +67,13 @@ class Email
    */
   protected $sMimeBoundary = '';
 
+  /**
+   * Return the properly decoded body text, if possible
+   *
+   * @param array $hHeaders
+   * @param string $sBody
+   * @return string
+   */
   public static function decodeBody($hHeaders, $sBody)
   {
     if (empty($hHeaders['content-transfer-encoding']))
@@ -92,6 +99,12 @@ class Email
     return $sBody;
   }
 
+  /**
+   * Is the message associated with the specified headers a text type?
+   *
+   * @param array $hHeaders
+   * @return boolean
+   */
   public static function isText(array $hHeaders = [])
   {
     if (isset($hHeaders['content-type']) && preg_match("#text/(plain|html)#", $hHeaders['content-type'], $aMatch))
@@ -102,6 +115,12 @@ class Email
     return false;
   }
 
+  /**
+   * Is the message associated with the specified headers an attachment?
+   *
+   * @param array $hHeaders
+   * @return boolean
+   */
   public static function isAttachment($hHeaders)
   {
     if (isset($hHeaders['content-disposition']) && preg_match("#attachment; filename=\"(.*?)\"#", $hHeaders['content-disposition'], $aMatch))
@@ -112,6 +131,12 @@ class Email
     return false;
   }
 
+  /**
+   * Is the message associated with the specified headers a multi-part message?
+   *
+   * @param array $hHeaders
+   * @return boolean
+   */
   public static function isMultiPart($hHeaders)
   {
     if (isset($hHeaders['content-type']) && preg_match("#multipart/.*?; boundary=\"(.*?)\"#", $hHeaders['content-type'], $aMatch))
@@ -122,10 +147,16 @@ class Email
     return false;
   }
 
+  /**
+   * Return the hash of header data based on the specified raw headers
+   *
+   * @param array|string $xRawHeader - the raw header data (either and array or text data)
+   * @return array
+   */
   public static function processHeaders($xRawHeader)
   {
     $aRawHeader = is_array($xRawHeader) ? $xRawHeader : explode("\n", $xRawHeader);
-    $aHeaders = [];
+    $hHeaders = [];
     $sPrevMatch = '';
 
     foreach ($aRawHeader as $sLine)
@@ -134,20 +165,26 @@ class Email
       {
         $sHeaderName = strtolower($aMatch[1]);
         $sPrevMatch = $sHeaderName;
-        $aHeaders[$sHeaderName] = trim(substr($sLine, strlen($sHeaderName) + 1));
+        $hHeaders[$sHeaderName] = trim(substr($sLine, strlen($sHeaderName) + 1));
       }
       else
       {
         if (!empty($sPrevMatch))
         {
-          $aHeaders[$sPrevMatch] .= ' ' . $sLine;
+          $hHeaders[$sPrevMatch] .= ' ' . $sLine;
         }
       }
     }
 
-    return $aHeaders;
+    return $hHeaders;
   }
 
+  /**
+   * Break apart the message into the headers and message text
+   *
+   * @param array|string $xMessage - the message data
+   * @return array
+   */
   public static function breakMessage($xMessage)
   {
     $aBody = is_array($xMessage) ? $xMessage : explode("\n", $xMessage);
@@ -170,38 +207,44 @@ class Email
     ];
   }
 
-  public static function processMessage($xEmail)
+  /**
+   * Process the raw message data and return a hash of data
+   *
+   * @param array|string $xMessage - the message data
+   * @return string
+   */
+  public static function processMessage($xMessage)
   {
-    $hEmail = self::breakMessage($xEmail);
+    $hMessage = self::breakMessage($xMessage);
 
-    $sBody = trim($hEmail['body']);
-    unset($hEmail['body']);
+    $sBody = trim($hMessage['body']);
+    unset($hMessage['body']);
 
-    if ($sFileName = self::isAttachment($hEmail['headers']))
+    if ($sFileName = self::isAttachment($hMessage['headers']))
     {
-      $hEmail['attachment'] =
+      $hMessage['attachment'] =
       [
         'filename' => $sFileName,
-        'data' => self::decodeBody($hEmail['headers'], $sBody)
+        'data' => self::decodeBody($hMessage['headers'], $sBody)
       ];
 
-      if (isset($hEmail['headers']['content-type']) && preg_match("#^(.*?);#", $hEmail['headers']['content-type'], $aMatch))
+      if (isset($hMessage['headers']['content-type']) && preg_match("#^(.*?);#", $hMessage['headers']['content-type'], $aMatch))
       {
-        $hEmail['content-type'] = $aMatch[1];
+        $hMessage['content-type'] = $aMatch[1];
       }
 
-      $hEmail['type'] = 'attachment';
-      return $hEmail;
+      $hMessage['type'] = 'attachment';
+      return $hMessage;
     }
 
-    if ($sBodyType = self::isText($hEmail['headers']))
+    if ($sBodyType = self::isText($hMessage['headers']))
     {
-      $hEmail[$sBodyType] = self::decodeBody($hEmail['headers'], $sBody);
-      $hEmail['type'] = $sBodyType;
-      return $hEmail;
+      $hMessage[$sBodyType] = self::decodeBody($hMessage['headers'], $sBody);
+      $hMessage['type'] = $sBodyType;
+      return $hMessage;
     }
 
-    if ($sBoundary = self::isMultiPart($hEmail['headers']))
+    if ($sBoundary = self::isMultiPart($hMessage['headers']))
     {
       $aPartList = explode('--' . $sBoundary, $sBody);
       array_shift($aPartList);
@@ -220,12 +263,12 @@ class Email
 
           unset($hProcessedMessage['headers']);
 
-          if (!isset($hEmail['part']))
+          if (!isset($hMessage['part']))
           {
-            $hEmail['part'] = [];
+            $hMessage['part'] = [];
           }
 
-          $hEmail['part'][] = $hProcessedMessage;
+          $hMessage['part'][] = $hProcessedMessage;
           continue;
         }
 
@@ -237,58 +280,58 @@ class Email
           continue;
         }
 
-        if (isset($hEmail[$sType]))
+        if (isset($hMessage[$sType]))
         {
-          if (!is_array($hEmail[$sType]) || !isset($hEmail[$sType][0]))
+          if (!is_array($hMessage[$sType]) || !isset($hMessage[$sType][0]))
           {
-            $xTemp = $hEmail[$sType];
-            unset($hEmail[$sType]);
-            $hEmail[$sType] = [$xTemp];
+            $xTemp = $hMessage[$sType];
+            unset($hMessage[$sType]);
+            $hMessage[$sType] = [$xTemp];
           }
 
-          $hEmail[$sType][] = $hProcessedMessage[$sType];
+          $hMessage[$sType][] = $hProcessedMessage[$sType];
         }
         else
         {
-          $hEmail[$sType] = $hProcessedMessage[$sType];
+          $hMessage[$sType] = $hProcessedMessage[$sType];
         }
       }
 
-      if (!isset($hEmail['text']) && !isset($hEmail['email']) && isset($hEmail['part'][0]))
+      if (!isset($hMessage['text']) && !isset($hMessage['email']) && isset($hMessage['part'][0]))
       {
-        if (isset($hEmail['part'][0]['text']))
+        if (isset($hMessage['part'][0]['text']))
         {
-          $hEmail['text'] = $hEmail['part'][0]['text'];
-          unset($hEmail['part'][0]['text']);
+          $hMessage['text'] = $hMessage['part'][0]['text'];
+          unset($hMessage['part'][0]['text']);
         }
 
-        if (isset($hEmail['part'][0]['html']))
+        if (isset($hMessage['part'][0]['html']))
         {
-          $hEmail['html'] = $hEmail['part'][0]['html'];
-          unset($hEmail['part'][0]['html']);
+          $hMessage['html'] = $hMessage['part'][0]['html'];
+          unset($hMessage['part'][0]['html']);
         }
 
-        if (empty($hEmail['part'][0]))
+        if (empty($hMessage['part'][0]))
         {
-          unset($hEmail['part'][0]);
+          unset($hMessage['part'][0]);
         }
 
-        if (empty($hEmail['part']))
+        if (empty($hMessage['part']))
         {
-          unset($hEmail['part']);
+          unset($hMessage['part']);
         }
       }
 
-      return $hEmail;
+      return $hMessage;
     }
 
     if (!empty($sBody))
     {
-      $hEmail['body'] = $sBody;
-      $hEmail['type'] = 'body';
+      $hMessage['body'] = $sBody;
+      $hMessage['type'] = 'body';
     }
 
-    return $hEmail;
+    return $hMessage;
   }
 
     /**
@@ -550,6 +593,7 @@ class Email
   }
 
   /**
+   * Generate and return the body of the email based on previously specified data
    *
    * @return string
    */
@@ -596,6 +640,11 @@ class Email
     $this->sAttachment = trim($sAttachment);
   }
 
+  /**
+   * Generate and return a string of header data
+   *
+   * @return string
+   */
   public function getHeaders()
   {
     $sHeader = 'From: ' . $this->sFrom . "\r\n";
