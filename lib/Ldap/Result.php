@@ -6,10 +6,26 @@ namespace Limbonia\Ldap;
  */
 class Result
 {
+  /**
+   * LDAP link identifier
+   *
+   * @var resource
+   */
   protected $rLdapLink;
 
+  /**
+   * Internal LDAP result
+   *
+   * @var resource
+   */
   protected $rLdapResult;
 
+  /**
+   * Recursively clean the specified LDAP entry so that we can use it more easily
+   *
+   * @param array $hEntry
+   * @return array
+   */
   protected static function cleanEntry($hEntry)
   {
     $hReturn = [];
@@ -69,6 +85,9 @@ class Result
     $this->rLdapResult = $rLdapResult;
   }
 
+  /**
+   * Free the current result
+   */
   public function __destruct()
   {
     ldap_free_result($this->rLdapResult);
@@ -84,6 +103,11 @@ class Result
     Resource::throwOnLdapError($this->rLdapLink);
   }
 
+  /**
+   * Retrieve the LDAP pagination cookie
+   *
+   * @return array
+   */
   public function pagedResultResponse()
   {
     $xCookie = null;
@@ -92,6 +116,11 @@ class Result
     return ['cookie' => $xCookie, 'estimated' => $xEstimated];
   }
 
+  /**
+   * Count the number of entries in a search
+   *
+   * @return integer
+   */
   public function countEntries()
   {
     return ldap_count_entries($this->rLdapLink, $this->rLdapResult);
@@ -115,6 +144,11 @@ class Result
     return self::cleanEntry($hEntries);
   }
 
+  /**
+   * Extract information from reference entry
+   *
+   * @return array
+   */
   public function parseReference()
   {
     $aReferrals = null;
@@ -122,8 +156,14 @@ class Result
     return $aReferrals;
   }
 
-  public function sort($by)
+  /**
+   * Sort LDAP result entries on the client side
+   *
+   * @param string $sBy - String to sort the entries by
+   * @return boolean
+   */
+  public function sort($sBy)
   {
-    return ldap_sort($this->rLdapLink, $this->rLdapResult, $by);
+    return ldap_sort($this->rLdapLink, $this->rLdapResult, $sBy);
   }
 }
