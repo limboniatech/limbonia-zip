@@ -143,7 +143,7 @@ trait Config
   }
 
   /**
-   * Does the speified value exist?
+   * Does the specified value exist?
    *
    * @param string $sName
    * @param string $sSection
