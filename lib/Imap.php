@@ -1,25 +1,121 @@
 <?php
 namespace Limbonia;
 
+/**
+ * The IMAP class is a wrapper around the IMAP email server protocol
+ */
 class Imap
 {
+  /**
+   * The name of the default mailbox folder
+   */
   const DEFAULT_FOLDER = 'INBOX';
+
+  /**
+   * The default number of seconds for connection timeouts
+   */
   const DEFAULT_TIMEOUT = 15;
+
+  /**
+   * The default port to use for secure communication
+   */
   const SECURE_PORT = 993;
+
+  /**
+   * The default port to use for insecure communication
+   */
   const INSECURE_PORT = 143;
+
+  /**
+   * The number of commands used in the current session, so far...
+   *
+   * @var integer
+   */
   protected $iCommandCounter = 0;
+
+  /**
+   * The open file server
+   *
+   * @var resource
+   */
   protected $rMailServer = null;
+
+  /**
+   * The current mailbox folder
+   *
+   * @var string
+   */
   protected $sCurrentFolder = '';
+
+  /**
+   * Has there been any emails deleted during this session?
+   *
+   * @var boolean
+   */
   protected $bHasDeleted = false;
+
+  /**
+   * The email server to login to
+   *
+   * @var string
+   */
   protected $sServer = '';
+
+  /**
+   * The username to login with
+   *
+   * @var string
+   */
   protected $sUser = '';
+
+  /**
+   * The password associated with the user
+   *
+   * @var string
+   */
   protected $sPassword = '';
+
+  /**
+   * The number of seconds to use for connection timeouts
+   *
+   * @var integer
+   */
   protected $iTimeOut = self::DEFAULT_TIMEOUT;
-  protected $sSecureModeMode = 'ssl://';
+
+  /**
+   * The mode to use for secure communication
+   *
+   * @var string
+   */
+  protected $sSecureMode = 'ssl://';
+
+  /**
+   * The port to connect on
+   *
+   * @var integer
+   */
   protected $iPort = self::SECURE_PORT;
+
+  /**
+   * The folder to use
+   *
+   * @var string
+   */
   protected $sFolder = self::DEFAULT_FOLDER;
+
+  /**
+   * Is the current instance logged in?
+   *
+   * @var boolean
+   */
   protected $bLoggedIn = false;
 
+  /**
+   * Using the specified information create and return a valid, connected, and logged in IMAP object
+   *
+   * @param array $hConfig
+   * @return \Limbonia\Imap
+   */
   public static function connection(array $hConfig = [])
   {
     $oImap = new self($hConfig);
@@ -79,6 +175,9 @@ class Imap
     }
   }
 
+  /**
+   * Destructor
+   */
   public function __destruct()
   {
     try
@@ -88,6 +187,13 @@ class Imap
     catch (\Exception $e) {}
   }
 
+  /**
+   * Run the specified IMAP command on the current connection and return the data
+   *
+   * @param string $sCommand
+   * @return array
+   * @throws \Exception
+   */
   protected function command($sCommand)
   {
     if (!is_resource($this->rMailServer))
@@ -130,6 +236,11 @@ class Imap
     return $aResult;
   }
 
+  /**
+   * Open a connection to and IMAP server
+   *
+   * @throws \Exception
+   */
   public function connect()
   {
     if (!is_resource($this->rMailServer))
@@ -155,6 +266,9 @@ class Imap
     }
   }
 
+  /**
+   * Login to the currently connected server using the stored credentials
+   */
   public function login()
   {
     if (!$this->bLoggedIn)
@@ -166,6 +280,9 @@ class Imap
     }
   }
 
+  /**
+   * Log user out of the current connection
+   */
   public function logout()
   {
     $this->bHasDeleted = false;
@@ -185,6 +302,9 @@ class Imap
     }
   }
 
+  /**
+   * Disconnect from the current instance from its IMAP server
+   */
   public function disconnect()
   {
     if ($this->bLoggedIn)
@@ -199,17 +319,34 @@ class Imap
     }
   }
 
+  /**
+   * Move the current folder on the server to the specified location
+   *
+   * @param string $sFolder
+   */
   public function setFolder($sFolder)
   {
     $this->command("SELECT $sFolder");
     $this->sCurrentFolder = $sFolder;
   }
 
+  /**
+   * Return the name of the folder currently in use
+   *
+   * @return string
+   */
   public function getFolder()
   {
     return $this->sCurrentFolder;
   }
 
+  /**
+   * Search for emails that match the specified criteria and return the list of them
+   *
+   * @param string $sCriteria
+   * @return array
+   * @throws \Exception
+   */
   public function search($sCriteria)
   {
     $aResult = $this->command("SEARCH $sCriteria");
@@ -240,6 +377,13 @@ class Imap
     return $aId;
   }
 
+  /**
+   * Fetch and return the specified data
+   *
+   * @param string $sId
+   * @param string $sItem
+   * @return array
+   */
   public function fetch($sId, $sItem)
   {
     $aResult = $this->command("FETCH $sId $sItem");
@@ -248,22 +392,46 @@ class Imap
     return $aResult;
   }
 
+  /**
+   * Fetch and return the specified email
+   *
+   * @param string $sId
+   * @return string
+   */
   public function fetchEmail($sId)
   {
     return implode("\n", $this->fetch($sId, 'BODY[]'));
   }
 
+  /**
+   * Fetch and return the specified text
+   *
+   * @param string $sId
+   * @return string
+   */
   public function fetchText($sId)
   {
     return implode("\n", $this->fetch($sId, 'BODY[TEXT]'));
   }
 
+  /**
+   * Fetch and return the specified headers
+   *
+   * @param string $sId
+   * @return string
+   */
   public function fetchHeaders($sId)
   {
     $aResult = $this->fetch($sId, 'BODY.PEEK[HEADER]');
     return \Limbonia\Email::processHeaders($aResult);
   }
 
+  /**
+   * Delete the specified email
+   *
+   * @param string $sId
+   * @return string
+   */
   public function delete($sId)
   {
     $this->command("STORE $sId +FLAGS.SILENT (\Deleted)");
