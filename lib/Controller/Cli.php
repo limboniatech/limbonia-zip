@@ -11,14 +11,40 @@ namespace Limbonia\Controller;
  */
 class Cli extends \Limbonia\Controller
 {
+  /**
+   * This constant tells processOptions that this option may *not* have a value associated with it
+   */
   const OPTION_VALUE_NONE = 0;
+
+  /**
+   * This constant tells processOptions that this option may have a value associated with it but is not required
+   */
   const OPTION_VALUE_ALLOW = 1;
+
+  /**
+   * This constant tells processOptions that this option must have a value associated with it
+   */
   const OPTION_VALUE_REQUIRE = 2;
 
+  /**
+   * The name of the template to display
+   *
+   * @var string
+   */
   protected $sTemplateName = '';
 
+  /**
+   * The description of the template to display in the help
+   *
+   * @var string
+   */
   protected $sTempalteDesc = 'This utility has no description';
 
+  /**
+   * List of command line options that should be processed and what they do
+   *
+   * @var array
+   */
   protected $hOptionList =
   [
     [
@@ -34,6 +60,9 @@ class Cli extends \Limbonia\Controller
     ]
   ];
 
+  /**
+   * Display the help information
+   */
   public function displayHelp()
   {
     $sHelp = "
@@ -89,11 +118,21 @@ Options:\n";
     die($sHelp . "\n");
   }
 
+  /**
+   * Update the template description to the specified value
+   *
+   * @param string $sDesc
+   */
   public function setDescription($sDesc)
   {
     $this->sTempalteDesc = $sDesc;
   }
 
+  /**
+   * Process the specified command line options against the internal option list and return the list of active options
+   *
+   * @return array
+   */
   public function processOptions()
   {
     $sShortOptions = '';
@@ -136,11 +175,22 @@ Options:\n";
     return $hActiveOptions;
   }
 
+  /**
+   * Add a new option to the internal option list
+   *
+   * @param array $hOption
+   */
   public function addOption($hOption)
   {
     $this->hOptionList[] = $hOption;
   }
 
+  /**
+   * Determine the template that should be used at this time and return it
+   *
+   * @return string
+   * @throws \Exception
+   */
   protected function generateTemplateFile()
   {
     $oServer = \Limbonia\Input::singleton('server');
@@ -172,7 +222,12 @@ Options:\n";
     return $this->templateFile('default');
   }
 
-  protected function renderPage()
+  /**
+   * Render this controller instance for output and return that data
+   *
+   * @return string
+   */
+  protected function render()
   {
     $sModuleDriver = isset($this->oApi->module) ? \Limbonia\Module::driver($this->oApi->module) : '';
 
@@ -243,7 +298,7 @@ Options:\n";
   }
 
   /**
-   * Run everything needed to react and display data in the way this controller is intended
+   * Run everything needed to react to input and display data in the way this controller is intended
    */
   public function run()
   {
