@@ -63,6 +63,14 @@ class TicketContent extends \Limbonia\Item
     return parent::__set($sName, $xValue);
   }
 
+  /**
+   * Loop through the specified array looking for keys that match column names.  For each match
+   * set that column to the value for that key in the array then unset that value in the array.
+   * After each matching key has been used return the remainder of the array.
+   *
+   * @param array $hItem
+   * @return array
+   */
   public function setAll(array $hItem = array())
   {
     $hLowerItem = parent::setAll($hItem);
