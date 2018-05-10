@@ -248,12 +248,28 @@ class Module
     return self::driverFactory($sType, $oController);
   }
 
+  /**
+   * Generate and return an HTML field, in the default style, using the specified data
+   *
+   * @param string $sContent
+   * @param string $sLabel (optional)
+   * @param string $sFieldId (optional)
+   * @return string
+   */
   public static function field($sContent, $sLabel = '', $sFieldId = '')
   {
+    $sLabelClass = empty($sLabel) ? 'blankLabel' : 'label';
     $sId = empty($sFieldId) ? '' : " id=\"{$sFieldId}Field\"";
-    return "<div class=\"field\"$sId><span class=\"label\">$sLabel</span><span class=\"data\">$sContent</span></div>";
+    return "<div class=\"field\"$sId><span class=\"$sLabelClass\">$sLabel</span><span class=\"data\">$sContent</span></div>";
   }
 
+  /**
+   * Generate and return an HTML field, in the default style, using the specified widget object to generate the content and field id
+   *
+   * @param \Limbonia\Widget $oWiget
+   * @param string $sLabel (optional)
+   * @return string
+   */
   public static function widgetField(\Limbonia\Widget $oWiget, $sLabel = '')
   {
     return self::field($oWiget, $sLabel, $oWiget->getId());
@@ -550,6 +566,7 @@ class Module
    */
   public function prepareTemplate()
   {
+    $sOriginalAction = $this->sCurrentAction;
     $this->oController->templateData('module', $this);
     $this->oController->templateData('method', $this->sCurrentAction);
     $aMethods = [];
@@ -566,6 +583,13 @@ class Module
       {
         $this->$sMethod();
       }
+    }
+
+    //If the current action has been modified from the original action
+    if ($sOriginalAction !== $this->sCurrentAction)
+    {
+      //then prepare the templates for the new action too
+      $this->prepareTemplate();
     }
   }
 
@@ -792,6 +816,11 @@ class Module
     return ucwords(trim(preg_replace("/(([a-z])[A-Z])/", "$1 $2", str_replace("_", " ", $this->sType))));
   }
 
+  /**
+   * Return the current action
+   *
+   * @return string
+   */
   public function getCurrentAction()
   {
     return $this->sCurrentAction;
@@ -813,6 +842,12 @@ class Module
     }
   }
 
+  /**
+   * Process a whole array of search terms
+   *
+   * @param array $hArray
+   * @return array
+   */
   protected function processSearchTerms($hArray)
   {
     if (is_array($hArray))
@@ -1198,7 +1233,7 @@ class Module
 
       case 'password':
         return self::field("<input type=\"password\" name=\"$this->sType[$sName]\" id=\"$this->sType$sName\" value=\"$sValue\">", $sLabel, "$this->sType{$sName}") .
-        self::field("<input type=\"password\" name=\"$this->sType[{$sName}2]\" id=\"$this->sType{$sName}2\" value=\"$sValue\">", $sLabel, "$this->sType{$sName}2");
+        self::field("<input type=\"password\" name=\"$this->sType[{$sName}2]\" id=\"$this->sType{$sName}2\" value=\"$sValue\">", $sLabel . '<br>(double check)', "$this->sType{$sName}2");
 
       case 'swing':
         return null;
@@ -1366,6 +1401,11 @@ class Module
     return $sFields;
   }
 
+  /**
+   * Generate and return whatever HTML and JavaScript is needed to make the module run in the browser
+   *
+   * @return string
+   */
   protected function getAdminHeader()
   {
     return '';
