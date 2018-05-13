@@ -421,7 +421,7 @@ class Database extends \PDO
 	 * Some drivers have driver specific options that may be set at
 	 * prepare-time.
 	 * </p>
-	 * @return PDOStatement If the database server successfully prepares the statement,
+	 * @return \Limbonia\Result\Database If the database server successfully prepares the statement,
 	 * <b>PDO::prepare</b> returns a
 	 * <b>PDOStatement</b> object.
 	 * If the database server cannot successfully prepare the statement,
@@ -459,7 +459,7 @@ class Database extends \PDO
 	 * The SQL statement to prepare and execute.
 	 * </p>
    *
-	 * @return PDOStatement returns a PDOStatement object on success, or <b>false</b> on failure.
+	 * @return \Limbonia\Result\Database returns a \Limbonia\Result\Database object on success, or <b>false</b> on failure.
    *
 	 * @link http://php.net/manual/en/pdo.query.php
 	 */
@@ -939,13 +939,18 @@ class Database extends \PDO
   {
     $aValue = [];
     $hColumns = $this->getColumns($sTable);
+    $aUsedColumn = [];
 
-    foreach ($hData as $sName => $xValue)
+    foreach ($hColumns as $sName => $hColumnData)
     {
-      $aValue[] = Database::prepareValue($hColumns[$sName], $xValue);
+      if (isset($hData[$sName]))
+      {
+        $aUsedColumn[] = $sName;
+        $aValue[] = Database::prepareValue($hColumnData, $hData[$sName]);
+      }
     }
 
-    $sSQL = "INSERT INTO {$sTable} (" . implode(',', array_keys($hData)) . ") VALUES (" . implode(',', $aValue) . ")";
+    $sSQL = "INSERT INTO {$sTable} (" . implode(',', $aUsedColumn) . ") VALUES (" . implode(',', $aValue) . ")";
     $iRowsAffected = $this->exec($sSQL);
 
     if (empty($iRowsAffected))
