@@ -57,7 +57,7 @@ class Web extends \Limbonia\Controller
 
     if (empty($this->oDomain))
     {
-      if (isset($oServer['context_prefix']) && isset($oServer['context_document_root']))
+      if (!empty($oServer['context_prefix']) && !empty($oServer['context_document_root']))
       {
          $this->oDomain = new \Limbonia\Domain($oServer . $oServer['context_prefix'], $oServer['context_document_root']);
       }
