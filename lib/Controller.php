@@ -779,6 +779,7 @@ abstract class Controller
    * @param string $sTable
    * @param array $hItem
    * @return \Limbonia\Item
+   * @throws \Limbonia\Exception\Object
    */
   public function itemFromArray($sTable, $hItem): \Limbonia\Item
   {

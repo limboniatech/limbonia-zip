@@ -17,6 +17,20 @@ class Project extends \Limbonia\Module
   }
 
   /**
+   * Lists of columns to ignore when filling template data
+   *
+   * @var array
+   */
+  protected $aIgnore =
+  [
+    'edit' => ['TopCategoryID'],
+    'create' => ['TopCategoryID'],
+    'search' => ['TopCategoryID'],
+    'view' => ['TopCategoryID'],
+    'boolean' => []
+  ];
+
+  /**
    * List of sub-menu options
    *
    * @var array
@@ -26,6 +40,7 @@ class Project extends \Limbonia\Module
     'view' => 'View',
     'edit' => 'Edit',
     'elements' => 'Elements',
+    'categories' => 'Categories',
     'releases' => 'Releases',
     'changelog' => 'Change Log',
     'roadmap' => 'Road Map'
@@ -36,7 +51,7 @@ class Project extends \Limbonia\Module
    *
    * @var array
    */
-  protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'elements', 'releases', 'changelog', 'roadmap'];
+  protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'elements', 'categories', 'releases', 'changelog', 'roadmap'];
 
   /**
    * Generate and return the default item data, filtered by API controls
@@ -107,8 +122,9 @@ class Project extends \Limbonia\Module
         return $hList;
 
       case 'elements':
+      case 'categories':
         $oDatabase = $this->oController->getDB();
-        $sTable = 'ProjectElement';
+        $sTable = $this->oApi->action == 'elements' ? 'ProjectElement' : 'TicketCategory';
         $sIdColumn = $oDatabase->getIdColumn($sTable);
 
         $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : null;
@@ -221,6 +237,65 @@ class Project extends \Limbonia\Module
   {
     $this->oItem->removeElement($this->oApi->subId);
     $this->oController->templateData('success', "Project element successfully deleted");
+  }
+
+  /**
+   * Prepare to display any version of the "categories" template
+   */
+  protected function prepareTemplateCategories()
+  {
+    $oSearch = $this->oController->itemSearch('User', ['Type' => 'internal', 'Active' => 1], ['LastName', 'FirstName']);
+    $this->oController->templateData('internalUserList', $oSearch);
+  }
+
+  /**
+   * Display the "categories" template
+   */
+  protected function prepareTemplateGetCategories()
+  {
+    if (isset($this->oApi->subId))
+    {
+      $oCategory = $this->oController->itemFromId('TicketCategory', $this->oApi->subId);
+      $this->oController->templateData('category', $oCategory);
+    }
+  }
+
+  /**
+   * Process the category creation and display the results
+   *
+   * @throws Exception
+   */
+  protected function prepareTemplatePostCategoriesCreate()
+  {
+    if ($this->oItem->addCategory($this->oController->post->getRaw()))
+    {
+      $this->oController->templateData('success', "Project category creation has been successful.");
+    }
+  }
+
+  /**
+   * Process the category update and display the results
+   */
+  protected function prepareTemplatePostCategoriesEdit()
+  {
+    $oCategory = $this->oController->itemFromId('TicketCategory', $this->oApi->subId);
+    $oCategory->setAll($this->editGetData());
+
+    if ($oCategory->save())
+    {
+      $this->oController->templateData('success', "Project category successfully updated");
+    }
+  }
+
+  /**
+   * Process the element deletion and display the results
+   */
+  protected function prepareTemplatePostCategoriesDelete()
+  {
+    if ($this->oItem->removeCategory($this->oApi->subId))
+    {
+      $this->oController->templateData('success', "Project category successfully deleted");
+    }
   }
 
   /**

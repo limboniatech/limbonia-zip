@@ -154,6 +154,20 @@ toggleMethod($('#TicketCategoryAssignmentMethod').val());
           break;
       }
     }
+    elseif ($sLowerType == 'search')
+    {
+      if ($this->sCurrentAction == 'list' || $this->oApi->method == 'post')
+      {
+        $this->aIgnore['search'] =
+        [
+          'ParentID',
+          'UserID',
+          'RoleID',
+          'KeyID',
+          'Level'
+        ];
+      }
+    }
 
     return $this->originalGetColumns($sType);
   }
@@ -202,15 +216,67 @@ toggleMethod($('#TicketCategoryAssignmentMethod').val());
   {
     if ($sName == 'ParentID')
     {
+      return '';
+    }
+
+    if ($sName == 'Name')
+    {
       if (empty($sValue))
       {
         return '';
       }
 
-      $oCategory = $this->oController->itemFromId('ticketcategory', $sValue);
-      return $this->field($oCategory->name, 'Parent', $this->sType . $sName);
+      $sPath = $this->oItem->parentId > 0 ? "{$this->oItem->path}: " : '';
+      return $this->field("$sPath<b>$sValue</b>", $sName, $this->sType . $sName);
     }
 
     return parent::getField($sName, $sValue, $hData);
+  }
+
+  /**
+   * Generate and return the value of the specified column
+   *
+   * @param \Limbonia\Item $oItem
+   * @param string $sColumn
+   * @return mixed
+   */
+  public function getColumnValue(\Limbonia\Item $oItem, $sColumn)
+  {
+    if ($sColumn == 'Name')
+    {
+      $sPath = $oItem->parentId > 0 ? "$oItem->path > " : '';
+      return "$sPath<b>$oItem->name</b>";
+    }
+
+    if ($sColumn == 'AssignmentMethod')
+    {
+      if ($oItem->assignmentMethod == 'direct')
+      {
+        return 'Direct to ' . $oItem->user->name;
+      }
+
+      if ($oItem->assignmentMethod == 'unassigned')
+      {
+        return 'Leave Unassigned';
+      }
+
+      preg_match("/(.*?) by (.*)/", $oItem->assignmentMethod, $aMatch);
+      $sMethod = ucwords($aMatch[1]) . ' between ';
+      $sGroup = 'all internal users';
+
+      if ($aMatch[2] == 'resource' && $oItem->keyID > 0)
+      {
+        $sGroup = 'internal users with ' . $oItem->key->name . ' access ' . ($oItem->level > 0 ? ' at level ' . $oItem->level . ' or above' : '');
+      }
+
+      if ($aMatch[2] == 'role' && $oItem->roleId > 0)
+      {
+        $sGroup = 'internal users with role: ' . $oItem->role->name;
+      }
+
+      return $sMethod . $sGroup;
+    }
+
+    parent::getColumnValue($oItem, $sColumn);
   }
 }

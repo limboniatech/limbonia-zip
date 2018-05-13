@@ -120,7 +120,7 @@ class ProjectRelease extends \Limbonia\Item
       'Subject' => "Project release: {$this->project->name}  {$this->version}"
     ];
 
-    $oTicket = parent::fromArray('Ticket', $hTicket, $this->getDatabase());
+    $oTicket = $this->oController->itemFromArray('Ticket', $hTicket);
     $this->ticketId = $oTicket->save();
 
     try
@@ -180,7 +180,7 @@ class ProjectRelease extends \Limbonia\Item
     if ($sLowerType == 'complete')
     {
       $sSQL = "SELECT DISTINCT Ticket.* FROM Ticket WHERE Type = 'project' AND ProjectID = $this->projectId AND ReleaseID = $this->id AND (DevStatus = 'complete' OR Status = 'closed')";
-      return parent::getList('Ticket', $sSQL, $this->getDatabase());
+      return $this->oController->itemList('Ticket', $sSQL);
     }
 
     $hCriteria =
@@ -194,18 +194,18 @@ class ProjectRelease extends \Limbonia\Item
     {
       $hCriteria['DevStatus'] = "!=:complete";
       $hCriteria['Status'] = '!=:closed';
-      $oTicket = parent::factory('Ticket', $this->getDatabase());
+      $oTicket = $this->oController->itemFactory('Ticket');
       $hIncomplete = [];
 
       foreach ($oTicket->priorityList as $sPriority)
       {
         $hCriteria['Priority'] = $sPriority;
-        $hIncomplete[$sPriority] = parent::search('Ticket', $hCriteria, null, $this->getDatabase());
+        $hIncomplete[$sPriority] = $this->oController->itemSearch('Ticket', $hCriteria);
       }
 
       return $hIncomplete;
     }
 
-    return parent::search('Ticket', $hCriteria, null, $this->getDatabase());
+    return $this->oController->itemSearch('Ticket', $hCriteria);
   }
 }

@@ -12,13 +12,76 @@ namespace Limbonia\Item;
 class Project extends \Limbonia\Item
 {
   /**
+   * List of names and their associated types, used by __get to generate item objects
+   *
+   * @var array
+   */
+  protected $hAutoExpand = ['topcategory' => 'TicketCategory'];
+
+  /**
    * Return the list of configured project
    *
    * @return \Limbonia\ItemList
    */
-  public static function getProjectList()
+  public static function getProjectList(\Limbonia\Controller $oController = null)
   {
-    return parent::search('Project', [], ['Name']);
+    if (empty($oController))
+    {
+      $oController = \Limbonia\Controller::getDefault();
+    }
+
+    return $oController->itemSearch('Project', [], ['Name']);
+  }
+
+    /**
+   * Created a row for this object's data in the database
+   *
+   * @return integer The ID of the row created on success or false on failure
+   */
+  protected function create()
+  {
+    //create the base project
+    $iProject = parent::create();
+
+    //if it works
+    if ($iProject)
+    {
+      try
+      {
+        //try creating a top category
+        $oCategory = $this->addCategory(['name' => $this->name]);
+
+        //if that fails
+        if ($oCategory === false)
+        {
+          //then complain
+          throw new \Exception('Failed to create project top category');
+        }
+
+        //set the topCategoryId to the new category ID
+        $this->topCategoryId = $oCategory->id;
+
+        //attempt to update the base project
+        if (!$this->update())
+        {
+          //if that fails then delete the new category
+          $oCategory->delete();
+
+          //and complain
+          throw new \Exception('Failed to add project top category');
+        }
+      }
+      catch (\Exception $e)
+      {
+        //if anything fails, delete this item
+        $this->delete();
+
+        //then rethrow the exception
+        throw $e;
+      }
+    }
+
+    return $iProject;
   }
 
   /**
@@ -34,22 +97,22 @@ class Project extends \Limbonia\Item
     if ($sLowerType == 'changelog')
     {
       $sSQL = "SELECT DISTINCT R.* FROM ProjectRelease R, Ticket T WHERE R.TicketID = T.TicketID AND T.Status = 'closed' AND R.ProjectID = $this->id ORDER BY R.Major DESC, R.Minor DESC, R.Patch DESC";
-      return parent::getList('ProjectRelease', $sSQL, $this->getDatabase());
+      return $this->oController->itemList('ProjectRelease', $sSQL);
     }
 
     if ($sLowerType == 'roadmap')
     {
       $sSQL = "SELECT DISTINCT R.* FROM ProjectRelease R, Ticket T WHERE R.TicketID = T.TicketID AND T.Status != 'closed' AND R.ProjectID = $this->id ORDER BY R.Major ASC, R.Minor ASC, R.Patch ASC";
-      return parent::getList('ProjectRelease', $sSQL, $this->getDatabase());
+      return $this->oController->itemList('ProjectRelease', $sSQL);
     }
 
     if ($sLowerType == 'active')
     {
       $sSQL = "SELECT R.* from ProjectRelease AS R, Ticket AS T WHERE R.TicketID = T.TicketID AND T.Status != 'closed' AND R.ProjectID = $this->id ORDER BY Major, Minor, Patch";
-      return parent::getList('ProjectRelease', $sSQL, $this->getDatabase());
+      return $this->oController->itemList('ProjectRelease', $sSQL);
     }
 
-    return parent::search('ProjectRelease', ['ProjectID' => $this->id], ['Major', 'Minor', 'Patch'], $this->getDatabase());
+    return $this->oController->itemSearch('ProjectRelease', ['ProjectID' => $this->id], ['Major', 'Minor', 'Patch']);
   }
 
   /**
@@ -68,7 +131,7 @@ class Project extends \Limbonia\Item
       'Note' => trim((string)$sNote)
     ];
 
-    $oRelease = parent::fromArray('ProjectRelease', $hRelease, $this->getDatabase());
+    $oRelease = $this->oController->itemFromArray('ProjectRelease', $hRelease);
     return $oRelease->save();
   }
 
@@ -80,7 +143,7 @@ class Project extends \Limbonia\Item
    */
   public function removeRelease($iRelease)
   {
-    $oRelease = parent::fromId('ProjectRelease', $iRelease, $this->getDatabase());
+    $oRelease = $this->oController->itemFromId('ProjectRelease', $iRelease);
     return $oRelease->delete();
   }
 
@@ -91,7 +154,7 @@ class Project extends \Limbonia\Item
    */
   public function getElementList()
   {
-    return parent::search('ProjectElement', ['ProjectID' => $this->id], ['Name'], $this->getDatabase());
+    return $this->oController->itemSearch('ProjectElement', ['ProjectID' => $this->id], ['Name']);
   }
 
   /**
@@ -110,7 +173,7 @@ class Project extends \Limbonia\Item
       'UserID' => empty($iUser) ? 0 : $iUser
     ];
 
-    $oElement = parent::fromArray('ProjectElement', $hElement, $this->getDatabase());
+    $oElement = $this->oController->itemFromArray('ProjectElement', $hElement);
     return $oElement->save();
   }
 
@@ -122,7 +185,7 @@ class Project extends \Limbonia\Item
    */
   public function removeElement($iElement)
   {
-    $oElement = parent::fromId('ProjectElement', $iElement, $this->getDatabase());
+    $oElement = $this->oController->itemFromId('ProjectElement', $iElement);
     return $oElement->delete();
   }
 
@@ -133,6 +196,72 @@ class Project extends \Limbonia\Item
    */
   public function getUnversionedTikets()
   {
-    return parent::getList('Ticket', "SELECT * FROM Ticket WHERE Status != 'closed' AND ProjectID = $this->projectId AND (ReleaseID IS NULL OR ReleaseID = 0) ORDER BY Priority, CreateTime", $this->getDatabase());
+    return $this->oController->itemList('Ticket', "SELECT * FROM Ticket WHERE Status != 'closed' AND ProjectID = $this->projectId AND (ReleaseID IS NULL OR ReleaseID = 0) ORDER BY Priority, CreateTime");
+  }
+
+  /**
+   * Return the list of categories related to this project
+   *
+   * @return \Limbonia\ItemList
+   */
+  public function getCategoryList()
+  {
+    return $this->oController->itemSearch('TicketCategory', ['ProjectID' => $this->id], ['ParentID', 'Name']);
+  }
+
+  /**
+   * Add a new category to this project
+   *
+   * @param array $hCategory - the category data to save
+   * @return \Limbonia\Item\TicketCategory The new category object on success or false on failure
+   * @throws \Exception
+   */
+  public function addCategory(array $hCategory = [])
+  {
+    $hLowerCategory = \array_change_key_case($hCategory, CASE_LOWER);
+
+    if (!isset($hLowerCategory['name']))
+    {
+      throw new \Exception('Category name is required!');
+    }
+
+    $hCategory['projectid'] = $this->id;
+    $hCategory['parentid'] = $this->topCategoryId;
+
+    if (isset($hCategory['userid']))
+    {
+      $hCategory['AssignmentMethod'] = 'direct';
+    }
+
+    $oCategory = $this->oController->itemFromArray('TicketCategory', $hCategory);
+    return $oCategory->save() ? $oCategory : false;
+  }
+
+  /**
+   * Remove the specified category from this project
+   *
+   * @param integer $iCategory
+   * @return boolean
+   * @throws \Exception
+   */
+  public function removeCategory($iCategory)
+  {
+    $oCategory = $this->oController->itemFromId('TicketCategory', $iCategory);
+
+    //if the name of the category matches the project name
+    if ($oCategory->name == $this->name)
+    {
+      //then this is the top category for this project, do not remove it!
+      throw new \Exception('The top project category can not be removed');
+    }
+
+    //if the ProjectID of the category doesn't match the project ID
+    if ($oCategory->name == $this->name || $oCategory->projectId != $this->id)
+    {
+      //then this category is not controlled by this project, do not remove it!
+      throw new \Exception('The specified category is not controlled by this project!');
+    }
+
+    return $oCategory->delete();
   }
 }

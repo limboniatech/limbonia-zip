@@ -152,6 +152,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * @param array $hItem
    * @param Database $oDatabase (optional)
    * @return Item
+   * @throws \Limbonia\Exception\Object
    */
   public static function fromArray($sTable, $hItem, Database $oDatabase = null)
   {
@@ -299,8 +300,9 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    * set that column to the value for that key in the array then unset that value in the array.
    * After each matching key has been used return the remainder of the array.
    *
-   * @param array $hItem
-   * @return array
+   * @param array $hItem - the data used to generate the item
+   * @return array - the unused hash data that was passed in
+   * @throws \Limbonia\Exception\Object
    */
   public function setAll(array $hItem = [])
   {
@@ -424,8 +426,8 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   /**
    * Sets the specified values if possible
    *
-   * @param string $sName
-   * @param mixed $xValue
+   * @param string $sName - the name of the field to set
+   * @param mixed $xValue - the value to set the field to
    */
   public function __set($sName, $xValue)
   {
@@ -534,11 +536,11 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
 
         try
         {
-          $this->hItemObjects[$sLowerName] = self::fromId($sType, $this->__get($sIDType), $this->getDatabase());
+          $this->hItemObjects[$sLowerName] = $this->getController()->itemFromId($sType, $this->__get($sIDType));
         }
         catch (\Exception $e)
         {
-          $this->hItemObjects[$sLowerName] = self::factory($sType, $this->getDatabase());
+          $this->hItemObjects[$sLowerName] = $this->getController()->itemFactory($sType);
         }
       }
 
@@ -603,9 +605,13 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function __unset($sName)
   {
-    if ($this->__isset($sName))
+    if ($sRealName = $this->hasColumn($sName))
     {
-      $this->hData[$sName] = null;
+      $this->hData[$sRealName] = null;
+    }
+    elseif ($sRealName = $this->hasColumn("{$sName}id"))
+    {
+      $this->hData[$sRealName] = null;
     }
   }
 
