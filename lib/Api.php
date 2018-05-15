@@ -383,7 +383,7 @@ class Api
       $this->hData['method'] = isset($oServer['http_x_http_method_override']) ? strtolower($oServer['http_x_http_method_override']) : strtolower($oServer['request_method']);
 
       $oGet = Input::singleton('get');
-      $this->processGet($oGet);
+      $this->processGet($oGet->getRaw());
 
       $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
       $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
