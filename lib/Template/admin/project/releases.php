@@ -22,6 +22,7 @@ elseif ($controller->api->subAction == 'delete' && isset($release))
 {
   echo "<h2>Delete Project Release</h2>
 <form action=\"" . $module->generateUri($currentItem->id, $method, $release->id, 'delete') . "\" method=\"post\">
+<input type=\"hidden\" name=\"doPost\" value=\"1\">
 Are you sure you want to delete $currentItem->name's release number \"$release->version\"?
 <button type=\"submit\" name=\"Yes\">Yes</button>&nbsp;&nbsp;&nbsp;&nbsp;<a class=\"item\" href=\"" . $module->generateUri($currentItem->id, $method) . "\"><button name=\"No\">No</button></a></form>\n";
 }

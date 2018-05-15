@@ -22,7 +22,7 @@ else
   foreach ($data as $item)
   {
     $table->startRow();
-    $table->addCell($module->processSearchGridRowControl($idColumn, $item->id));
+    $table->addCell($module->processSearchGridRowControl($item->getIDColumn(), $item->id));
 
     foreach ($dataColumns as $column)
     {

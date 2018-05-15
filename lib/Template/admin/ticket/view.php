@@ -20,6 +20,8 @@ echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'OwnerID'), '
 echo $module->getFormField('Watchers');
 echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Subject'), 'Subject');
 echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'CategoryID'), 'Category');
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'ProjectID'), 'Project');
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'ReleaseID'), 'Version');
 echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Type'), 'Type');
 
 if ($currentItem->timeSpent > 0)
@@ -46,16 +48,14 @@ if (!empty($currentItem->totalTime))
 
 if ($currentItem->type == 'software')
 {
-  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'SoftwareID'), 'Software');
-  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'ElementID'), 'Software Element');
-  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'ReleaseID'), 'Software Version');
   echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Severity'), 'Severity');
   echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Projection'), 'Projection');
   echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'DevStatus'), 'Devopment Status');
   echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'QualityStatus'), 'Quality Status');
-  echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Description'), 'Description');
   echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'StepsToReproduce'), 'Steps To Reproduce');
 }
+
+echo \Limbonia\Module::field($module->getColumnValue($currentItem, 'Description'), 'Description');
 
 foreach ($currentItem->contentList as $content)
 {

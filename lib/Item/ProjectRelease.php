@@ -30,10 +30,14 @@ class ProjectRelease extends \Limbonia\Item
   {
     $hExtra = parent::setAll($hItem);
 
-    if (isset($hExtra['version']))
+    foreach (array_keys($hExtra) as $sName)
     {
-      $this->__set('version', $hExtra['version']);
-      unset($hExtra['version']);
+      if (strtolower($sName) == 'version')
+      {
+        $this->__set('version', $hExtra[$sName]);
+        unset($hExtra[$sName]);
+        break;
+      }
     }
 
     return $hExtra;
@@ -179,13 +183,12 @@ class ProjectRelease extends \Limbonia\Item
 
     if ($sLowerType == 'complete')
     {
-      $sSQL = "SELECT DISTINCT Ticket.* FROM Ticket WHERE Type = 'project' AND ProjectID = $this->projectId AND ReleaseID = $this->id AND (DevStatus = 'complete' OR Status = 'closed')";
+      $sSQL = "SELECT DISTINCT Ticket.* FROM Ticket WHERE ProjectID = $this->projectId AND ReleaseID = $this->id AND (DevStatus = 'complete' OR Status = 'closed')";
       return $this->oController->itemList('Ticket', $sSQL);
     }
 
     $hCriteria =
     [
-      'Type' => 'project',
       'ProjectID' => $this->projectId,
       'ReleaseID' => $this->id
     ];

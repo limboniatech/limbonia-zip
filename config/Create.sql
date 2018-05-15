@@ -6,20 +6,12 @@ USE limbonia;
 
 CREATE TABLE IF NOT EXISTS Project (
   ProjectID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  CategoryID INTEGER UNSIGNED NOT NULL DEFAULT 0,
+  TopCategoryID INTEGER UNSIGNED NOT NULL DEFAULT 0,
   Name VARCHAR(255) NOT NULL,
+  Repository VARCHAR(255) NOT NULL DEFAULT '',
   Description text,
   PRIMARY KEY (ProjectID),
   UNIQUE INDEX Unique_ProjectName (Name)
-);
-
-CREATE TABLE IF NOT EXISTS ProjectElement (
-  ElementID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  ProjectID INTEGER UNSIGNED NOT NULL,
-  Name VARCHAR(255) NOT NULL,
-  UserID INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (ElementID),
-  UNIQUE INDEX Unique_ProjectElement (ProjectID,Name)
 );
 
 CREATE TABLE IF NOT EXISTS ProjectRelease (
@@ -75,37 +67,6 @@ CREATE TABLE IF NOT EXISTS Settings (
   PRIMARY KEY(Type)
 );
 
-CREATE TABLE IF NOT EXISTS Software (
-  SoftwareID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  Name VARCHAR(255) NOT NULL,
-  Repository VARCHAR(255) NOT NULL,
-  Description text,
-  PRIMARY KEY (SoftwareID),
-  UNIQUE INDEX Unique_SoftwareName (Name)
-);
-
-CREATE TABLE IF NOT EXISTS SoftwareElement (
-  ElementID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  SoftwareID INTEGER UNSIGNED NOT NULL,
-  Name VARCHAR(255) NOT NULL,
-  UserID INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (ElementID),
-  UNIQUE INDEX Unique_SoftwareElement (SoftwareID,Name)
-);
-
-CREATE TABLE IF NOT EXISTS SoftwareRelease (
-  ReleaseID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  SoftwareID int(11) unsigned NOT NULL,
-  TicketID int(11) unsigned NOT NULL DEFAULT 0,
-  Major INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  Minor INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  Patch INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  Note text,
-  PRIMARY KEY (ReleaseID),
-  UNIQUE INDEX Unique_SoftwareVersion (SoftwareID,Major,Minor,Patch),
-  INDEX Index_Software (SoftwareID)
-);
-
 CREATE TABLE IF NOT EXISTS Template (
   TemplateID INTEGER UNSIGNED NOT NULL,
   Uri VARCHAR(255) NOT NULL,
@@ -132,8 +93,6 @@ CREATE TABLE IF NOT EXISTS Ticket (
   `Status` ENUM('new','active','pending','closed') NOT NULL DEFAULT 'new',
   Priority ENUM('low','normal','high','critical') NOT NULL DEFAULT 'normal',
   ProjectID INTEGER UNSIGNED NOT NULL,
-  SoftwareID INTEGER UNSIGNED NOT NULL,
-  ElementID INTEGER UNSIGNED NOT NULL,
   ReleaseID INTEGER UNSIGNED NOT NULL,
   Severity ENUM('wish list','feature','change','performance','minor bug','major bug','crash') NOT NULL DEFAULT 'feature',
   Projection ENUM('unknown','very minor','minor','average','major','very major','redesign') NOT NULL DEFAULT 'unknown',
@@ -198,10 +157,8 @@ CREATE TABLE IF NOT EXISTS TicketHistory (
   StatusTo ENUM('new','active','pending','closed') NOT NULL DEFAULT 'new',
   PriorityFrom ENUM('low','normal','high','critical') NOT NULL DEFAULT 'normal',
   PriorityTo ENUM('low','normal','high','critical') NOT NULL DEFAULT 'normal',
-  SoftwareIDFrom INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  SoftwareIDTo INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  ElementIDFrom INTEGER UNSIGNED NOT NULL DEFAULT 0,
-  ElementIDTo INTEGER UNSIGNED NOT NULL DEFAULT 0,
+  ProjectIDFrom INTEGER UNSIGNED NOT NULL DEFAULT 0,
+  ProjectIDTo INTEGER UNSIGNED NOT NULL DEFAULT 0,
   ReleaseIDFrom INTEGER UNSIGNED NOT NULL DEFAULT 0,
   ReleaseIDTo INTEGER UNSIGNED NOT NULL DEFAULT 0,
   SeverityFrom ENUM('wish list','feature','change','performance','minor bug','major bug','crash') NOT NULL DEFAULT 'feature',

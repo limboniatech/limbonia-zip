@@ -46,7 +46,7 @@ elseif ($controller->api->subAction == 'delete' && isset($category))
   echo "<h2>Delete Project Category</h2>
 <form action=\"" . $module->generateUri($currentItem->id, $method, $category->id, 'delete') . "\" method=\"post\">
 <input type=\"hidden\" name=\"havePosted\" value=\"1\">
-Are you sure you want to delete $currentItem->name's element \"$category->name\"?
+Are you sure you want to delete $currentItem->name's category \"$category->name\"?
 <button type=\"submit\" name=\"Yes\">Yes</button>&nbsp;&nbsp;&nbsp;&nbsp;<a class=\"item\" href=\"" . $module->generateUri($currentItem->id, $method) . "\"><button name=\"No\">No</button></a></form>\n";
 }
 else

@@ -63,9 +63,6 @@ class Ticket extends \Limbonia\Module
       'ParentID',
       'CompletionTime',
       'CreateTime',
-      'SoftwareID',
-      'ElementID',
-      'ReleaseID',
       'Severity',
       'Projection',
       'DevStatus',
@@ -81,9 +78,6 @@ class Ticket extends \Limbonia\Module
       'ParentID',
       'CompletionTime',
       'CreateTime',
-      'SoftwareID',
-      'ElementID',
-      'ReleaseID',
       'Severity',
       'Projection',
       'DevStatus',
@@ -413,9 +407,6 @@ class Ticket extends \Limbonia\Module
   {
     $sHeader = parent::getAdminHeader();
     $sHeader .= "\n<style>
-#TicketSoftwareIDField,
-#TicketReleaseIDField,
-#TicketElementIDField,
 #TicketSeverityField,
 #TicketProjectionField,
 #TicketDevStatusField,
@@ -435,24 +426,15 @@ class Ticket extends \Limbonia\Module
  */
 function toggleMethod(sOption)
 {
-  softwareDiv = document.getElementById('TicketSoftwareIDField');
-  releseDiv = document.getElementById('TicketReleaseIDField');
-  elementDiv = document.getElementById('TicketElementIDField');
   severityDiv = document.getElementById('TicketSeverityField');
   projDiv = document.getElementById('TicketProjectionField');
   devDiv = document.getElementById('TicketDevStatusField');
   qualityDiv = document.getElementById('TicketQualityStatusField');
-  catDiv = document.getElementById('TicketCategoryIDField');
   stepsDiv = document.getElementById('TicketStepsToReproduceField');
 
   switch (sOption)
   {
     case 'software':
-      catDiv.style.display = 'none';
-
-      softwareDiv.style.display = 'block';
-      releseDiv.style.display = 'block';
-      elementDiv.style.display = 'block';
       severityDiv.style.display = 'block';
       projDiv.style.display = 'block';
       devDiv.style.display = 'block';
@@ -463,11 +445,6 @@ function toggleMethod(sOption)
     case 'internal':
     case 'contact':
     case 'system':
-      catDiv.style.display = 'block';
-
-      softwareDiv.style.display = 'none';
-      releseDiv.style.display = 'none';
-      elementDiv.style.display = 'none';
       severityDiv.style.display = 'none';
       projDiv.style.display = 'none';
       devDiv.style.display = 'none';
@@ -507,21 +484,11 @@ toggleMethod($('#TicketType').val());
         case 'system':
           $this->aIgnore['view'] =
           [
-            'SoftwareID',
-            'ReleaseID',
-            'ElementID',
             'Severity',
             'Projection',
             'DevStatus',
             'QualityStatus',
             'StepsToReproduce'
-          ];
-          break;
-
-        case 'software':
-          $this->aIgnore['view'] =
-          [
-            'CategoryID'
           ];
           break;
       }
@@ -551,7 +518,7 @@ toggleMethod($('#TicketType').val());
   {
     if ($sColumn == 'ReleaseID')
     {
-      return $oItem->releaseId == 0 ? 'None' : '<a class="item" href="' . $this->oController->generateUri('software', $oItem->softwareId, 'roadmap', '#' . $oItem->release->version) . '">' . $oItem->release->version . '</a>';
+      return $oItem->releaseId == 0 ? 'None' : '<a class="item" href="' . $this->oController->generateUri('project', $oItem->projectId, 'roadmap', '#' . $oItem->release->version) . '">' . $oItem->release->version . '</a>';
     }
 
     if ($sColumn == 'CreatorID')
@@ -671,60 +638,49 @@ toggleMethod($('#TicketType').val());
       return parent::getFormField($sName, $sValue, ['Type' => 'int']);
     }
 
-    static $bSoftwareDone = false;
+    static $oProjectWidget = null;
+    static $oReleaseWidget = null;
 
-    if ($sName == 'SoftwareID' || $sName == 'ReleaseID' || $sName == 'ElementID')
+    if ($sName == 'ProjectID')
     {
-      if ($bSoftwareDone)
+      if (is_null($oProjectWidget))
       {
-        if ($sName == 'SoftwareID' && !empty($sValue))
-        {
-          return "<script type=\"text/javascript\">setSoftware('$sValue');</script>\n";
-        }
-
-        if ($sName == 'ReleaseID' && !empty($sValue))
-        {
-          return "<script type=\"text/javascript\">setRelease('$sValue');</script>\n";
-        }
-
-        if ($sName == 'ElementID' && !empty($sValue))
-        {
-          return "<script type=\"text/javascript\">setElement('$sValue');</script>\n";
-        }
-
-        return null;
+        $oProjectWidget = $this->oController->widgetFactory('Project', "$this->sType[ProjectID]");
+        $oReleaseWidget = $this->oController->widgetFactory('Select', "$this->sType[ReleaseID]");
       }
 
-      $oSoftwareWidget = $this->oController->widgetFactory('Software', "$this->sType[SoftwareID]");
-      $sSoftwareID = $oSoftwareWidget->getId();
-
-      $oReleaseWidget = $this->oController->widgetFactory('Select', "$this->sType[ReleaseID]");
+      $sProjectID = $oProjectWidget->getId();
       $sReleaseID = $oReleaseWidget->getId();
 
-      $oElementWidget = $this->oController->widgetFactory('Select', "$this->sType[ElementID]");
-      $sElementID = $oElementWidget->getId();
+      $sGetReleases = $oProjectWidget->addAjaxFunction('getReleasesByProject', TRUE);
 
-      $sGetReleases = $oSoftwareWidget->addAjaxFunction('getReleasesBySoftware', TRUE);
-      $sGetElements = $oSoftwareWidget->addAjaxFunction('getElementsBySoftware', TRUE);
+      $sProjectScript  = "var projectSelect = document.getElementById('$sProjectID');\n";
+      $sProjectScript .= "var projectID = '';\n";
+      $sProjectScript .= "var releaseID = '';\n";
+      $sProjectScript .= "function setProject(iProject)\n";
+      $sProjectScript .= "{\n";
+      $sProjectScript .= "  projectID = iProject;\n";
+      $sProjectScript .= "  projectSelect.value = iProject;\n";
+      $sProjectScript .= '  ' . $sGetReleases . "(iProject, '$sReleaseID', releaseID);\n";
+      $sProjectScript .= "}\n";
+      $sProjectScript .= "setProject('" . $sValue . "');\n";
 
-      $sSoftwareScript  = "var softwareSelect = document.getElementById('$sSoftwareID');\n";
-      $sSoftwareScript .= "var softwareID = '';\n";
-      $sSoftwareScript .= "var releaseID = '';\n";
-      $sSoftwareScript .= "var elementID = '';\n";
-      $sSoftwareScript .= "function setSoftware(iSoftware)\n";
-      $sSoftwareScript .= "{\n";
-      $sSoftwareScript .= "  softwareID = iSoftware;\n";
-      $sSoftwareScript .= "  softwareSelect.value = iSoftware;\n";
-      $sSoftwareScript .= '  ' . $sGetReleases . "(iSoftware, '$sReleaseID', releaseID);\n";
-      $sSoftwareScript .= '  ' . $sGetElements . "(iSoftware, '$sElementID', elementID);\n";
-      $sSoftwareScript .= "}\n";
+      $oProjectWidget->writeJavascript($sProjectScript);
+      $oProjectWidget->addEvent('change', $sGetReleases . "(this.options[this.selectedIndex].value, '$sReleaseID', releaseID);");
+      return static::widgetField($oProjectWidget, 'Project');
+    }
 
-      if ($sName == 'SoftwareID')
+    if ($sName == 'ReleaseID')
+    {
+      if (is_null($oProjectWidget))
       {
-        $sSoftwareScript .= "setSoftware('" . $sValue . "');\n";
+        $oProjectWidget = $this->oController->widgetFactory('Project', "$this->sType[ProjectID]");
+        $oReleaseWidget = $this->oController->widgetFactory('Select', "$this->sType[ReleaseID]");
       }
 
-      $oSoftwareWidget->writeJavascript($sSoftwareScript);
+      $sReleaseID = $oReleaseWidget->getId();
+
+      $sGetReleases = $oReleaseWidget->addAjaxFunction('getReleasesByProject', TRUE);
 
       $sReleaseScript = "var releaseSelect = document.getElementById('$sReleaseID');\n";
       $sReleaseScript .= "function setRelease(iRelease)\n";
@@ -743,58 +699,15 @@ toggleMethod($('#TicketType').val());
       $sReleaseScript .= "  }\n";
       $sReleaseScript .= "  else\n";
       $sReleaseScript .= "  {\n";
-      $sReleaseScript .= '    ' . $sGetReleases . "(softwareID, '$sReleaseID', iRelease);\n";
+      $sReleaseScript .= '    ' . $sGetReleases . "(projectID, '$sReleaseID', iRelease);\n";
       $sReleaseScript .= "  }\n";
       $sReleaseScript .= "  releaseSelect.options[1] = new Option(iRelease, iRelease, true);\n";
       $sReleaseScript .= "}\n";
-
-      if ($sName == 'releaseID')
-      {
-        $sReleaseScript .= "setRelease('" . $sValue . "');\n";
-      }
+      $sReleaseScript .= "setRelease('" . $sValue . "');\n";
 
       $oReleaseWidget->writeJavascript($sReleaseScript);
-
-      $sElementScript = "var elementSelect = document.getElementById('$sElementID');\n";
-      $sElementScript .= "function setElement(iElement)\n";
-      $sElementScript .= "{\n";
-      $sElementScript .= "  elementID = iElement;\n";
-      $sElementScript .= "  if (elementSelect.options.length > 1)\n";
-      $sElementScript .= "  {\n";
-      $sElementScript .= "    for (i = 0; i < elementSelect.options.length; i++)\n";
-      $sElementScript .= "    {\n";
-      $sElementScript .= "      if (elementSelect.options[i].value == iElement)\n";
-      $sElementScript .= "      {\n";
-      $sElementScript .= "        elementSelect.options[i].selected = true;\n";
-      $sElementScript .= "        break;\n";
-      $sElementScript .= "      }\n";
-      $sElementScript .= "    }\n";
-      $sElementScript .= "  }\n";
-      $sElementScript .= "  else\n";
-      $sElementScript .= "  {\n";
-      $sElementScript .= '    ' . $sGetElements . "(softwareID, '$sElementID', elementID);\n";
-      $sElementScript .= "  }\n";
-      $sElementScript .= "  elementSelect.options[1] = new Option(iElement, iElement, true);\n";
-      $sElementScript .= "}\n";
-
-      if ($sName == 'ElementID')
-      {
-        $sElementScript .= "setElement('" . $sValue . "');\n";
-      }
-
-      $oElementWidget->writeJavascript($sElementScript);
-
-      $oSoftwareWidget->addEvent('change', $sGetReleases . "(this.options[this.selectedIndex].value, '$sReleaseID', releaseID);" . $sGetElements . "(this.options[this.selectedIndex].value, '$sElementID', elementID);");
-      $sFormField = static::widgetField($oSoftwareWidget, 'Software');
-
       $oReleaseWidget->addOption('Select a version', '0');
-      $sFormField .= static::widgetField($oReleaseWidget, 'Version');
-
-      $oElementWidget->addOption('Select an element', '0');
-      $sFormField .= static::widgetField($oElementWidget, 'Element');
-
-      $bSoftwareDone = TRUE;
-      return $sFormField;
+      return static::widgetField($oReleaseWidget, 'Version');
     }
 
     if ($sName == 'Watchers')

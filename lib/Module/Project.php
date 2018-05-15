@@ -39,7 +39,6 @@ class Project extends \Limbonia\Module
   [
     'view' => 'View',
     'edit' => 'Edit',
-    'elements' => 'Elements',
     'categories' => 'Categories',
     'releases' => 'Releases',
     'changelog' => 'Change Log',
@@ -51,7 +50,7 @@ class Project extends \Limbonia\Module
    *
    * @var array
    */
-  protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'elements', 'categories', 'releases', 'changelog', 'roadmap'];
+  protected $aAllowedActions = ['search', 'create', 'editdialog', 'editcolumn', 'edit', 'list', 'view', 'categories', 'releases', 'changelog', 'roadmap'];
 
   /**
    * Generate and return the default item data, filtered by API controls
@@ -121,10 +120,9 @@ class Project extends \Limbonia\Module
 
         return $hList;
 
-      case 'elements':
       case 'categories':
         $oDatabase = $this->oController->getDB();
-        $sTable = $this->oApi->action == 'elements' ? 'ProjectElement' : 'TicketCategory';
+        $sTable = 'TicketCategory';
         $sIdColumn = $oDatabase->getIdColumn($sTable);
 
         $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : null;
@@ -180,66 +178,6 @@ class Project extends \Limbonia\Module
   }
 
   /**
-   * Prepare to display any version of the "elements" template
-   */
-  protected function prepareTemplateElements()
-  {
-    $oSearch = $this->oController->itemSearch('User', ['Type' => 'internal', 'Active' => 1], ['LastName', 'FirstName']);
-    $this->oController->templateData('internalUserList', $oSearch);
-  }
-
-  /**
-   * Display the "elements" template
-   */
-  protected function prepareTemplateGetElements()
-  {
-    if (isset($this->oApi->subId))
-    {
-      $oElement = $this->oController->itemFromId('ProjectElement', $this->oApi->subId);
-      $this->oController->templateData('element', $oElement);
-    }
-  }
-
-  /**
-   * Process the element creation and display the results
-   *
-   * @throws Exception
-   */
-  protected function prepareTemplatePostElementsCreate()
-  {
-    $sName = trim($this->oController->post['Name']);
-
-    if (empty($sName))
-    {
-      throw new Exception('Project element creation failed: no name given');
-    }
-
-    $iUser = (integer)$this->oController->post['UserID'] ?? 0;
-    $this->oItem->addElement($sName, $iUser);
-    $this->oController->templateData('success', "Project element creation has been successful.");
-  }
-
-  /**
-   * Process the element update and display the results
-   */
-  protected function prepareTemplatePostElementsEdit()
-  {
-    $oElement = $this->oController->itemFromId('ProjectElement', $this->oApi->subId);
-    $oElement->setAll($this->editGetData());
-    $oElement->save();
-    $this->oController->templateData('success', "Project element successfully updated");
-  }
-
-  /**
-   * Process the element deletion and display the results
-   */
-  protected function prepareTemplatePostElementsDelete()
-  {
-    $this->oItem->removeElement($this->oApi->subId);
-    $this->oController->templateData('success', "Project element successfully deleted");
-  }
-
-  /**
    * Prepare to display any version of the "categories" template
    */
   protected function prepareTemplateCategories()
@@ -288,7 +226,7 @@ class Project extends \Limbonia\Module
   }
 
   /**
-   * Process the element deletion and display the results
+   * Process the category deletion and display the results
    */
   protected function prepareTemplatePostCategoriesDelete()
   {

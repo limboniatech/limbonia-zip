@@ -13,7 +13,7 @@ foreach ($currentItem->getReleaseList('changelog') as $oRelease)
 
     foreach ($oBugList as $oBug)
     {
-        echo "      <li class=\"ticket\">" . ucwords($oBug->severity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $oBug->id) . "\" title=\"[$oBug->devStatus] " . htmlentities($oBug->subject) . "\">#$oBug->id</a>: {$oBug->element->name} - " . htmlentities($oBug->subject) . " ({$oBug->owner->name})</li>\n";
+        echo "      <li class=\"ticket\">" . ucwords($oBug->severity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $oBug->id) . "\" title=\"[$oBug->devStatus] " . htmlentities($oBug->subject) . "\">#$oBug->id</a>: {$oBug->category->name} - " . htmlentities($oBug->subject) . " ({$oBug->owner->name})</li>\n";
     }
 
     echo "</ul>\n";

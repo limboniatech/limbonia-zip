@@ -9,7 +9,7 @@ if (count($unversionedList) > 0)
 
   foreach ($unversionedList as $unversionedBug)
   {
-    echo "    <li>[" . ucwords($unversionedBug->qualityStatus) . "] " . ucwords($unversionedBug->severity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $unversionedBug->id) . "\" title=\"[$unversionedBug->devStatus] " . htmlentities($unversionedBug->subject) . "\">#$unversionedBug->id</a>: <span class=\"incomplete\">{$unversionedBug->element->name} - " . htmlentities($unversionedBug->subject) . "</span> ({$unversionedBug->owner->name}) - $unversionedBug->devStatus</li>\n";
+    echo "    <li>[" . ucwords($unversionedBug->qualityStatus) . "] " . ucwords($unversionedBug->severity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $unversionedBug->id) . "\" title=\"[$unversionedBug->devStatus] " . htmlentities($unversionedBug->subject) . "\">#$unversionedBug->id</a>: <span class=\"incomplete\">{$unversionedBug->category->name} - " . htmlentities($unversionedBug->subject) . "</span> ({$unversionedBug->owner->name}) - $unversionedBug->devStatus</li>\n";
   }
 
   echo "</ul>\n";
@@ -36,7 +36,7 @@ foreach ($currentItem->getReleaseList('roadmap') as $release)
     $sDueDate = empty($release->ticket->dueDate) ? 'No Due Date' : $release->ticket->dueDate;
     $finishedPercent = number_format(100 * $completedCount / $bugCount);
     echo "  <div class=\"release\">
-    <div class=\"title\" id=\"$release->version\"><a class=\"item\" href=\"" . $controller->generateUri('ticket', $release->ticketID) . "\">$currentItem->name - $release->version</a> ($sDueDate) (<a class=\"item\" href=\"" . $controller->generateUri('ticket', 'create') . "?Type=project&ProjectID=$currentItem->id&ReleaseID=$release->id\">New Ticket</a>)</div>
+    <div class=\"title\" id=\"$release->version\"><a class=\"item\" href=\"" . $controller->generateUri('ticket', $release->ticketID) . "\">$currentItem->name - $release->version</a> ($sDueDate) (<a class=\"item\" href=\"" . $controller->generateUri('ticket', 'create') . "?ProjectID=$currentItem->id&ReleaseID=$release->id\">New Ticket</a>)</div>
     <div class=\"note\">$release->note</div>
     <div class=\"progressWrapper\"><div class=\"progress\"><span class=\"bar\" style=\"width: {$finishedPercent}%;\">{$finishedPercent}%</span></div></div>\n";
 
@@ -49,7 +49,7 @@ foreach ($currentItem->getReleaseList('roadmap') as $release)
 
         foreach ($ticketList as $incompleteBug)
         {
-          echo "    <li class=\"ticket\">[" . ucwords($incompleteBug->qualityStatus) . "] " . ucwords($incompleteBug->severity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $incompleteBug->id) . "\" title=\"[$incompleteBug->devStatus] " . htmlentities($incompleteBug->subject) . "\">#$incompleteBug->id</a>: <span class=\"incomplete\">{$incompleteBug->element->name} - " . htmlentities($incompleteBug->subject) . "</span> ({$incompleteBug->owner->name}) - $incompleteBug->devStatus</li>\n";
+          echo "    <li class=\"ticket\">[" . ucwords($incompleteBug->qualityStatus) . "] " . ucwords($incompleteBug->severity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $incompleteBug->id) . "\" title=\"[$incompleteBug->devStatus] " . htmlentities($incompleteBug->subject) . "\">#$incompleteBug->id</a>: <span class=\"incomplete\">{$incompleteBug->category->name} - " . htmlentities($incompleteBug->subject) . "</span> ({$incompleteBug->owner->name}) - $incompleteBug->devStatus</li>\n";
         }
 
         echo "</ul>\n";
@@ -63,7 +63,7 @@ foreach ($currentItem->getReleaseList('roadmap') as $release)
 
       foreach ($completedList as $completedBug)
       {
-        echo "    <li class=\"ticket\">[" . ucwords($completedBug->qualityStatus) . "] " . ucwords($completedBug->sevesity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $completedBug->id) . "\" title=\"[$completedBug->devStatus] " . htmlentities($completedBug->subject) . "\">#$completedBug->id</a>: <span class=\"completed\">{$completedBug->element->name} - " . htmlentities($completedBug->subject). "</span> ({$completedBug->owner->name})</li>\n";
+        echo "    <li class=\"ticket\">[" . ucwords($completedBug->qualityStatus) . "] " . ucwords($completedBug->sevesity) . " <a class=\"item\" href=\"" . $controller->generateUri('ticket', $completedBug->id) . "\" title=\"[$completedBug->devStatus] " . htmlentities($completedBug->subject) . "\">#$completedBug->id</a>: <span class=\"completed\">{$completedBug->category->name} - " . htmlentities($completedBug->subject). "</span> ({$completedBug->owner->name})</li>\n";
       }
 
       echo "</ul>\n";
@@ -76,7 +76,7 @@ foreach ($currentItem->getReleaseList('roadmap') as $release)
   {
     $sDueDate = empty($release->ticket->dueDate) ? 'No Due Date' : $release->ticket->dueDate;
     echo "  <div class=\"release\">
-    <div class=\"title\" id=\"$release->version\"><a class=\"item\" href=\"" . $controller->generateUri('ticket', $release->ticketID) . "\">$currentItem->name - $release->version</a> ($sDueDate) (<a class=\"item\" href=\"" . $controller->generateUri('ticket', 'create') . "?Type=project&ProjectID=$currentItem->id&ReleaseID=$release->id\">New Ticket</a>)</div>
+    <div class=\"title\" id=\"$release->version\"><a class=\"item\" href=\"" . $controller->generateUri('ticket', $release->ticketID) . "\">$currentItem->name - $release->version</a> ($sDueDate) (<a class=\"item\" href=\"" . $controller->generateUri('ticket', 'create') . "?ProjectID=$currentItem->id&ReleaseID=$release->id\">New Ticket</a>)</div>
     <div class=\"note\">$release->note</div>
   </div>\n";
   }

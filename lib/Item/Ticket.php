@@ -31,7 +31,7 @@ class Ticket extends \Limbonia\Item
    *
    * @var aray
    */
-  protected $aSoftwareColumn = ['SoftwareID', 'ElementID', 'ReleaseID', 'Severity', 'Projection', 'DevStatus', 'QualityStatus', 'Description', 'StepsToReproduce'];
+  protected $aSoftwareColumn = ['Severity', 'Projection', 'DevStatus', 'QualityStatus', 'StepsToReproduce'];
 
   /**
    * List of extra data passed to this ticket, stored here so that it can be passed on to a content object
@@ -51,8 +51,7 @@ class Ticket extends \Limbonia\Item
     'owner' => 'User',
     'creator' => 'User',
     'category' => 'TicketCategory',
-    'element' => 'SoftwareElement',
-    'release' => 'SoftwareRelease'
+    'release' => 'ProjectRelease'
   ];
 
   /**

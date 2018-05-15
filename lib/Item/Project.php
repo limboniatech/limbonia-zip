@@ -12,6 +12,13 @@ namespace Limbonia\Item;
 class Project extends \Limbonia\Item
 {
   /**
+   * List of columns that shouldn't be updated after the data has been created
+   *
+   * @var array
+   */
+  protected $aNoUpdate = ['TopCategoryID'];
+
+  /**
    * List of names and their associated types, used by __get to generate item objects
    *
    * @var array
@@ -33,55 +40,155 @@ class Project extends \Limbonia\Item
     return $oController->itemSearch('Project', [], ['Name']);
   }
 
-    /**
+  /**
+   * Sets the specified values if possible
+   *
+   * @param string $sName - the name of the field to set
+   * @param mixed $xValue - the value to set the field to
+   */
+  public function __set($sName, $xValue)
+  {
+    $sLowerName = strtolower($sName);
+
+    if ($sLowerName == 'name')
+    {
+      $this->topCategory->name = $xValue;
+    }
+
+    if ($sLowerName == 'topcategoryid' && isset($this->hItemObjects['topcategory']))
+    {
+      unset($this->hItemObjects['topcategory']);
+    }
+
+    parent::__set($sName, $xValue);
+  }
+
+  /**
+   * Get the specified data
+   *
+   * @param string $sName
+   * @return mixed
+   */
+  public function __get($sName)
+  {
+    $sLowerName = strtolower($sName);
+
+    if ($sLowerName = 'topcategory' && !isset($this->hItemObjects[$sLowerName]))
+    {
+      try
+      {
+        if ($this->hData['TopCategoryID'] == 0)
+        {
+          throw new \Exception('Top Category not set!');
+        }
+
+        $this->hItemObjects[$sLowerName] = $this->getController()->itemFromId('TicketCategory', $this->hData['TopCategoryID']);
+
+      }
+      catch (\Exception $e)
+      {
+        $this->hItemObjects[$sLowerName] = $this->getController()->itemFromArray('TicketCategory',
+        [
+          'name' => $this->hData['Name'],
+          'projectid' => $this->hData['ProjectID']
+        ]);
+      }
+    }
+
+    return parent::__get($sName);
+  }
+
+  /**
    * Created a row for this object's data in the database
    *
    * @return integer The ID of the row created on success or false on failure
    */
   protected function create()
   {
+    $this->topCategory->name = $this->name;
+
+    //if that fails
+    if ($this->topCategory->save() === false)
+    {
+      //then complain
+      throw new \Exception('Failed to create top category');
+    }
+
+    //set the topCategoryId to the new category ID
+    $this->topCategoryId = $this->topCategory->id;
+
     //create the base project
     $iProject = parent::create();
 
-    //if it works
-    if ($iProject)
+    if ($iProject === false)
     {
-      try
+      //if that fails then delete the new category
+      $this->topCategory->delete();
+      return false;
+    }
+
+    //if it works
+    try
+    {
+      $this->topCategory->projectId = $this->id;
+
+      //attempt to update the category with the new project ID
+      if (!$this->topCategory->save())
       {
-        //try creating a top category
-        $oCategory = $this->addCategory(['name' => $this->name]);
+        //if that fails then delete the new category
+        $this->topCategory->delete();
 
-        //if that fails
-        if ($oCategory === false)
-        {
-          //then complain
-          throw new \Exception('Failed to create project top category');
-        }
-
-        //set the topCategoryId to the new category ID
-        $this->topCategoryId = $oCategory->id;
-
-        //attempt to update the base project
-        if (!$this->update())
-        {
-          //if that fails then delete the new category
-          $oCategory->delete();
-
-          //and complain
-          throw new \Exception('Failed to add project top category');
-        }
+        //and complain
+        throw new \Exception('Failed to add top category');
       }
-      catch (\Exception $e)
-      {
-        //if anything fails, delete this item
-        $this->delete();
+    }
+    catch (\Exception $e)
+    {
+      //if anything fails, delete this item
+      $this->delete();
 
-        //then rethrow the exception
-        throw $e;
-      }
+      //then rethrow the exception
+      throw new \Exception('Post-creation data failed: ' . $e->getMessage());
     }
 
     return $iProject;
+  }
+
+  /**
+   * Update this object's data in the data base with current data
+   *
+   * @return integer The ID of this object on success or false on failure
+   */
+  protected function update()
+  {
+    $this->topCategory->name = $this->name;
+    $this->topCategory->projectId = $this->id;
+
+    //if that fails
+    if ($this->topCategory->save() === false)
+    {
+      //then complain
+      throw new \Exception('Failed to update top category');
+    }
+
+    return parent::update();
+  }
+
+  /**
+   * Delete the row representing this object from the database
+   *
+   * @return boolean
+   * @throws \Limbonia\Exception\DBResult
+   */
+  public function delete()
+  {
+    if (!parent::delete())
+    {
+      return false;
+    }
+
+    $this->topCategory->delete();
+    return true;
   }
 
   /**
@@ -145,48 +252,6 @@ class Project extends \Limbonia\Item
   {
     $oRelease = $this->oController->itemFromId('ProjectRelease', $iRelease);
     return $oRelease->delete();
-  }
-
-  /**
-   * Return the list of elements related to this project
-   *
-   * @return \Limbonia\ItemList
-   */
-  public function getElementList()
-  {
-    return $this->oController->itemSearch('ProjectElement', ['ProjectID' => $this->id], ['Name']);
-  }
-
-  /**
-   * Add a new element to this project
-   *
-   * @param string $sName
-   * @param integer $iUser (optional)
-   * @return integer The ID of the new element object on success or false on failure
-   */
-  public function addElement($sName, $iUser = 0)
-  {
-    $hElement =
-    [
-      'ProjectID' => $this->id,
-      'Name' => trim($sName),
-      'UserID' => empty($iUser) ? 0 : $iUser
-    ];
-
-    $oElement = $this->oController->itemFromArray('ProjectElement', $hElement);
-    return $oElement->save();
-  }
-
-  /**
-   * Remove the specified element from this project
-   *
-   * @param integer $iElement
-   * @return boolean
-   */
-  public function removeElement($iElement)
-  {
-    $oElement = $this->oController->itemFromId('ProjectElement', $iElement);
-    return $oElement->delete();
   }
 
   /**
