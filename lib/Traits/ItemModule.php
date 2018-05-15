@@ -467,9 +467,6 @@ trait ItemModule
       return null;
     }
 
-    $sIDColumn = preg_replace("/.*?\./", "", $this->oItem->getIDColumn());
-    $this->oController->templateData('idColumn', $sIDColumn);
-    $this->oController->templateData('noID', $this->oItem->id == 0);
     $this->oController->templateData('fields', $this->getColumns('Edit'));
   }
 

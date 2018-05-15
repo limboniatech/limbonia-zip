@@ -24,6 +24,13 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   protected static $hStatement = [];
 
   /**
+   * The default data used for "blank" or "empty" items
+   *
+   * @var array
+   */
+  protected static $hDefaultData = [];
+
+  /**
    * This object's data
    *
    * @var array
@@ -213,10 +220,20 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
 
     $this->aNoUpdate[] = $this->sIdColumn;
 
-    foreach ($this->getColumns() as $sColumn => $hColumnData)
+    //if the default data for this table hasn't been set yet...
+    if (!isset(self::$hDefaultData[$this->sTable]))
     {
-      $this->hData[$sColumn] = isset($hColumnData['Default']) ? $hColumnData['Default'] : null;
+      self::$hDefaultData[$this->sTable] = [];
+      
+      //then generate it
+      foreach ($this->getColumns() as $sColumn => $hColumnData)
+      {
+        self::$hDefaultData[$this->sTable][$sColumn] = isset($hColumnData['Default']) ? $hColumnData['Default'] : null;
+      }
     }
+
+    //assing the default data to the freshly minted item...
+    $this->hData = self::$hDefaultData[$this->sTable];
   }
 
   /**
