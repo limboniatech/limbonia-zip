@@ -48,7 +48,8 @@ class Ticket extends \Limbonia\Module
       'LastUpdate',
       'CreateTime',
       'CompletionTime',
-      'CreatorID'
+      'CreatorID',
+      'Type'
     ],
     'create' =>
     [
@@ -59,7 +60,6 @@ class Ticket extends \Limbonia\Module
     ],
     'search' =>
     [
-      'TimeSpent',
       'ParentID',
       'CompletionTime',
       'CreateTime',
@@ -70,10 +70,13 @@ class Ticket extends \Limbonia\Module
       'Description',
       'StepsToReproduce'
     ],
-    'view' => [],
+    'view' =>
+    [
+      'CreateTime',
+      'ParentID'
+    ],
     'usertickets' =>
     [
-      'TimeSpent',
       'OwnerID',
       'ParentID',
       'CompletionTime',
@@ -139,27 +142,29 @@ class Ticket extends \Limbonia\Module
    */
   protected function columnOrder()
   {
-    $aColumnOrder =
+    return
     [
+      'CreatorID',
+      'Status',
+      'Priority',
       'OwnerID',
-      'CustomerID',
-      'CategoryID',
-      'Type',
       'Subject',
-      'TimeSpent',
+      'CategoryID',
+      'ProjectID',
+      'ReleaseID',
+      'Type',
+      'LastUpdate',
       'StartDate',
       'DueDate',
-      'Status',
-      'Priority'
+      'CompletionTime',
+      'Severity',
+      'Projection',
+      'DevStatus',
+      'QualityStatus',
+      'StepsToReproduce',
+      'Description'
     ];
-    /*
-    if ()
-    {
-
-    }
-    */
-    return [];
-  }
+   }
 
   /**
    * Return the default settings
@@ -271,6 +276,46 @@ class Ticket extends \Limbonia\Module
     $hData = $this->originalProcessCreateGetData();
     $hData['CreatorID'] = $this->oController->user()->id;
     return $hData;
+  }
+
+  /**
+   * Run the code needed to display the default "create" template
+   */
+  protected function prepareTemplateCreate()
+  {
+    $hFields = array_merge(['Header' => ['Type' => 'Text']], $this->getColumns('create'));
+    $this->oController->templateData('fields', $hFields);
+  }
+
+  /**
+   * Run the code needed to display the default "edit" template
+   */
+  protected function prepareTemplateEdit()
+  {
+    if (!$this->allow('edit') || isset($this->oController->post['No']))
+    {
+      $this->oController->templateData('close', true);
+      return null;
+    }
+
+    $hFields = $this->getColumns('edit');
+    $hFields['UpdateText'] = ['Type' => 'Text'];
+    $hFields['UpdateType'] = ['Type' => 'Text'];
+    $hFields['TimeWorked'] = ['Type' => 'Text'];
+    $this->oController->templateData('fields', $hFields);
+  }
+
+  /**
+   * Run the code needed to display the default "view" template
+   */
+  protected function prepareTemplateView()
+  {
+    $hFields = $this->getColumns('View');
+    $hFields['Content'] =
+    [
+      'Type' => 'text'
+    ];
+    $this->oController->templateData('fields', $hFields);
   }
 
   /**
@@ -398,73 +443,6 @@ class Ticket extends \Limbonia\Module
     return $hPost;
   }
 
-  /**
-   * Generate and return whatever HTML and JavaScript is needed to make the module run in the browser
-   *
-   * @return string
-   */
-  protected function getAdminHeader()
-  {
-    $sHeader = parent::getAdminHeader();
-    $sHeader .= "\n<style>
-#TicketSeverityField,
-#TicketProjectionField,
-#TicketDevStatusField,
-#TicketQualityStatusField,
-#TicketCategoryIDField,
-#TicketStepsToReproduceField
-{
-  display: none;
-}
-</style>\n
-<script type=\"text/javascript\">
-/**
- * Toggle the associated data when the Asignment Method is changed
- *
- * @param {String} sOption
- * @returns {Boolean}
- */
-function toggleMethod(sOption)
-{
-  severityDiv = document.getElementById('TicketSeverityField');
-  projDiv = document.getElementById('TicketProjectionField');
-  devDiv = document.getElementById('TicketDevStatusField');
-  qualityDiv = document.getElementById('TicketQualityStatusField');
-  stepsDiv = document.getElementById('TicketStepsToReproduceField');
-
-  switch (sOption)
-  {
-    case 'software':
-      severityDiv.style.display = 'block';
-      projDiv.style.display = 'block';
-      devDiv.style.display = 'block';
-      qualityDiv.style.display = 'block';
-      stepsDiv.style.display = 'block';
-      break;
-
-    case 'internal':
-    case 'contact':
-    case 'system':
-      severityDiv.style.display = 'none';
-      projDiv.style.display = 'none';
-      devDiv.style.display = 'none';
-      qualityDiv.style.display = 'none';
-      stepsDiv.style.display = 'none';
-      break;
-  }
-}
-
-$('#TicketType').change(function()
-{
-  toggleMethod($(this).val());
-});
-
-toggleMethod($('#TicketType').val());
-</script>\n";
-
-    return $sHeader;
-  }
-
     /**
    * Generate and return a list of columns based on the specified type
    *
@@ -475,21 +453,21 @@ toggleMethod($('#TicketType').val());
   {
     $sLowerType = strtolower($sType);
 
-    if ($sLowerType == 'view')
+    if (in_array($sLowerType, ['view', 'edit']))
     {
-      switch ($this->oItem->assignmentMethod)
+      switch ($this->oItem->type)
       {
         case 'internal':
         case 'contact':
         case 'system':
-          $this->aIgnore['view'] =
+          $this->aIgnore[$sLowerType] = array_merge($this->aIgnore[$sLowerType],
           [
             'Severity',
             'Projection',
             'DevStatus',
             'QualityStatus',
             'StepsToReproduce'
-          ];
+          ]);
           break;
       }
     }
@@ -561,6 +539,64 @@ toggleMethod($('#TicketType').val());
    */
   public function getFormField($sName, $sValue = null, $hData = [])
   {
+    if ($sName == 'Header')
+    {
+      return "\n<style>
+#TicketSeverityField,
+#TicketProjectionField,
+#TicketDevStatusField,
+#TicketQualityStatusField,
+#TicketStepsToReproduceField
+{
+  display: none;
+}
+</style>\n
+<script type=\"text/javascript\">
+/**
+ * Toggle the associated data when the Asignment Method is changed
+ *
+ * @param {String} sOption
+ * @returns {Boolean}
+ */
+function toggleMethod(sOption)
+{
+  severityDiv = document.getElementById('TicketSeverityField');
+  projDiv = document.getElementById('TicketProjectionField');
+  devDiv = document.getElementById('TicketDevStatusField');
+  qualityDiv = document.getElementById('TicketQualityStatusField');
+  stepsDiv = document.getElementById('TicketStepsToReproduceField');
+
+  switch (sOption)
+  {
+    case 'software':
+      severityDiv.style.display = 'block';
+      projDiv.style.display = 'block';
+      devDiv.style.display = 'block';
+      qualityDiv.style.display = 'block';
+      stepsDiv.style.display = 'block';
+      break;
+
+    case 'internal':
+    case 'contact':
+    case 'system':
+      severityDiv.style.display = 'none';
+      projDiv.style.display = 'none';
+      devDiv.style.display = 'none';
+      qualityDiv.style.display = 'none';
+      stepsDiv.style.display = 'none';
+      break;
+  }
+}
+
+$('#TicketType').change(function()
+{
+  toggleMethod($(this).val());
+});
+
+toggleMethod($('#TicketType').val());
+</script>\n";
+    }
+
     $sLabel = preg_replace("/([A-Z])/", "$1", $sName);
 
     if (is_null($sValue) && isset($hData['Default']) && !$this->isSearch())
@@ -710,29 +746,6 @@ toggleMethod($('#TicketType').val());
       return static::widgetField($oReleaseWidget, 'Version');
     }
 
-    if ($sName == 'Watchers')
-    {
-      $aWatcherList = $this->oItem->getWatcherList();
-      $aWatcher = [];
-      $bCurrentlyWatching = false;
-
-      foreach ($aWatcherList as $oWatcher)
-      {
-        if ($oWatcher->id == $this->oController->user()->id)
-        {
-          $bCurrentlyWatching = true;
-        }
-
-        $aWatcher[] = "<a class=\"item\" href=\"" . $this->oController->generateUri('user', $oWatcher->id) . "\">$oWatcher->name</a>";
-      }
-
-      $sWatcherList = count($aWatcher) == 0 ? 'None' : implode(', ', $aWatcher);
-      $sButtonText = $bCurrentlyWatching ? 'Stop watching this ticket' : 'Watch this ticket';
-      $sSubAction = $bCurrentlyWatching ? 'remove' : 'add';
-
-      return static::field("$sWatcherList<br /><form method=\"post\" action=\"" . $this->generateUri($this->oItem->id, 'watchers', $sSubAction) . "\"><button type=\"submit\">$sButtonText</button></form>", 'Watchers', 'Watchers');
-    }
-
     $sType = strtolower(preg_replace("/( |\().*/", "", $hData['Type']));
 
     switch ($sType)
@@ -758,5 +771,138 @@ toggleMethod($('#TicketType').val());
     }
 
     return parent::getColumnTitle($sColumn);
+  }
+
+    /**
+   * Generate and return the HTML for the specified form field based on the specified information
+   *
+   * @param string $sName
+   * @param string $sValue
+   * @param array $hData
+   * @return string
+   */
+  public function getField($sName, $sValue = null, $hData = [])
+  {
+    $sLabel = $this->getColumnTitle($sName);
+
+    if ($sName == 'CreatorID')
+    {
+      if ($this->oItem->creatorID == 0)
+      {
+        return '';
+      }
+
+      return static::field($this->getColumnValue($this->oItem, $sName) . ' on ' . $this->oItem->createTime, 'Created By');
+    }
+
+    if ($sName == 'OwnerID')
+    {
+      $aWatcherList = $this->oItem->getWatcherList();
+      $aWatcher = [];
+      $bCurrentlyWatching = false;
+
+      foreach ($aWatcherList as $oWatcher)
+      {
+        if ($oWatcher->id == $this->oController->user()->id)
+        {
+          $bCurrentlyWatching = true;
+        }
+
+        $aWatcher[] = "<a class=\"item\" href=\"" . $this->oController->generateUri('user', $oWatcher->id) . "\">$oWatcher->name</a>";
+      }
+
+      $sWatcherList = count($aWatcher) == 0 ? 'None' : implode(', ', $aWatcher);
+      $sButtonText = $bCurrentlyWatching ? 'Stop watching this ticket' : 'Watch this ticket';
+      $sSubAction = $bCurrentlyWatching ? 'remove' : 'add';
+
+      return static::field($this->getColumnValue($this->oItem, $sName), $sLabel, $this->sType . $sName) .
+      static::field("$sWatcherList<br /><form method=\"post\" action=\"" . $this->generateUri($this->oItem->id, 'watchers', $sSubAction) . "\"><button type=\"submit\">$sButtonText</button></form>", 'Watchers', 'Watchers');
+    }
+
+    if (in_array($sName, ['Status', 'Priority', 'CategoryID', 'ProjectID', 'Type', 'StartDate', 'DueDate', 'Severity', 'Projection', 'DevStatus', 'QualityStatus']))
+    {
+      $sValue = $this->getColumnValue($this->oItem, $sName);
+
+      if (in_array($sName, ['StartDate', 'DueDate']) && empty($sValue))
+      {
+        return '';
+      }
+
+      return static::field($sValue, $sLabel, $this->sType . $sName);
+    }
+
+    if ($sName == 'CompletionTime')
+    {
+      $sValue = $this->getColumnValue($this->oItem, $sName);
+      $sField = empty($sValue) ? '' : static::field($sValue, $sLabel, $this->sType . $sName);
+
+      if (!empty($this->oItem->totalTime))
+      {
+        $sField .= static::field(\Limbonia\Item::outputTimeInterval($this->oItem->totalTime), 'Total Time Worked');
+      }
+
+      return $sField;
+    }
+
+    if ($sName == 'ReleaseID')
+    {
+      return static::field($this->getColumnValue($this->oItem, $sName), 'Version', $this->sType . $sName);
+    }
+
+    if ($sName == 'Content')
+    {
+      $sField = '';
+
+      foreach ($this->oItem->contentList as $oContent)
+      {
+        $sField .= "<div class=\"field ticketContent\">\n";
+        $sField .= "  <span class=\"label\">\n";
+
+        if ($oContent->user->id > 0)
+        {
+          $sField .= "<a class=\"item\" href=\"" . $this->getController()->generateUri('user', $oContent->user->id) . "\">{$oContent->user->name}</a>\n";
+        }
+        else
+        {
+          $sField .= "Auto Created";
+        }
+
+        $sField .= ' [' . ucwords($oContent->updateType) . ']';
+        $sField .= "  <br>\n";
+        $sField .= $oContent->updateTime;
+
+        if (!empty($oContent->timeWorked))
+        {
+          $sField .= '<br>' . \Limbonia\Item::outputTimeInterval($oContent->timeWorked);
+        }
+
+        $sField .= "</span>\n";
+        $sField .= "<span class=\"$oContent->updateType data\">\n";
+        $sField .= preg_replace("/\n/", "<br>\n", $oContent->updateText) . "\n";
+        $historyList = $oContent->getHistory();
+
+        if (count($historyList) > 0)
+        {
+          $sField .= "<div class=\"history\">\n";
+
+          foreach ($historyList as $history)
+          {
+            if (!empty($history->note))
+            {
+              $sField .= "<div class=\"note\">$history->note</div>\n";
+            }
+          }
+
+          $sField .= "</div>\n";
+        }
+
+        $sField .= "  </span>\n";
+        $sField .= "</div>\n";
+      }
+
+      return $sField;
+    }
+
+    return parent::getField($sName, $sValue, $hData);
   }
 }

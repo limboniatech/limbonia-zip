@@ -36,69 +36,27 @@ class TicketCategory extends \Limbonia\Module
   }
 
   /**
-   * Generate and return whatever HTML and JavaScript is needed to make the module run in the browser
-   *
-   * @return string
+   * Run the code needed to display the default "create" template
    */
-  protected function getAdminHeader()
+  protected function prepareTemplateCreate()
   {
-    $sHeader = parent::getAdminHeader();
-    $sHeader .= "\n<style>
-#TicketCategoryUserIDField,
-#TicketCategoryRoleIDField,
-#TicketCategoryKeyIDField,
-#TicketCategoryLevelField
-{
-  display: none;
-}
-</style>\n
-<script type=\"text/javascript\">
-/**
- * Toggle the associated data when the Asignment Method is changed
- *
- * @param {String} sOption
- * @returns {Boolean}
- */
-function toggleMethod(sOption)
-{
-  userDiv = document.getElementById('TicketCategoryUserIDField');
-  roleDiv = document.getElementById('TicketCategoryRoleIDField');
-  keyDiv = document.getElementById('TicketCategoryKeyIDField');
-  levelDiv = document.getElementById('TicketCategoryLevelField');
-
-  if (sOption === 'unassigned')
-  {
-    userDiv.style.display = roleDiv.style.display = keyDiv.style.display = levelDiv.style.display = 'none';
+    $hFields = array_merge(['Header' => ['Type' => 'Text']], $this->getColumns('create'));
+    $this->oController->templateData('fields', $hFields);
   }
 
-  if (sOption === 'least tickets by resource' || sOption === 'round robin by resource')
+  /**
+   * Run the code needed to display the default "edit" template
+   */
+  protected function prepareTemplateEdit()
   {
-    userDiv.style.display = roleDiv.style.display = 'none';
-    keyDiv.style.display = levelDiv.style.display = 'block';
-  }
+    if (!$this->allow('edit') || isset($this->oController->post['No']))
+    {
+      $this->oController->templateData('close', true);
+      return null;
+    }
 
-  if (sOption === 'least tickets by role' || sOption === 'round robin by role')
-  {
-    userDiv.style.display = keyDiv.style.display = levelDiv.style.display = 'none';
-    roleDiv.style.display = 'block';
-  }
-
-  if (sOption === 'direct')
-  {
-    userDiv.style.display = 'block';
-    roleDiv.style.display = keyDiv.style.display = levelDiv.style.display = 'none';
-  }
-}
-
-$('#TicketCategoryAssignmentMethod').change(function()
-{
-  toggleMethod($(this).val());
-});
-
-toggleMethod($('#TicketCategoryAssignmentMethod').val());
-</script>\n";
-
-    return $sHeader;
+    $hFields = array_merge(['Header' => ['Type' => 'Text']], $this->getColumns('edit'));
+    $this->oController->templateData('fields', $hFields);
   }
 
   /**
@@ -182,6 +140,64 @@ toggleMethod($('#TicketCategoryAssignmentMethod').val());
    */
   public function getFormField($sName, $sValue = null, $hData = [])
   {
+    if ($sName == 'Header')
+    {
+      return "\n<style>
+#TicketCategoryUserIDField,
+#TicketCategoryRoleIDField,
+#TicketCategoryKeyIDField,
+#TicketCategoryLevelField
+{
+  display: none;
+}
+</style>\n
+<script type=\"text/javascript\">
+/**
+ * Toggle the associated data when the Asignment Method is changed
+ *
+ * @param {String} sOption
+ * @returns {Boolean}
+ */
+function toggleMethod(sOption)
+{
+  userDiv = document.getElementById('TicketCategoryUserIDField');
+  roleDiv = document.getElementById('TicketCategoryRoleIDField');
+  keyDiv = document.getElementById('TicketCategoryKeyIDField');
+  levelDiv = document.getElementById('TicketCategoryLevelField');
+
+  if (sOption === 'unassigned')
+  {
+    userDiv.style.display = roleDiv.style.display = keyDiv.style.display = levelDiv.style.display = 'none';
+  }
+
+  if (sOption === 'least tickets by resource' || sOption === 'round robin by resource')
+  {
+    userDiv.style.display = roleDiv.style.display = 'none';
+    keyDiv.style.display = levelDiv.style.display = 'block';
+  }
+
+  if (sOption === 'least tickets by role' || sOption === 'round robin by role')
+  {
+    userDiv.style.display = keyDiv.style.display = levelDiv.style.display = 'none';
+    roleDiv.style.display = 'block';
+  }
+
+  if (sOption === 'direct')
+  {
+    userDiv.style.display = 'block';
+    roleDiv.style.display = keyDiv.style.display = levelDiv.style.display = 'none';
+  }
+}
+
+$('#TicketCategoryAssignmentMethod').change(function()
+{
+  toggleMethod($(this).val());
+});
+
+toggleMethod($('#TicketCategoryAssignmentMethod').val());
+</script>\n";
+    }
+
     if ($sName == 'ParentID')
     {
       $oSelect = $this->oController->widgetFactory('Select', "$this->sType[ParentID]");
