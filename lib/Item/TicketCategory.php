@@ -157,7 +157,7 @@ class TicketCategory extends \Limbonia\Item
         $this->hData['Path'] = self::$hCache[$this->hData['CategoryID']]['Path'];
       }
 
-      return !empty($this->hData['Path']) ? implode(' > ', $this->hData['Path']) : 'None';
+      return !empty($this->hData['Path']) ? implode(' > ', $this->hData['Path']) : '';
     }
 
     return parent::__get($sName);
