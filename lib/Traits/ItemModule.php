@@ -451,9 +451,17 @@ trait ItemModule
   /**
    * Run the code needed to display the default "create" template
    */
+  protected function prepareTemplateGetCreate()
+  {
+    $this->oItem->setAll($this->getController()->get->getRaw());
+  }
+
+  /**
+   * Run the code needed to display the default "create" template
+   */
   protected function prepareTemplateCreate()
   {
-    $this->oController->templateData('fields', $this->getColumns('Create'));
+    $this->getController()->templateData('fields', $this->getColumns('create'));
   }
 
   /**
@@ -491,8 +499,18 @@ trait ItemModule
    */
   protected function prepareTemplatePostCreate()
   {
-    $this->oItem->setAll($this->processCreateGetData());
-    $this->oItem->save();
+    try
+    {
+      $this->oItem->setAll($this->processCreateGetData());
+      $this->oItem->save();
+      $this->getController()->templateData('success', "Successfully created new " . $this->getType() . "<a class=\"item\" href=\"" . $this->generateUri('create') . "\">Create another?</a>");
+    }
+    catch (\Exception $e)
+    {
+      $this->getController()->templateData('failure', 'Failed creating new ' . $this->getType() . ': ' . $e->getMessage());
+    }
+
+    $this->sCurrentAction = 'view';
   }
 
   /**
