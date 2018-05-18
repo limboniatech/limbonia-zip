@@ -76,14 +76,23 @@ class Project extends \Limbonia\Module
           $sTable .= ', Ticket';
           $aWhere = ['ProjectRelease.ProjectID = ' . $this->oItem->id];
           $aWhere[] = 'ProjectRelease.TicketID = Ticket.TicketID';
-          $aWhere[] = "Ticket.Status = '{$hWhere['status']}'";
+          $aWhere = array_merge($aWhere, $this->getController()->getDB()->verifyWhere('Ticket', ['status' => $hWhere['status']]));
           unset($hWhere['status']);
         }
 
         $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : null;
-        $aFields = $oDatabase->verifyColumns('ProjectRelease', $aRawFields, $bUseTableName);
-        $sSelect = \Limbonia\Database::makeSelect($aFields, 'ProjectRelease');
+        $aSqlFields = $oDatabase->verifyColumns('ProjectRelease', $aRawFields, $bUseTableName);
+        $aFields = $oDatabase->verifyColumns('ProjectRelease', $aRawFields);
 
+        if (!empty($aRawFields) && in_array('version', \array_change_key_case($aRawFields, CASE_LOWER)))
+        {
+          $aFields[] = 'Version';
+          $aSqlFields[] = 'Major';
+          $aSqlFields[] = 'Minor';
+          $aSqlFields[] = 'Patch';
+        }
+
+        $sSelect = \Limbonia\Database::makeSelect($aSqlFields, 'ProjectRelease');
         $aWhere = array_merge($aWhere, $oDatabase->verifyWhere('ProjectRelease', $hWhere, $bUseTableName));
         $sWhere = \Limbonia\Database::makeWhere($aWhere);
 
@@ -98,7 +107,7 @@ class Project extends \Limbonia\Module
         foreach ($oResult as $hRow)
         {
           //filter the data through the module's item
-          $oItem = $this->oController->itemFromArray($sTable, $hRow);
+          $oItem = $this->oController->itemFromArray('ProjectRelease', $hRow);
 
           if (empty($aFields))
           {
