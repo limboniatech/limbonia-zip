@@ -256,11 +256,16 @@ class Ticket extends \Limbonia\Module
   {
     $hCriteria = parent::processSearchGetCriteria();
 
-    //if the search criteria is empty then assign a default
-    //of no closed tickets.
+    //if the search criteria is empty
     if (empty($hCriteria))
     {
+      //then assign a default search values
+
+      //no closed tickets
       $hCriteria['Status'] = "!=:closed";
+
+      //only internal and contact
+      $hCriteria['Type'] = ['internal', 'contact'];
     }
 
     return $hCriteria;
@@ -283,7 +288,7 @@ class Ticket extends \Limbonia\Module
    */
   protected function prepareTemplateCreate()
   {
-    $hFields = array_merge(['Header' => ['Type' => 'Text']], $this->getColumns('create'));
+    $hFields = array_merge(['CreateHeader' => ['Type' => 'Text'], 'EditHeader' => ['Type' => 'Text']], $this->getColumns('create'));
     $this->oController->templateData('fields', $hFields);
   }
 
@@ -298,7 +303,7 @@ class Ticket extends \Limbonia\Module
       return null;
     }
 
-    $hFields = $this->getColumns('edit');
+    $hFields = array_merge(['EditHeader' => ['Type' => 'Text']], $this->getColumns('edit'));
     $hFields['UpdateText'] = ['Type' => 'Text'];
     $hFields['UpdateType'] = ['Type' => 'Text'];
     $hFields['TimeWorked'] = ['Type' => 'Text'];
@@ -539,7 +544,7 @@ class Ticket extends \Limbonia\Module
    */
   public function getFormField($sName, $sValue = null, $hData = [])
   {
-    if ($sName == 'Header')
+    if ($sName == 'CreateHeader')
     {
       return "\n<style>
 #TicketSeverityField,
@@ -588,12 +593,141 @@ function toggleMethod(sOption)
   }
 }
 
-$('#TicketType').change(function()
+$(function()
 {
-  toggleMethod($(this).val());
-});
+  $('#TicketType').change(function()
+  {
+   toggleMethod($(this).val());
+  });
 
-toggleMethod($('#TicketType').val());
+  toggleMethod($('#TicketType').val());
+});
+</script>\n";
+    }
+
+    if ($sName == 'EditHeader')
+    {
+      return "\n
+<script type=\"text/javascript\">
+/**
+ * Toggle the associated categories when the ProjectID is changed
+ *
+ * @param {Integer} iProject
+ */
+function changeProject(iProject)
+{
+  var iProject = parseInt(iProject);
+
+  if (iProject)
+  {
+    $('#TicketReleaseIDField').show();
+  }
+  else
+  {
+    $('#TicketReleaseIDField').hide();
+    iProject = 0;
+  }
+
+  var sGet = (iProject == 0) ? '' : 'projectid=' + iProject + '&';
+
+  $.ajax
+  ({
+    method: 'GET',
+    dataType: 'json',
+    url: '{$this->getController()->domain->url}/api/ticketcategory?' + sGet + 'sort=fullname&fields=fullname'
+  })
+  .done(function(oData, sStatus, oRequest)
+  {
+    var ticketCategory = $('#TicketCategoryID');
+    var currentValue = ticketCategory.val();
+    var bValidValue = false;
+    ticketCategory.empty().append($('<option>',
+    {
+      value: '',
+      text: 'Select Category'
+    }));
+
+    $.each(oData, function(iKey, oCategory)
+    {
+      if (oCategory.CategoryID == currentValue)
+      {
+        bValidValue = true;
+      }
+
+      if (iProject > 0)
+      {
+        oCategory.FullName = oCategory.FullName.replace(/^.*? > /, '');
+      }
+
+      ticketCategory.append($('<option>',
+      {
+        value: oCategory.CategoryID,
+        text: oCategory.FullName
+      }));
+    });
+
+    if (bValidValue)
+    {
+      ticketCategory.val(currentValue);
+    }
+  });
+
+  if (iProject == 0)
+  {
+    $('#TicketReleaseID').empty().append($('<option>',
+    {
+      value: '',
+      text: 'Select Version'
+    }));
+  }
+  else
+  {
+    $.ajax
+    ({
+      method: 'GET',
+      dataType: 'json',
+      url: '{$this->getController()->domain->url}/api/project/' + iProject + '/releases?status=!%3D%3Aclosed&fields=version&order=major,minor,patch'
+    })
+    .done(function(oData, sStatus, oRequest)
+    {
+      var ticketRelease = $('#TicketReleaseID');
+      var currentValue = ticketRelease.val();
+      var bValidValue = false;
+      ticketRelease.empty().append($('<option>',
+      {
+        value: '',
+        text: 'Select Version'
+      }));
+
+      $.each(oData, function(iKey, oRelease)
+      {
+        if (oRelease.ReleaseID == currentValue)
+        {
+          bValidValue = true;
+        }
+
+        ticketRelease.append($('<option>',
+        {
+          value: oRelease.ReleaseID,
+          text: oRelease.Version
+        }));
+      });
+
+      if (bValidValue)
+      {
+        ticketRelease.val(currentValue);
+      }
+    });
+  }
+}
+
+$(function()
+{
+  $('#TicketProjectID').change(function()
+  {
+    changeProject($(this).val());
+  });
+});
 </script>\n";
     }
 
@@ -606,22 +740,24 @@ toggleMethod($('#TicketType').val());
 
     if ($sName == 'CategoryID')
     {
-      $oList = \Limbonia\Item::search('TicketCategory');
-      $oSelect = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
+      $hWhere = $this->oItem->projectId > 0 ? ['ProjectID' => $this->oItem->projectId] : null;
+      $oCategoryList = $this->getController()->itemSearch('TicketCategory', $hWhere);
+      $oCategoryWidget = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
       $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select Category';
-      $oSelect->addOption($sEmptyItemLabel, '');
+      $oCategoryWidget->addOption($sEmptyItemLabel, '');
 
-      foreach ($oList as $oTempItem)
+      foreach ($oCategoryList as $oCategory)
       {
-        $oSelect->addOption($oTempItem->name, $oTempItem->id);
+        $sPath = $oCategory->parentId > 0 ? "{$oCategory->path}: " : '';
+        $oCategoryWidget->addOption("$sPath$oCategory->name", $oCategory->id);
       }
 
       if (!empty($sValue))
       {
-        $oSelect->setSelected($sValue);
+        $oCategoryWidget->setSelected($sValue);
       }
 
-      return static::widgetField($oSelect, 'Category');
+      return static::widgetField($oCategoryWidget, 'Category');
     }
 
     if (in_array($sName, ['OwnerID', 'CreatorID']))
@@ -674,76 +810,24 @@ toggleMethod($('#TicketType').val());
       return parent::getFormField($sName, $sValue, ['Type' => 'int']);
     }
 
-    static $oProjectWidget = null;
-    static $oReleaseWidget = null;
-
-    if ($sName == 'ProjectID')
-    {
-      if (is_null($oProjectWidget))
-      {
-        $oProjectWidget = $this->oController->widgetFactory('Project', "$this->sType[ProjectID]");
-        $oReleaseWidget = $this->oController->widgetFactory('Select', "$this->sType[ReleaseID]");
-      }
-
-      $sProjectID = $oProjectWidget->getId();
-      $sReleaseID = $oReleaseWidget->getId();
-
-      $sGetReleases = $oProjectWidget->addAjaxFunction('getReleasesByProject', TRUE);
-
-      $sProjectScript  = "var projectSelect = document.getElementById('$sProjectID');\n";
-      $sProjectScript .= "var projectID = '';\n";
-      $sProjectScript .= "var releaseID = '';\n";
-      $sProjectScript .= "function setProject(iProject)\n";
-      $sProjectScript .= "{\n";
-      $sProjectScript .= "  projectID = iProject;\n";
-      $sProjectScript .= "  projectSelect.value = iProject;\n";
-      $sProjectScript .= '  ' . $sGetReleases . "(iProject, '$sReleaseID', releaseID);\n";
-      $sProjectScript .= "}\n";
-      $sProjectScript .= "setProject('" . $sValue . "');\n";
-
-      $oProjectWidget->writeJavascript($sProjectScript);
-      $oProjectWidget->addEvent('change', $sGetReleases . "(this.options[this.selectedIndex].value, '$sReleaseID', releaseID);");
-      return static::widgetField($oProjectWidget, 'Project');
-    }
-
     if ($sName == 'ReleaseID')
     {
-      if (is_null($oProjectWidget))
+      $oList = $this->oItem->project->getReleaseList('active');
+      $oWidget = $this->oController->widgetFactory('Select', "$this->sType[$sName]");
+      $sEmptyItemLabel = $this->isSearch() ? 'None' : 'Select Version';
+      $oWidget->addOption($sEmptyItemLabel, '');
+
+      foreach ($oList as $oItem)
       {
-        $oProjectWidget = $this->oController->widgetFactory('Project', "$this->sType[ProjectID]");
-        $oReleaseWidget = $this->oController->widgetFactory('Select', "$this->sType[ReleaseID]");
+        $oWidget->addOption($oItem->version, $oItem->id);
       }
 
-      $sReleaseID = $oReleaseWidget->getId();
+      if (!empty($sValue))
+      {
+        $oWidget->setSelected($sValue);
+      }
 
-      $sGetReleases = $oReleaseWidget->addAjaxFunction('getReleasesByProject', TRUE);
-
-      $sReleaseScript = "var releaseSelect = document.getElementById('$sReleaseID');\n";
-      $sReleaseScript .= "function setRelease(iRelease)\n";
-      $sReleaseScript .= "{\n";
-      $sReleaseScript .= "  releaseID = iRelease;\n";
-      $sReleaseScript .= "  if (releaseSelect.options.length > 1)\n";
-      $sReleaseScript .= "  {\n";
-      $sReleaseScript .= "    for (i = 0; i < releaseSelect.options.length; i++)\n";
-      $sReleaseScript .= "    {\n";
-      $sReleaseScript .= "      if (releaseSelect.options[i].value == iRelease)\n";
-      $sReleaseScript .= "      {\n";
-      $sReleaseScript .= "        releaseSelect.options[i].selected = true;\n";
-      $sReleaseScript .= "        break;\n";
-      $sReleaseScript .= "      }\n";
-      $sReleaseScript .= "    }\n";
-      $sReleaseScript .= "  }\n";
-      $sReleaseScript .= "  else\n";
-      $sReleaseScript .= "  {\n";
-      $sReleaseScript .= '    ' . $sGetReleases . "(projectID, '$sReleaseID', iRelease);\n";
-      $sReleaseScript .= "  }\n";
-      $sReleaseScript .= "  releaseSelect.options[1] = new Option(iRelease, iRelease, true);\n";
-      $sReleaseScript .= "}\n";
-      $sReleaseScript .= "setRelease('" . $sValue . "');\n";
-
-      $oReleaseWidget->writeJavascript($sReleaseScript);
-      $oReleaseWidget->addOption('Select a version', '0');
-      return static::widgetField($oReleaseWidget, 'Version');
+      return preg_replace("/div class/", 'div style="display:none" class', static::widgetField($oWidget, 'Version'));
     }
 
     $sType = strtolower(preg_replace("/( |\().*/", "", $hData['Type']));
