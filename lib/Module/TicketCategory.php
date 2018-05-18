@@ -36,6 +36,75 @@ class TicketCategory extends \Limbonia\Module
   }
 
   /**
+   * Generate and return the default list of data, filtered and ordered by API controls
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiGetList()
+  {
+    $sTable = $this->oItem->getTable();
+    $oDatabase = $this->oController->getDB();
+    $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : [];
+    $aFields = array_diff($oDatabase->verifyColumns($sTable, $aRawFields), $this->aIgnore['view']);
+    $aSqlFields = $aFields;
+
+    if (in_array('fullname', \array_change_key_case($aRawFields, CASE_LOWER)))
+    {
+      $aFields[] = 'FullName';
+      $aSqlFields[] = 'Name';
+      $aSqlFields[] = 'ParentID';
+    }
+
+    //default order is according to the ID column of this item
+    $aOrder = $this->oApi->sort ?? ['id'];
+    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($sTable, $aSqlFields, $this->oApi->search, $aOrder));
+    $hList = [];
+    $bFullNameSort = in_array('fullname ASC', $aOrder) || in_array('fullname DESC', $aOrder);
+
+    foreach ($oResult as $hRow)
+    {
+      //filter the data through the module's item
+      $oItem = $this->oController->itemFromArray($sTable, $hRow);
+      $hItem = $this->removeIgnoredFields('view', $oItem->getAll());
+      $sSortKey = $bFullNameSort ? $oItem->fullname : $oItem->id;
+
+      if (empty($aFields))
+      {
+        $hList[$sSortKey] = $hItem;
+      }
+      else
+      {
+        $hTemp = [];
+
+        foreach ($aFields as $sField)
+        {
+          if (isset($hItem[$sField]))
+          {
+            $hTemp[$sField] = $hItem[$sField];
+          }
+        }
+
+        $hList[$sSortKey] = $hTemp;
+      }
+    }
+
+    if ($bFullNameSort)
+    {
+      if (in_array('fullname ASC', $aOrder))
+      {
+        ksort($hList);
+      }
+      else
+      {
+        krsort($hList);
+      }
+    }
+
+    return $hList;
+  }
+
+  /**
    * Run the code needed to display the default "create" template
    */
   protected function prepareTemplateCreate()
