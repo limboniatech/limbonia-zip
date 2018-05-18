@@ -199,6 +199,11 @@ class Project extends \Limbonia\Item
    */
   public function getReleaseList($sType = '')
   {
+    if (empty($this->id))
+    {
+      return $this->oController->itemList('ProjectRelease', 'SELECT * FROM ProjectRelease WHERE 1 = 0');
+    }
+
     $sLowerType = strtolower($sType);
 
     if ($sLowerType == 'changelog')
