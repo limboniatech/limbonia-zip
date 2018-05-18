@@ -160,6 +160,16 @@ class TicketCategory extends \Limbonia\Item
       return !empty($this->hData['Path']) ? implode(' > ', $this->hData['Path']) : '';
     }
 
+    if ($sLowerName == 'fullname')
+    {
+      if (empty($this->hData['ParentID']))
+      {
+        return $this->hData['Name'];
+      }
+
+      return $this->__get('path') . " > {$this->hData['Name']}";
+    }
+
     return parent::__get($sName);
   }
 
@@ -200,10 +210,17 @@ class TicketCategory extends \Limbonia\Item
     }
   }
 
+  /**
+   * Get a copy of all the data this object contains
+   *
+   * @param boolean $bFormatted Format the returned data?
+   * @return array
+   */
   public function getAll($bFormatted = false)
   {
     $hData = parent::getAll($bFormatted);
     $hData['Path'] = $this->__get('path');
+    $hData['FullName'] = $this->__get('fullname');
     return $hData;
   }
 
