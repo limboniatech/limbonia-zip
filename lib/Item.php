@@ -224,7 +224,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
     if (!isset(self::$hDefaultData[$this->sTable]))
     {
       self::$hDefaultData[$this->sTable] = [];
-      
+
       //then generate it
       foreach ($this->getColumns() as $sColumn => $hColumnData)
       {
@@ -657,7 +657,8 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   /**
    * Created a row for this object's data in the database
    *
-   * @return integer The ID of the row created on success or false on failure
+   * @return integer The ID of the row created
+   * @throws \Limbonia\Exception\DBResult
    */
   protected function create()
   {
@@ -677,7 +678,8 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   /**
    * Update this object's data in the data base with current data
    *
-   * @return integer The ID of this object on success or false on failure
+   * @return integer The ID of this object
+   * @throws \Limbonia\Exception\Database|\Limbonia\Exception\DBResult
    */
   protected function update()
   {
@@ -687,7 +689,8 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   /**
    * Either create or update this object depending on if it's already been created or not
    *
-   * @return integer The ID of this object on success or false on failure
+   * @return integer The ID of this object
+   * @throws \Limbonia\Exception\Database|\Limbonia\Exception\DBResult
    */
   public function save()
   {
