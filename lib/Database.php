@@ -933,7 +933,8 @@ class Database extends \PDO
    *
    * @param string $sTable
    * @param array $hData
-   * @return integer - returns the last inserted id on success and false on failure
+   * @return integer - returns the last inserted id
+   * @throws \Limbonia\Exception\DBResult
    */
   public function insert($sTable, $hData)
   {
@@ -968,7 +969,8 @@ class Database extends \PDO
    * @param string $sTable
    * @param integer $iID
    * @param array $hData
-   * @return integer Return the row ID on success or false on failure
+   * @return integer Return the row ID
+   * @throws \Limbonia\Exception\Database|\Limbonia\Exception\DBResult
    */
   public function update($sTable, $iID, $hData)
   {
@@ -988,7 +990,7 @@ class Database extends \PDO
 
     if (empty($aSet))
     {
-      return false;
+      throw new \Limbonia\Exception\Database("Item #$iID not updated in $sTable: No valid data found", $this->getType());
     }
 
     $sSQL = "UPDATE {$sTable} SET " . implode(',', $aSet) . ' WHERE ' . $this->getIdColumn($sTable) ." = $iID";
