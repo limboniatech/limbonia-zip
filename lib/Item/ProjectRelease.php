@@ -44,6 +44,19 @@ class ProjectRelease extends \Limbonia\Item
   }
 
   /**
+   * Get a copy of all the data this object contains
+   *
+   * @param boolean $bFormatted Format the returned data?
+   * @return array
+   */
+  public function getAll($bFormatted = false)
+  {
+    $hData = parent::getAll($bFormatted);
+    $hData['Version'] = $this->__get('version');
+    return $hData;
+  }
+
+  /**
    * Get the specified data
    *
    * @param string $sName
