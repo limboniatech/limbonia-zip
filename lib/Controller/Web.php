@@ -5,7 +5,7 @@ namespace Limbonia\Controller;
  * Limbonia API Controller Class
  *
  * This allows the basic controller retrieve data base on the API URL and return
- * that data in JSON format
+ * that data in either HTML or JSON format
  *
  * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @package Limbonia
@@ -42,7 +42,7 @@ class Web extends \Limbonia\Controller
    * @param \Limbonia\Api $oApi
    * @param array $hConfig - A hash of configuration data
    */
-  public function __construct(\Limbonia\Api $oApi, array $hConfig = [])
+  protected function __construct(\Limbonia\Api $oApi, array $hConfig = [])
   {
     parent::__construct($oApi, $hConfig);
 
@@ -59,7 +59,7 @@ class Web extends \Limbonia\Controller
     {
       if (!empty($oServer['context_prefix']) && !empty($oServer['context_document_root']))
       {
-         $this->oDomain = new \Limbonia\Domain($oServer . $oServer['context_prefix'], $oServer['context_document_root']);
+         $this->oDomain = new \Limbonia\Domain($oServer['server_name'] . $oServer['context_prefix'], $oServer['context_document_root']);
       }
       else
       {
@@ -173,7 +173,6 @@ class Web extends \Limbonia\Controller
       {
         return self::outputJson
         ([
-          'pageTitle' => '???',
           'main' => $this->templateRender($sTemplate)
         ]);
       }

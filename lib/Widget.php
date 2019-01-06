@@ -35,11 +35,6 @@ class Widget extends Tag
   protected $sId = 'LimboniaWidget';
 
   /**
-   * @var string $sType - The type of widget this object represents
-   */
-  protected $sType = '';
-
-  /**
    * @var string $sPreScript - HTML to be written out *before* the JavaScript stuff...
    */
   protected $sPreScript = '';

@@ -154,7 +154,7 @@ class TicketContent extends \Limbonia\Item
    */
   function getHistory()
   {
-    if (count($this->aHistory) == 0)
+    if (empty($this->aHistory))
     {
       $oResult = $this->getDatabase()->query('SELECT * FROM TicketHistory WHERE ContentID = ' . $this->id);
       $aHistory = $oResult->fetchAll();

@@ -38,7 +38,7 @@ class Cli extends \Limbonia\Controller
    *
    * @var string
    */
-  protected $sTempalteDesc = 'This utility has no description';
+  protected $sTempalteDesc = 'This utility does nothing but display this help including available modes';
 
   /**
    * List of command line options that should be processed and what they do
@@ -198,8 +198,10 @@ Options:\n";
     $this->sTemplateName = $sCliName;
     $sTemplateFile = $this->templateFile($sCliName);
 
-    if (!empty($sTemplateFile))
+    //if the template file is either empty and not the current running file
+    if (!empty($sTemplateFile) && $sTemplateFile !== $sCliName)
     {
+      //then return it as is...
       return $sTemplateFile;
     }
 
@@ -239,9 +241,9 @@ Options:\n";
 
         foreach (\Limbonia\Controller::templateDirs() as $sDir)
         {
-          foreach (glob($sDir . '/' . $this->type . '/*.php') as $sFileName)
+          foreach (glob($sDir . '/' . $this->type . '/*/*.php') as $sFileName)
           {
-            $aAvailableModes[] = basename($sFileName, '.php');
+            $aAvailableModes[] = basename(dirname($sFileName)) . '_' . basename($sFileName, '.php');
           }
         }
 
@@ -313,6 +315,6 @@ Options:\n";
     }
 
     $this->templateData('currentUser', $this->oUser);
-    die($this->renderPage());
+    die($this->render());
   }
 }

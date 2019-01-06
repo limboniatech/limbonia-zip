@@ -12,6 +12,13 @@ namespace Limbonia;
 abstract class Controller
 {
   /**
+   * The config that comes from external sources
+   *
+   * @var array
+   */
+  protected static $hAutoConfig = [];
+
+    /**
    * The current default Controller
    *
    * @var \Limbonia\Controller
@@ -305,9 +312,80 @@ abstract class Controller
     return self::$aLibList;
   }
 
+  /**
+   * Return the list of template directories
+   *
+   * @return string
+   */
   public static function templateDirs()
   {
     return self::$aTemplateDir;
+  }
+
+  /**
+   * Find and return the home directory of the current user
+   *
+   * @return string
+   */
+  public static function getHomeDir()
+  {
+    if (isset($_SERVER['HOME']))
+    {
+      return $_SERVER['HOME'];
+    }
+
+    $sHome = getenv('HOME');
+
+    if (!empty($sHome))
+    {
+      return $sHome;
+    }
+
+    $hUser = posix_getpwuid(posix_getuid());
+    return $hUser['dir'];
+  }
+
+  /**
+   * Merge two arrays recursively and return it
+   *
+   * @param array $hOriginal
+   * @param array $hOverride
+   * @return array
+   */
+  public static function mergeArray(array $hOriginal, array $hOverride)
+  {
+    $hMerge = $hOriginal;
+
+    foreach ($hOverride as $sKey => $xValue)
+    {
+      if (isset($hOriginal[$sKey]))
+      {
+        if (is_array($xValue) && is_array($hOriginal[$sKey]))
+        {
+          $hMerge[$sKey] = self::mergeArray($hOriginal[$sKey], $xValue);
+        }
+        else
+        {
+          $hMerge[$sKey] = $hOverride[$sKey];
+        }
+      }
+      else
+      {
+        $hMerge[$sKey] = $xValue;
+      }
+    }
+
+    return $hMerge;
+  }
+
+  /**
+   * Add a new hash to the default config
+   *
+   * @param array $hNewConfig
+   */
+  public static function addAutoConfig(array $hNewConfig = [])
+  {
+    self::$hAutoConfig = self::mergeArray(self::$hAutoConfig, $hNewConfig);
   }
 
   /**
@@ -319,6 +397,20 @@ abstract class Controller
    */
   public static function factory(array $hConfig = [])
   {
+    if (is_file('/etc/limbonia/config.php'))
+    {
+      require_once '/etc/limbonia/config.php';
+    }
+
+    $sHome = \Limbonia\Controller::getHomeDir();
+    $sConfigFile = "$sHome/.limbonia/config.php";
+
+    if (is_file($sConfigFile))
+    {
+      require_once $sConfigFile;
+    }
+
+    $hConfig = self::mergeArray(self::$hAutoConfig, $hConfig);
     $hLowerConfig = \array_change_key_case($hConfig, CASE_LOWER);
     $oApi = $hLowerConfig['api'] ?? \Limbonia\Api::singleton();
     $sControllerClass = __CLASS__ . '\\' . ucfirst($oApi->controller);

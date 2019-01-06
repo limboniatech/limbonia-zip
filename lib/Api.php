@@ -374,8 +374,9 @@ class Api
     {
       $this->hData['method'] = $this->hDefault['method'];
       $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
-      $hOptions = getopt('', ['api::']);
-      $this->hData['rawpath'] = $hOptions['api'] ?? '' ;
+      $hOptions = getopt('', ['mode::']);
+      $sMode = empty($hOptions) ? basename($oServer['php_self']) : $hOptions['mode'];
+      $this->hData['rawpath'] = preg_replace("#_#", '/', $sMode);
       $this->processRawPath();
     }
     else

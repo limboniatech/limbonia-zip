@@ -1,25 +1,7 @@
 #!/usr/bin/php
 <?php
+require_once __DIR__ . '/../lib/autoloader.php';
 ignore_user_abort(true);
 
-$sHome = '';
-
-if (isset($_SERVER['HOME']))
-{
-  $sHome = $_SERVER['HOME'];
-}
-else
-{
-  $sHome = getenv('HOME');
-
-  if (empty($sHome))
-  {
-    $hUser = posix_getpwuid(posix_getuid());
-    $sHome = $hUser['dir'];
-  }
-}
-
-require_once "$sHome/.limbonia/lib/config.php";
-require_once 'limbonia-crm/autoloader.php';
-$oController = \Limbonia\Controller::factory($hBaseConfig);
+$oController = \Limbonia\Controller::factory();
 $oController->run();
