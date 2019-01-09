@@ -1437,9 +1437,9 @@ class Module
   protected function editDialog($sText, $sButtonName)
   {
     $sVerb = isset($_SESSION['EditData']['Delete']) ? 'Delete' : 'Edit Column';
-    $sContent = "<form name=\"EditColumn\" action=\"" . $this->generateUri('editcolumn') . "\" method=\"post\">\n";
+    $sContent = "<form id=\"EditColumn\" name=\"EditColumn\" action=\"" . $this->generateUri('editcolumn') . "\" method=\"post\">\n";
     $sContent .= $sText;
-    $sContent .= "<button type=\"submit\" name=\"$sButtonName\">Yes</button>&nbsp;&nbsp;&nbsp;&nbsp;<button type=\"submit\" name=\"No\">No</button>";
+    $sContent .= "<button type=\"submit\" name=\"$sButtonName\">Yes</button>&nbsp;&nbsp;&nbsp;&nbsp;<button id=\"No\" name=\"No\">No</button>";
     $sContent .= "</form>\n";
     return \Limbonia\Controller\Admin::getMenu($sContent, $this->getTitle() . " :: $sVerb");
   }

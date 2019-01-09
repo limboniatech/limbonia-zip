@@ -1,3 +1,11 @@
+Limbonia - 1.8.1 (2019-01-09 09:10:36)
+bugfix
+
+    Minor Bug #99: Limbonia - Items are delete even if "No" is pressed (Lonnie Blansett)
+    Minor Bug #167: Ticket System - Make "Version" visible when editing a software ticket (Lonnie Blansett)
+    Minor Bug #90: Limbonia - When displaying an "item" tab the "List" tab should not stay highlited as current (Lonnie Blansett)
+    Minor Bug #165: Ticket System - Fix TimeWorked bug (Lonnie Blansett)
+
 Limbonia - 1.8.0 (2019-01-05 22:03:34)
 
     Feature #61: Limbonia - Update ticket via email (Lonnie Blansett)

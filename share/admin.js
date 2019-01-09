@@ -57,8 +57,9 @@ function buildItem(oData)
   if (iCurrentItemId !== oData.id)
   {
     iCurrentItemId = oData.id;
+    $('#content > nav.tabSet').children().removeClass('current');
     $('#content > nav.tabSet > span').remove();
-    $('#content > nav.tabSet').append('<span class="current tab ' + sLowerModule + ' ' + oData.action + ' noLink">' + oData.moduleType + ' #' + oData.id + '</span>').siblings().removeClass('current');
+    $('#content > nav.tabSet').append('<span class="current tab ' + sLowerModule + ' ' + oData.action + ' noLink">' + oData.moduleType + ' #' + oData.id + '</span>');
   }
 
   $('#moduleOutput').html('      <div id="item">\
@@ -259,6 +260,19 @@ $(function()
   $('body > header').on('click', 'a.item', function(e)
   {
     updateNav($(this).attr('href'), 'item');
+    e.preventDefault();
+  });
+
+  /**
+   * Handle form submission with AJAX instead of the default URL
+   */
+  $('#admin').on('click', 'form button#No', function(e)
+  {
+    var oForm = $(this).parent();
+    var sUri = $(oForm).prop('action');
+    var sType = urlItemId(sUri) > 0 ? 'item' : 'module';
+    oFormData = oForm.serialize() + '&No=1';
+    updateNav(sUri, sType, oFormData);
     e.preventDefault();
   });
 

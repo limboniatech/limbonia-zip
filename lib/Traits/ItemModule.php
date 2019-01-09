@@ -789,7 +789,7 @@ trait ItemModule
    */
   public function editColumn()
   {
-    if (!$this->allow('Edit') || isset($this->oController->post['No']))
+    if (!$this->allow('Edit') || (isset($this->oController->post['No']) && $this->oController->post['No'] == 1))
     {
       if (isset($_SESSION['EditData']))
       {

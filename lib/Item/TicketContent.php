@@ -52,7 +52,11 @@ class TicketContent extends \Limbonia\Item
 
     if ($sRealName == 'TimeWorked')
     {
-      if (!is_numeric($xValue) && !is_null($xValue))
+      if (is_numeric($xValue) || empty($xValue))
+      {
+        $xValue = (int)$xValue;
+      }
+      else
       {
         $iNow = strtotime('now');
         $iIntervalInSeconds = strtotime($xValue, $iNow) - $iNow;

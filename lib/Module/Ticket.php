@@ -827,7 +827,14 @@ $(function()
         $oWidget->setSelected($sValue);
       }
 
-      return preg_replace("/div class/", 'div style="display:none" class', static::widgetField($oWidget, 'Version'));
+      $sWidgetField = static::widgetField($oWidget, 'Version');
+
+      if ($this->oItem->projectid == 0)
+      {
+        $sWidgetField = preg_replace("/div class/", 'div style="display:none" class', $sWidgetField);
+      }
+
+      return $sWidgetField;
     }
 
     $sType = strtolower(preg_replace("/( |\().*/", "", $hData['Type']));
