@@ -122,7 +122,7 @@ function updateNav(sUrl, sType, sFormData, bHasFiles)
   var sOverlayTarget = sType === 'item' && $('#item > #page').length ? '#item > #page' : '#moduleOutput';
 
   history.pushState(null, '', sUrl);
-  sUrlJoinCharacter = sUrl.match(/\?/) ? '&' : '?';
+  var sUrlJoinCharacter = sUrl.match(/\?/) ? '&' : '?';
 
   var hAjaxConfig =
   {
@@ -134,7 +134,7 @@ function updateNav(sUrl, sType, sFormData, bHasFiles)
     },
     method: 'GET',
     dataType: 'json',
-    url: sUrl + sUrlJoinCharacter + 'ajax=click'
+    url: sUrl.match(/#/) ? sUrl.replace(/#/, sUrlJoinCharacter + 'ajax=click#') : sUrl + sUrlJoinCharacter + 'ajax=click'
   };
 
   if (sFormData)
