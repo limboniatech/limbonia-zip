@@ -79,7 +79,7 @@ class User extends \Limbonia\Module
    */
   protected function processApiGetItem()
   {
-    switch ($this->oApi->action)
+    switch ($this->oRouter->action)
     {
       case 'roles':
         return $this->oItem->getRoles();
@@ -89,6 +89,17 @@ class User extends \Limbonia\Module
     }
 
     return $this->originalProcessApiGetItem();
+  }
+
+    /**
+   * Delete the API specified list of items then return true
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiDeleteList()
+  {
+    throw new \Limbonia\Exception\Web('Deleting all users is not allowed', null, 405);
   }
 
   /**

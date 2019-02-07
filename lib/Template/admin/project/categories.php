@@ -9,7 +9,7 @@ if (isset($failure))
   echo "<div class=\"methodFailure\">$failure</div>\n";
 }
 
-if ($controller->api->subAction == 'edit' && isset($category))
+if ($controller->getRouter()->subAction == 'edit' && isset($category))
 {
   if ($category->id == $currentItem->topCategory->id)
   {
@@ -41,7 +41,7 @@ if ($controller->api->subAction == 'edit' && isset($category))
 <div class=\"field\"><span class=\"blankLabel\"></span><span class=\"data\"><button type=\"submit\" name=\"Update\">Update</button>&nbsp;&nbsp;&nbsp;&nbsp;<a class=\"item\" href=\"" . $module->generateUri($currentItem->id, $method) . "\"><button name=\"No\">No</button></a></span></div>
 </form>\n";
 }
-elseif ($controller->api->subAction == 'delete' && isset($category))
+elseif ($controller->getRouter()->subAction == 'delete' && isset($category))
 {
   echo "<h2>Delete Project Category</h2>
 <form action=\"" . $module->generateUri($currentItem->id, $method, $category->id, 'delete') . "\" method=\"post\">

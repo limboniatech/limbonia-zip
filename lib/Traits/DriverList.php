@@ -81,7 +81,7 @@ trait DriverList
    * @param string $sType - the type of object to create
    * @param array $aParam - array of parameters to initialize the
    * @return self
-   * @throws \Limbonia\Exception\Object
+   * @throws \Limbonia\Exception
    */
   public static function driverFactory(string $sType, ...$aParam)
   {
@@ -89,7 +89,7 @@ trait DriverList
 
     if (!class_exists($sTypeClass, true))
     {
-      throw new \Limbonia\Exception\Object("Driver for " . self::classType() . " ($sType) not found!");
+      throw new \Limbonia\Exception("Driver for " . self::classType() . " ($sType) not found!");
     }
 
     return new $sTypeClass(...$aParam);

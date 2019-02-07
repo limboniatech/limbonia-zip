@@ -9,7 +9,7 @@ if (isset($failure))
   echo "<div class=\"methodFailure\">$failure</div>\n";
 }
 
-if ($controller->api->subAction == 'edit' && isset($release))
+if ($controller->getRouter()->subAction == 'edit' && isset($release))
 {
   echo "<h2>Edit Project Release</h2>
 <form action=\"" . $module->generateUri($currentItem->id, $method, $release->id, 'edit') . "\" method=\"post\">
@@ -18,7 +18,7 @@ if ($controller->api->subAction == 'edit' && isset($release))
 <div class=\"field\"><span class=\"blankLabel\"></span><span class=\"data\"><button type=\"submit\" name=\"Update\">Update</button>&nbsp;&nbsp;&nbsp;&nbsp;<a class=\"item\" href=\"" . $module->generateUri($currentItem->id, $method) . "\"><button name=\"No\">No</button></a></span></div>
 </form>\n";
 }
-elseif ($controller->api->subAction == 'delete' && isset($release))
+elseif ($controller->getRouter()->subAction == 'delete' && isset($release))
 {
   echo "<h2>Delete Project Release</h2>
 <form action=\"" . $module->generateUri($currentItem->id, $method, $release->id, 'delete') . "\" method=\"post\">

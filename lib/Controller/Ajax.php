@@ -38,7 +38,7 @@ class Ajax extends \Limbonia\Controller\Web
   protected function render()
   {
     ob_start();
-    $aApiCall = $this->oApi->rawcall;
+    $aApiCall = $this->oRouter->rawcall;
     $sFunction = 'ajax_' . urldecode(array_pop($aApiCall));
     $aApiCall[0] = 'Limbonia';
     $sClass = implode('\\', $aApiCall);

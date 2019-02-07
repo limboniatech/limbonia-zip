@@ -59,13 +59,13 @@ class Input implements \ArrayAccess, \Countable, \SeekableIterator
    * The constructor
    *
    * @param string $sType
-   * @throws \Limbonia\Exception\Object
+   * @throws \Limbonia\Exception
    */
   protected function __construct($sType)
   {
     if (!isset(self::$aValidTypes[$sType]))
     {
-      throw new \Limbonia\Exception\Object("Invalid input type found: $sType");
+      throw new \Limbonia\Exception("Invalid input type found: $sType");
     }
 
     //to work around a PHP bug in getting server variables on some systems...

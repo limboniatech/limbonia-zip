@@ -60,6 +60,58 @@ class User extends \Limbonia\Item
   }
 
   /**
+   * Generate and return a user object from the specified auth_token
+   *
+   * @param string $sAuthToken
+   * @param \Limbonia\Database $oDatabase (optional)
+   * @return \Limbonia\Item\User
+   * @throws \Limbonia\Exception\Web
+   */
+  public static function getByAuthToken($sAuthToken, \Limbonia\Database $oDatabase = null)
+  {
+    $oDatabase = $oDatabase instanceof \Limbonia\Database ? $oDatabase : \Limbonia\Controller::getDefault()->getDB();
+    $oDatabase->query("DELETE FROM UserAuth WHERE TIMEDIFF(NOW(), LastUseTime) > '00:60:00'");
+    $oResult = $oDatabase->query("SELECT * FROM UserAuth WHERE AuthToken = :AuthToken AND TIMEDIFF(NOW(), LastUseTime) < '00:20:00'", ['AuthToken' => $sAuthToken]);
+    $hRow = $oResult->fetchOne();
+
+    if (empty($hRow))
+    {
+      throw new \Limbonia\Exception\Web('Valid auth_token not found', null, 401);
+    }
+
+    $oUser = \Limbonia\Item::fromId('User', $hRow['UserID'], $oDatabase);
+
+    if (!$oUser->active)
+    {
+      throw new \Limbonia\Exception\Web('User not active', null, 401);
+    }
+
+    $oDatabase->query("UPDATE UserAuth SET LastUseTime = NOW() WHERE AuthToken = '{$hRow['AuthToken']}' AND UserID = {$hRow['UserID']}");
+    return $oUser;
+  }
+
+  /**
+   * Generate and return a user object from the specified api_key
+   *
+   * @param string $sApiKey
+   * @param \Limbonia\Database $oDatabase (optional)
+   * @return \Limbonia\Item\User
+   * @throws \Limbonia\Exception\Web
+   */
+  public static function getByApiKey($sApiKey, \Limbonia\Database $oDatabase = null)
+  {
+    $oDatabase = $oDatabase instanceof \Limbonia\Database ? $oDatabase : \Limbonia\Controller::getDefault()->getDB();
+    $oUserList = parent::search('User', ['ApiKey' => $sApiKey], null, $oDatabase);
+
+    if (count($oUserList) == 0)
+    {
+      throw new \Limbonia\Exception\Web("Unkown user: $sApiKey", null, 401);
+    }
+
+    return $oUserList[0];
+  }
+
+  /**
    * Make sure the specified password follows all the current guidelines
    *
    * @todo Create method for adding / controlling the password guidelines with config and scripting options
@@ -96,6 +148,49 @@ class User extends \Limbonia\Item
   }
 
   /**
+   * Generate an auth_token, add it to the database for this user and then return it
+   *
+   * @return string
+   * @throws \Limbonia\Exception
+   */
+  public function generateAuthToken()
+  {
+    $sAuthToken = sha1(self::generatePassword());
+    $oResult = $this->getDatabase()->prepare("INSERT INTO UserAuth (UserID, AuthToken, LastUseTime) VALUES (:UserID, :AuthToken, NOW())");
+
+    if (!$oResult->execute(['UserID' => $this->id, 'AuthToken' => $sAuthToken]))
+    {
+      throw new \Limbonia\Exception('Failed to store auth_token');
+    }
+
+    return $sAuthToken;
+  }
+
+  /**
+   * Delete the specified auth_token from this user
+   *
+   * @param type $sAuthToken
+   * @return boolean
+   * @throws \Limbonia\Exception
+   */
+  public function deleteAuthToken($sAuthToken)
+  {
+    $oResult = $this->getDatabase()->prepare("DELETE FROM UserAuth WHERE UserID = :UserID AND AuthToken = :AuthToken");
+
+    if (!$oResult->execute(['UserID' => $this->id, 'AuthToken' => $sAuthToken]))
+    {
+      throw new \Limbonia\Exception('Failed to delete auth_token');
+    }
+
+    if ($oResult->rowCount() == 0)
+    {
+      throw new \Limbonia\Exception("Failed to delete auth_token: $sAuthToken");
+    }
+
+    return true;
+  }
+
+  /**
    * Authenticate the current user using what ever method they require
    *
    * @param string $sPassword
@@ -105,12 +200,12 @@ class User extends \Limbonia\Item
   {
     if (!$this->active)
     {
-      throw new \Exception('User not active');
+      throw new \Limbonia\Exception\Web('User not active', null, 401);
     }
 
     if (!password_verify($sPassword, $this->password))
     {
-      throw new \Exception('Invalid password');
+      throw new \Limbonia\Exception\Web('Invalid password', null, 401);
     }
   }
 

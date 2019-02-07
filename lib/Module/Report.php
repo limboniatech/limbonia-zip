@@ -95,9 +95,9 @@ class Report extends \Limbonia\Module
   {
     $this->hReportList = \Limbonia\Report::driverList();
 
-    if (isset($this->oApi->call[2], $this->hReportList[$this->oApi->call[2]]))
+    if (isset($this->oRouter->call[2], $this->hReportList[$this->oRouter->call[2]]))
     {
-      $this->oReport = $this->oController->reportFactory($this->oApi->call[2], $this->generateReportParams());
+      $this->oReport = $this->oController->reportFactory($this->oRouter->call[2], $this->generateReportParams());
     }
 
     if (!empty($this->oReport))
@@ -106,7 +106,7 @@ class Report extends \Limbonia\Module
       $this->aAllowedActions[] = 'schedule';
     }
 
-    $this->sDefaultAction = in_array($this->oApi->subaction, $this->aAllowedActions) ? $this->oApi->subaction : 'view';
+    $this->sDefaultAction = in_array($this->oRouter->subaction, $this->aAllowedActions) ? $this->oRouter->subaction : 'view';
   }
 
   /**
@@ -141,19 +141,19 @@ class Report extends \Limbonia\Module
   {
     $hParam = [];
 
-    if (isset($this->oApi->fields))
+    if (isset($this->oRouter->fields))
     {
-      $hParam['fields'] = $this->oApi->fields;
+      $hParam['fields'] = $this->oRouter->fields;
     }
 
-    if (isset($this->oApi->fields))
+    if (isset($this->oRouter->fields))
     {
-      $hParam['fields'] = $this->oApi->fields;
+      $hParam['fields'] = $this->oRouter->fields;
     }
 
-    if (isset($this->oApi->fields))
+    if (isset($this->oRouter->fields))
     {
-      $hParam['fields'] = $this->oApi->fields;
+      $hParam['fields'] = $this->oRouter->fields;
     }
 
     return $hParam;

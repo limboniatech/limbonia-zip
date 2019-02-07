@@ -213,7 +213,7 @@ class ProjectRelease extends \Limbonia\Item
       $oTicket = $this->oController->itemFactory('Ticket');
       $hIncomplete = [];
 
-      foreach ($oTicket->priorityList as $sPriority)
+      foreach (array_reverse($oTicket->priorityList) as $sPriority)
       {
         $hCriteria['Priority'] = $sPriority;
         $hIncomplete[$sPriority] = $this->oController->itemSearch('Ticket', $hCriteria);

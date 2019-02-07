@@ -25,6 +25,13 @@ class Domain
   protected static $sDomainDirTemplate = '/home/lonnie/__DOMAIN__/__SUB__/html';
 
   /**
+   * The current HTTP protocol being used at this time
+   *
+   * @var string
+   */
+  protected static $sProtocol = '';
+
+  /**
    * The domain name
    *
    * @var string
@@ -171,6 +178,17 @@ class Domain
     self::$sDomainDirTemplate = $sDirTemplate;
   }
 
+  public static function protocol()
+  {
+    if (empty(self::$sProtocol))
+    {
+      $oServer = Input::singleton('server');
+      self::$sProtocol = isset($oServer['https']) && $oServer['https'] != 'off' ? 'https' : 'http';
+    }
+
+    return self::$sProtocol;
+  }
+
   /**
    * The domain constructor
    *
@@ -202,6 +220,9 @@ class Domain
   {
     switch (strtolower($sName))
     {
+      case 'protocol':
+        return self::protocol();
+
       case 'name':
         return $this->sName;
 
@@ -213,6 +234,12 @@ class Domain
 
       case 'url':
         return '//' . $this->sName . $this->sBaseUri;
+
+      case 'currenturl':
+        return self::protocol() . '://' . $this->sName . $this->sBaseUri;
+
+      case 'secureurl':
+        return 'https://' . $this->sName . $this->sBaseUri;
     }
   }
 
@@ -226,10 +253,13 @@ class Domain
   {
     switch (strtolower($sName))
     {
+      case 'protocol':
       case 'name':
       case 'path':
       case 'uri':
       case 'url':
+      case 'currenturl':
+      case 'secureurl':
         return true;
     }
   }

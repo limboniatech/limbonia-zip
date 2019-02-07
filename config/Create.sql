@@ -209,5 +209,12 @@ CREATE TABLE IF NOT EXISTS User_Role (
   INDEX Unique_UserRole(UserID, RoleID)
 );
 
+CREATE TABLE IF NOT EXISTS UserAuth (
+  UserID INTEGER UNSIGNED NOT NULL,
+  AuthToken VARCHAR(255) NOT NULL,
+  LastUseTime TIMESTAMP NOT NULL,
+  INDEX Unique_UserAuth(UserID, AuthToken)
+);
+
 INSERT INTO User (Email, FirstName, LastName, Visible) VALUES ('MasterAdmin', 'Master', 'Admin', 0);
 INSERT INTO User_Role (RoleID, UserID) VALUES ((SELECT r.RoleID FROM Role r WHERE r.Name = 'Admin'), (SELECT u.UserID FROM `User` u WHERE u.Email = 'MasterAdmin'));

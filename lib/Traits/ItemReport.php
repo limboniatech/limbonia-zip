@@ -6,7 +6,9 @@ trait ItemReport
   /**
    * Generate and return the result data for the current configuration of this report
    *
+   *
    * @return \Limbonia\Interfaces\Result
+   * @throws \Limbonia\Exception
    */
   protected function generateResult(): \Limbonia\Interfaces\Result
   {
@@ -14,7 +16,7 @@ trait ItemReport
 
     if (empty($sItemDriver))
     {
-      throw new \Limbonia\Exception\Object("Driver for type ($this->sType) not found");
+      throw new \Limbonia\Exception("Driver for type ($this->sType) not found");
     }
 
     $oItem = $this->oController->itemFactory($this->sType);

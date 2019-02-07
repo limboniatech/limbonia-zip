@@ -231,7 +231,23 @@ Options:\n";
    */
   protected function render()
   {
-    $sModuleDriver = isset($this->oApi->module) ? \Limbonia\Module::driver($this->oApi->module) : '';
+    $hOptions = getopt('', ['mode::']);
+
+    if (empty($hOptions))
+    {
+      $oServer = Input::singleton('server');
+      $sMode = basename($oServer['php_self']);
+    }
+    else
+    {
+      $sMode = $hOptions['mode'];
+    }
+
+    $sPath = strtolower(preg_replace("#_#", '/', $sMode));
+    $aPath = explode('/', $sPath);
+    $sModule = $aPath[0] ?? null;
+    $sAction = $aPath[1] ?? 'list';
+    $sModuleDriver = \Limbonia\Module::driver($sModule);
 
     if (empty($sModuleDriver))
     {
@@ -286,7 +302,7 @@ Options:\n";
     try
     {
       $oCurrentModule = $this->moduleFactory($sModuleDriver);
-      $this->sTemplateName = strtolower($sModuleDriver) . '_' . $this->oApi->action;
+      $this->sTemplateName = strtolower($sModuleDriver) . '_' . $sAction;
       $oCurrentModule->prepareTemplate();
       $this->templateData('options', $this->processOptions());
       $sModuleTemplate = $oCurrentModule->getTemplate();
@@ -294,7 +310,7 @@ Options:\n";
     }
     catch (\Exception $e)
     {
-      $this->templateData('failure', "The module {$this->oApi->module} could not be instaniated: " . $e->getMessage());
+      $this->templateData('failure', "The module {$sModule} could not be instaniated: " . $e->getMessage());
       return $this->templateRender('error');
     }
   }

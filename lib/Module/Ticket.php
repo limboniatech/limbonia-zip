@@ -193,7 +193,7 @@ class Ticket extends \Limbonia\Module
    */
   protected function processApiGetItem()
   {
-    switch ($this->oApi->action)
+    switch ($this->oRouter->action)
     {
       case 'attachments':
         return $this->oItem->getAttachmentList();
@@ -217,7 +217,7 @@ class Ticket extends \Limbonia\Module
   protected function processApiGetList()
   {
     //if the field list is either not narrowed down at all or includes "children"
-    if (empty($this->oApi->fields) || in_array('children', $this->oApi->fields))
+    if (empty($this->oRouter->fields) || in_array('children', $this->oRouter->fields))
     {
       //then add the children list to each ticket
       $hList = $this->originalProcessApiGetList();
@@ -344,7 +344,7 @@ class Ticket extends \Limbonia\Module
    */
   protected function prepareTemplateAttachmentsDelete()
   {
-    $this->oItem->removeAttachmentById($this->oApi->subId);
+    $this->oItem->removeAttachmentById($this->oRouter->subId);
     $this->oController->templateData('success', "Successfully removed attachment.");
   }
 
@@ -385,7 +385,7 @@ class Ticket extends \Limbonia\Module
    */
   protected function prepareTemplateRelationshipsRemovechild()
   {
-    $oChild = $this->oController->itemFromId('ticket', $this->oApi->subId);
+    $oChild = $this->oController->itemFromId('ticket', $this->oRouter->subId);
     $this->oItem->removeChild($oChild);
     $this->oItem->save();
     $this->oController->templateData('success', "Successfully removed child ticket.");

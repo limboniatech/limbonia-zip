@@ -30,6 +30,8 @@ trait ItemModule
 
   /**
    * Initialize this module's custom data, if there is any
+   *
+   * @throws \Limbonia\Exception
    */
   protected function init()
   {
@@ -37,14 +39,14 @@ trait ItemModule
 
     if (empty($sItemDriver))
     {
-      throw new \Limbonia\Exception\Object("Driver for type ($this->sType) not found");
+      throw new \Limbonia\Exception("Driver for type ($this->sType) not found");
     }
 
     $this->oItem = $this->oController->itemFactory($this->sType);
 
-    if (isset($this->oApi->id) && strtolower($this->sType) == $this->oApi->module)
+    if (isset($this->oRouter->id) && strtolower($this->sType) == $this->oRouter->module)
     {
-      $this->oItem->load($this->oApi->id);
+      $this->oItem->load($this->oRouter->id);
     }
 
     if ($this->oItem->id > 0)
@@ -73,7 +75,7 @@ trait ItemModule
   {
     if ($this->oItem->id == 0)
     {
-      throw new \Exception($this->getType() . ' #' . $this->oApi->id . ' not found', 404);
+      throw new \Limbonia\Exception\Web($this->getType() . ' #' . $this->oRouter->id . ' not found', null, 404);
     }
   }
 
@@ -85,10 +87,10 @@ trait ItemModule
    */
   protected function processApiHead()
   {
-    if (is_null($this->oApi->id))
+    if (is_null($this->oRouter->id))
     {
       $oDatabase = $this->oController->getDB();
-      $oDatabase->query($oDatabase->makeSearchQuery($this->oItem->getTable(), ['id'], $this->oApi->search, null));
+      $oDatabase->query($oDatabase->makeSearchQuery($this->oItem->getTable(), ['id'], $this->oRouter->search, null));
       return null;
     }
 
@@ -96,22 +98,21 @@ trait ItemModule
     return null;
   }
 
-  /**
-   * Generate and return the default list of data, filtered and ordered by API controls
-   *
-   * @return array
-   * @throws \Exception
-   */
-  protected function processApiGetList()
+  protected function getList(array $aFields = [])
   {
+    if (empty($this->oRouter->search))
+    {
+      throw new \Limbonia\Exception\Web("No list criteria specified", null, 403);
+    }
+
     $sTable = $this->oItem->getTable();
     $oDatabase = $this->oController->getDB();
-    $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : [];
+    $aRawFields = empty($aFields) ? [] : array_merge(['id'], $aFields);
     $aFields = array_diff($oDatabase->verifyColumns($sTable, $aRawFields), $this->aIgnore['view']);
 
     //default order is according to the ID column of this item
-    $aOrder = $this->oApi->sort ?? ['id'];
-    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($sTable, $aFields, $this->oApi->search, $aOrder));
+    $aOrder = $this->oRouter->sort ?? ['id'];
+    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($sTable, $aFields, $this->oRouter->search, $aOrder));
     $hList = [];
 
     foreach ($oResult as $hRow)
@@ -143,6 +144,17 @@ trait ItemModule
     return $hList;
   }
 
+    /**
+   * Generate and return the default list of data, filtered and ordered by API controls
+   *
+   * @return array
+   * @throws \Exception
+   */
+  protected function processApiGetList()
+  {
+    return $this->getList($this->oRouter->fields);
+  }
+
   /**
    * Generate and return the default item data, filtered by API controls
    *
@@ -153,12 +165,12 @@ trait ItemModule
   {
     $hRaw = $this->removeIgnoredFields('view', $this->oItem->getAll());
 
-    if ($this->oApi->fields)
+    if ($this->oRouter->fields)
     {
       $hResult = [];
       $sTable = $this->oItem->getTable();
 
-      foreach ($this->oApi->fields as $sColumn)
+      foreach ($this->oRouter->fields as $sColumn)
       {
         $sRealColumn = $this->oController->getDB()->hasColumn($sTable, $sColumn);
 
@@ -185,7 +197,7 @@ trait ItemModule
    */
   protected function processApiGet()
   {
-    if (is_null($this->oApi->id))
+    if (is_null($this->oRouter->id))
     {
       return $this->processApiGetList();
     }
@@ -194,16 +206,9 @@ trait ItemModule
     return $this->processApiGetItem();
   }
 
-  /**
-   * Update the API specified item with the API specified data then return the updated item
-   *
-   * @return \Limbonia\Item
-   * @throws \Exception
-   */
-  protected function processApiPutItem()
+  protected function putData()
   {
-    $hItem = $this->oApi->data;
-    $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
+    $hLowerItem = \array_change_key_case($this->oRouter->data, CASE_LOWER);
 
     foreach ($this->aIgnore['edit'] as $sField)
     {
@@ -215,7 +220,18 @@ trait ItemModule
       }
     }
 
-    $this->oItem->setAll($hLowerItem);
+    return $hLowerItem;
+  }
+
+  /**
+   * Update the API specified item with the API specified data then return the updated item
+   *
+   * @return \Limbonia\Item
+   * @throws \Exception
+   */
+  protected function processApiPutItem()
+  {
+    $this->oItem->setAll($this->putData());
     $this->oItem->save();
     return $this->oItem;
   }
@@ -228,40 +244,24 @@ trait ItemModule
    */
   protected function processApiPutList()
   {
-    $sTable = $this->oItem->getTable();
-    $sIdColumn = strtolower($this->oItem->getIDColumn());
-    $hList = [];
+    $hItemList = $this->getList(['id']);
 
-    foreach ($this->oApi->data as $iKey => $hItem)
+    if (empty($hItemList))
     {
-      $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
+      return true;
+    }
 
-      foreach ($this->aIgnore['edit'] as $sField)
-      {
-        $sLowerField = strtolower($sField);
+    $aItemList = array_keys($hItemList);
+    $hList = [];
+    $sTable = $this->oItem->getTable();
+    $hPutData = $this->putData();
 
-        if (isset($hLowerItem[$sLowerField]))
-        {
-          unset($hLowerItem[$sLowerField]);
-        }
-      }
-
-      if (!isset($hLowerItem['id']) && !isset($hLowerItem[$sIdColumn]))
-      {
-        throw new \Exception("Valid item ID not found", 409);
-      }
-
-      $iItem = $hLowerItem['id'] ?? $hLowerItem[$sIdColumn];
-
-      if ($iKey != $iItem)
-      {
-        throw new \Exception("Hash key and item ID mismatch", 409);
-      }
-
-      $oItem = $this->oController->itemFromId($sTable, $hLowerItem);
-      $oItem->setAll($hItem);
+    foreach ($aItemList as $iItem)
+    {
+      $oItem = $this->oController->itemFromId($sTable, $iItem);
+      $oItem->setAll($hPutData);
       $oItem->save();
-      $hItem[$oItem->id] = $oItem->getAll();
+      $hList[$oItem->id] = $oItem->getAll();
     }
 
     return $hList;
@@ -275,12 +275,12 @@ trait ItemModule
    */
   protected function processApiPut()
   {
-    if (!is_array($this->oApi->data) || count($this->oApi->data) == 0)
+    if (!is_array($this->oRouter->data) || count($this->oRouter->data) == 0)
     {
-      throw new \Exception('No valid data found to process', 400);
+      throw new \Exception('No valid data found to process');
     }
 
-    if (is_null($this->oApi->id))
+    if (is_null($this->oRouter->id))
     {
       return $this->processApiPutList();
     }
@@ -289,17 +289,11 @@ trait ItemModule
     return $this->processApiPutItem();
   }
 
-
-  /**
-   * Create the API specified item with the API specified data then return the created item
-   *
-   * @return \Limbonia\Item
-   * @throws \Exception
-   */
-  protected function processApiPostItem()
+  protected function itemFromArray($hItem)
   {
-    $hLowerItem = \array_change_key_case($this->oApi->data, CASE_LOWER);
+    $sTable = $this->oItem->getTable();
     $sIdColumn = strtolower($this->oItem->getIDColumn());
+    $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
 
     if (isset($hLowerItem['id']))
     {
@@ -311,8 +305,20 @@ trait ItemModule
       unset($hLowerItem[$sIdColumn]);
     }
 
-    $oItem = $this->oController->itemFromArray($this->oItem->getTable(), $hLowerItem);
+    return $this->oController->itemFromArray($sTable, $hLowerItem);
+  }
+
+  /**
+   * Create the API specified item with the API specified data then return the created item
+   *
+   * @return \Limbonia\Item
+   * @throws \Exception
+   */
+  protected function processApiPostItem()
+  {
+    $oItem = $this->itemFromArray($this->oRouter->data);
     $oItem->save();
+    header('Location: ' . $this->oController->getDomain()->currenturl . '/' . $this->oRouter->rawPath . '/' . $oItem->id);
     return $oItem->getAll();
   }
 
@@ -324,29 +330,17 @@ trait ItemModule
    */
   protected function processApiPostList()
   {
-    $sTable = $this->oItem->getTable();
-    $sIdColumn = strtolower($this->oItem->getIDColumn());
     $hList = [];
 
-    foreach ($this->oApi->data as $hItem)
+    foreach ($this->oRouter->data as $hItem)
     {
-      $hLowerItem = \array_change_key_case($hItem, CASE_LOWER);
-
-      if (isset($hLowerItem['id']))
-      {
-        unset($hLowerItem['id']);
-      }
-
-      if (isset($hLowerItem[$sIdColumn]))
-      {
-        unset($hLowerItem[$sIdColumn]);
-      }
-
-      $oItem = $this->oController->itemFromArray($sTable, $hLowerItem);
+      $oItem = $this->itemFromArray($hItem);
       $oItem->save();
       $hItem[$oItem->id] = $oItem->getAll();
     }
 
+    $aIdList = array_keys($hList);
+    header('Location: ' . $this->oController->getDomain()->currenturl . '/' . $this->oRouter->rawPath . '/?id=' . implode(',', $aIdList));
     return $hList;
   }
 
@@ -354,16 +348,16 @@ trait ItemModule
    * Run the default "POST" code and return the created data
    *
    * @return array
-   * @throws \Exception
+   * @throws \Limbonia\Exception
    */
   protected function processApiPost()
   {
-    if (!is_array($this->oApi->data) || count($this->oApi->data) == 0)
+    if (!is_array($this->oRouter->data) || count($this->oRouter->data) == 0)
     {
-      throw new \Exception('No valid data found to process', 400);
+      throw new \Limbonia\Exception('No valid data found to process');
     }
 
-    $aKeys = array_keys($this->oApi->data);
+    $aKeys = array_keys($this->oRouter->data);
 
     //if the first data key is numeric
     if (is_numeric($aKeys[0]))
@@ -395,15 +389,8 @@ trait ItemModule
    */
   protected function processApiDeleteList()
   {
-    $sIdColumn = $this->oItem->getIDColumn();
-    $oDatabase = $this->oController->getDB();
-    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($this->oItem->getTable(), ['id'], $this->oApi->search));
-    $aList = [];
-
-    foreach ($oResult as $hRow)
-    {
-      $aList[] = $hRow[$sIdColumn];
-    }
+    $hList = $this->getList(['id']);
+    $aList = array_keys($hList);
 
     if (empty($aList))
     {
@@ -411,8 +398,9 @@ trait ItemModule
     }
 
     $sTable = $this->oItem->getTable();
+    $sIdColumn = $this->oItem->getIDColumn();
     $sSql = "DELETE FROM $sTable WHERE $sIdColumn IN (" . implode(', ', $aList) . ")";
-    $iRowsDeleted = $oDatabase->exec($sSql);
+    $iRowsDeleted = $this->oController->getDB()->exec($sSql);
 
     if ($iRowsDeleted === false)
     {
@@ -431,7 +419,7 @@ trait ItemModule
    */
   protected function processApiDelete()
   {
-    if (is_null($this->oApi->id))
+    if (is_null($this->oRouter->id))
     {
       return $this->processApiDeleteList();
     }
@@ -547,7 +535,7 @@ trait ItemModule
 
     if ($oData->count() == 1)
     {
-      if (isset($this->oApi->ajax))
+      if (isset($this->oRouter->ajax))
       {
         $this->oItem = $oData[0];
         $this->hMenuItems['item'] = 'Item';
@@ -556,7 +544,7 @@ trait ItemModule
         return true;
       }
 
-      if (isset($this->oApi->subAction) && $this->oApi->subAction == 'quick')
+      if (isset($this->oRouter->subAction) && $this->oRouter->subAction == 'quick')
       {
         $oItem = $oData[0];
         header('Location: '. $this->generateUri($oItem->id));

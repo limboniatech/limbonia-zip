@@ -43,7 +43,7 @@ class Role extends \Limbonia\Module
    */
   protected function processApiGetItem()
   {
-    switch ($this->oApi->action)
+    switch ($this->oRouter->action)
     {
       case 'resources':
         $hResourceList = [];

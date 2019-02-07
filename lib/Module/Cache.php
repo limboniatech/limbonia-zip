@@ -72,7 +72,7 @@ class Cache extends \Limbonia\Module
   {
     if (!is_dir($this->oController->cacheDir) || !is_readable($this->oController->cacheDir) || !is_writable($this->oController->cacheDir))
     {
-      throw new \Exception('Valid cache director not found');
+      throw new \Exception('Valid cache directory not found');
     }
 
     return null;

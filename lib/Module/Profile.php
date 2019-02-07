@@ -213,7 +213,7 @@ class Profile extends \Limbonia\Module
    */
   protected function processApiPut()
   {
-    if (!is_array($this->api->data) || count($this->api->data) == 0)
+    if (!is_array($this->oRouter->data) || count($this->oRouter->data) == 0)
     {
       throw new \Exception('No valid data found to process', 400);
     }

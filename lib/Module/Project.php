@@ -60,13 +60,13 @@ class Project extends \Limbonia\Module
    */
   protected function processApiGetItem()
   {
-    switch ($this->oApi->action)
+    switch ($this->oRouter->action)
     {
       case 'releases':
         $oDatabase = $this->oController->getDB();
         $sTable = 'ProjectRelease';
         $sIdColumn = $oDatabase->getIdColumn($sTable);
-        $hWhere = $this->oApi->search ?? [];
+        $hWhere = $this->oRouter->search ?? [];
         $bUseTableName = false;
         $aWhere = ['ProjectID = ' . $this->oItem->id];
 
@@ -80,7 +80,7 @@ class Project extends \Limbonia\Module
           unset($hWhere['status']);
         }
 
-        $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : null;
+        $aRawFields = isset($this->oRouter->fields) ? array_merge(['id'], $this->oRouter->fields) : null;
         $aSqlFields = $oDatabase->verifyColumns('ProjectRelease', $aRawFields, $bUseTableName);
         $aFields = $oDatabase->verifyColumns('ProjectRelease', $aRawFields);
 
@@ -97,7 +97,7 @@ class Project extends \Limbonia\Module
         $sWhere = \Limbonia\Database::makeWhere($aWhere);
 
         //default order is according to the ID column of this item
-        $aOrder = $this->oApi->sort ?? ['id'];
+        $aOrder = $this->oRouter->sort ?? ['id'];
         $sOrder = \Limbonia\Database::makeOrder($oDatabase->verifyOrder('ProjectRelease', $aOrder, $bUseTableName));
 
         $sSQL = "SELECT DISTINCT $sSelect FROM $sTable$sWhere$sOrder";
@@ -134,16 +134,16 @@ class Project extends \Limbonia\Module
         $sTable = 'TicketCategory';
         $sIdColumn = $oDatabase->getIdColumn($sTable);
 
-        $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : null;
+        $aRawFields = isset($this->oRouter->fields) ? array_merge(['id'], $this->oRouter->fields) : null;
         $aFields = $oDatabase->verifyColumns($sTable, $aRawFields);
         $sSelect = \Limbonia\Database::makeSelect($aFields);
 
-        $hWhere = $this->oApi->search ?? [];
+        $hWhere = $this->oRouter->search ?? [];
         $aWhere = array_merge(['ProjectID = ' . $this->oItem->id], $oDatabase->verifyWhere($sTable, $hWhere));
         $sWhere = \Limbonia\Database::makeWhere($aWhere);
 
         //default order is according to the name column of this item
-        $aOrder = $this->oApi->sort ?? ['name'];
+        $aOrder = $this->oRouter->sort ?? ['name'];
         $sOrder = \Limbonia\Database::makeOrder($oDatabase->verifyOrder($sTable, $aOrder));
 
         $sSQL = "SELECT DISTINCT $sSelect FROM $sTable$sWhere$sOrder";
@@ -200,9 +200,9 @@ class Project extends \Limbonia\Module
    */
   protected function prepareTemplateGetCategories()
   {
-    if (isset($this->oApi->subId))
+    if (isset($this->oRouter->subId))
     {
-      $oCategory = $this->oController->itemFromId('TicketCategory', $this->oApi->subId);
+      $oCategory = $this->oController->itemFromId('TicketCategory', $this->oRouter->subId);
       $this->oController->templateData('category', $oCategory);
     }
   }
@@ -225,7 +225,7 @@ class Project extends \Limbonia\Module
    */
   protected function prepareTemplatePostCategoriesEdit()
   {
-    $oCategory = $this->oController->itemFromId('TicketCategory', $this->oApi->subId);
+    $oCategory = $this->oController->itemFromId('TicketCategory', $this->oRouter->subId);
     $oCategory->setAll($this->editGetData());
 
     if ($oCategory->save())
@@ -239,7 +239,7 @@ class Project extends \Limbonia\Module
    */
   protected function prepareTemplatePostCategoriesDelete()
   {
-    if ($this->oItem->removeCategory($this->oApi->subId))
+    if ($this->oItem->removeCategory($this->oRouter->subId))
     {
       $this->oController->templateData('success', "Project category successfully deleted");
     }
@@ -250,9 +250,9 @@ class Project extends \Limbonia\Module
    */
   protected function prepareTemplateGetReleases()
   {
-    if (isset($this->oApi->subId))
+    if (isset($this->oRouter->subId))
     {
-      $oRelease = $this->oController->itemFromId('ProjectRelease', $this->oApi->subId);
+      $oRelease = $this->oController->itemFromId('ProjectRelease', $this->oRouter->subId);
       $this->oController->templateData('release', $oRelease);
     }
   }
@@ -280,7 +280,7 @@ class Project extends \Limbonia\Module
    */
   protected function prepareTemplatePostReleasesEdit()
   {
-    $oRelease = $this->oController->itemFromId('ProjectRelease', $this->oApi->subId);
+    $oRelease = $this->oController->itemFromId('ProjectRelease', $this->oRouter->subId);
     $oRelease->setAll($this->editGetData());
     $oRelease->save();
     $this->oController->templateData('success', "Project release successfully updated");
@@ -291,7 +291,7 @@ class Project extends \Limbonia\Module
    */
   protected function prepareTemplatePostReleasesDelete()
   {
-    $this->oItem->removeRelease($this->oApi->subId);
+    $this->oItem->removeRelease($this->oRouter->subId);
     $this->oController->templateData('success', "Project release successfully deleted");
   }
 }

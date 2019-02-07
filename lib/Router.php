@@ -2,36 +2,23 @@
 namespace Limbonia;
 
 /**
- * Limbonia API input class
+ * Limbonia Router input class
  *
- * This defines all the basic parts of Limbonia API
+ * This defines all the basic parts of Limbonia Router
  *
  * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @package Limbonia
  */
-class Api
+class Router
 {
   use \Limbonia\Traits\Hash;
 
   /**
-   * The single instance allowed for the API object
+   * The single instance allowed for the Router object
    *
-   * @var \Limbonia\Api
+   * @var \Limbonia\Router
    */
   protected static $oInstance = null;
-
-  /**
-   * List of controller types that are based on the web controller
-   *
-   * @var array
-   */
-  protected static $aWebTypes =
-  [
-    'admin',
-    'ajax',
-    'api',
-    'web'
-  ];
 
   /**
    * The list of possible keys in the data array
@@ -41,8 +28,6 @@ class Api
   protected static $aDataKeys =
   [
     'method',
-    'user',
-    'pass',
     'baseurl',
     'rawpath',
     'path',
@@ -69,25 +54,7 @@ class Api
   protected static $aJsonMethods = ['put', 'post'];
 
   /**
-   * Cached login data...
-   *
-   * @var array
-   */
-  protected static $hLoginData =
-  [
-    'user' => '',
-    'pass' => ''
-  ];
-
-  /**
-   * Is this instance running from the command line?
-   *
-   * @var boolean
-   */
-  protected $bCli = false;
-
-  /**
-   * Default API data
+   * Default Router data
    *
    * @var array
    */
@@ -98,7 +65,7 @@ class Api
   ];
 
   /**
-   * The API data
+   * The Router data
    *
    * @var array
    */
@@ -107,7 +74,7 @@ class Api
   /**
    * Instantiate and return a single version of this class to all callers
    *
-   * @return \Limbonia\Api
+   * @return \Limbonia\Router
    */
   public static function singleton()
   {
@@ -121,78 +88,31 @@ class Api
   }
 
   /**
-   * Generate an API object from the specified URI then return it
+   * Generate an Router object from the specified URI then return it
    *
-   * @param string $sUri - The URI to extract the API data from
-   * @return \Limbonia\Api
+   * @param string $sUri - The URI to extract the Router data from
+   * @return \Limbonia\Router
    */
   public static function fromUri(string $sUri)
   {
-    $oApi = new self();
-    $oApi->setAll(['uri' => $sUri]);
-    return $oApi;
+    return self::fromArray(['uri' => $sUri]);
   }
 
   /**
-   * Generate an API object from the specified URI then return it
+   * Generate an Router object from the specified URI then return it
    *
-   * @param array $hApi - The array to extract the API data from
-   * @return \Limbonia\Api
+   * @param array $hRouter - The array to extract the Router data from
+   * @return \Limbonia\Router
    */
-  public static function fromArray(array $hApi)
+  public static function fromArray(array $hRouter)
   {
-    $oApi = new self();
-    $oApi->setAll($hApi);
-    return $oApi;
+    $oRouter = new self();
+    $oRouter->setAll($hRouter);
+    return $oRouter;
   }
 
   /**
-   * The API object constructor
-   */
-  public function __construct()
-  {
-    if (\Limbonia\Controller::isCLI())
-    {
-      $this->bCli = true;
-      $this->hDefault['method'] = 'cli';
-      $this->hDefault['controller'] = 'cli';
-    }
-    else
-    {
-      $oServer = Input::singleton('server');
-
-      if (isset($oServer['PHP_AUTH_USER']) && isset($oServer['PHP_AUTH_PW']))
-      {
-        self::$hLoginData['user'] = $oServer['PHP_AUTH_USER'];
-        unset($oServer['PHP_AUTH_USER']);
-
-        self::$hLoginData['pass'] = $oServer['PHP_AUTH_PW'];
-        unset($oServer['PHP_AUTH_PW']);
-      }
-      else
-      {
-        $oPost = Input::singleton('post');
-
-        if (isset($oPost['email']) && isset($oPost['password']))
-        {
-          self::$hLoginData['user'] = $oPost['email'];
-          unset($oPost['email']);
-
-          self::$hLoginData['pass'] = $oPost['password'];
-          unset($oPost['password']);
-        }
-      }
-    }
-
-    if (!empty(self::$hLoginData['user']) && !empty(self::$hLoginData['pass']))
-    {
-      $this->hData['user'] = self::$hLoginData['user'];
-      $this->hData['pass'] = self::$hLoginData['pass'];
-    }
-  }
-
-  /**
-   * Set the specified data into the the current API object
+   * Set the specified data into the the current Router object
    *
    * @param array $hData
    */
@@ -208,7 +128,7 @@ class Api
     if (isset($hData['uri']))
     {
       $hUri = parse_url($hData['uri']);
-      $sWebTypes = implode('|', static::$aWebTypes);
+      $sWebTypes = implode('|', Controller::WEB_TYPES);
 
       if (isset($this->hData['baseurl']) && preg_match("#{$this->hData['baseurl']}/(.*$)#", $hUri['path'], $aMatch))
       {
@@ -256,44 +176,39 @@ class Api
     $this->hData['path'] = strtolower($this->hData['rawpath']);
     $this->hData['call'] = explode('/', $this->hData['path']);
 
-    if (isset($this->hData['call'][0]) && in_array($this->hData['call'][0], self::$aWebTypes))
+    if (isset($this->hData['call'][0]) && in_array($this->hData['call'][0], Controller::WEB_TYPES))
     {
-      $this->hData['controller'] = $this->hData['call'][0];
-    }
-    else
-    {
-      $this->hData['controller'] = $this->hDefault['controller'];
-      array_unshift($this->hData['call'], $this->hDefault['controller']);
+      array_shift($this->hData['call']);
     }
 
-    $this->hData['module'] = $this->hData['call'][1] ?? null;
+    $this->hData['module'] = $this->hData['call'][0] ?? null;
     $this->hData['id'] = null;
 
-    if (isset($this->hData['call'][2]) && is_numeric($this->hData['call'][2]))
+    if (isset($this->hData['call'][1]) && is_numeric($this->hData['call'][1]))
     {
-      $this->hData['id'] = $this->hData['call'][2];
-      $this->hData['action'] = $this->hData['call'][3] ?? 'view';
+      $this->hData['id'] = $this->hData['call'][1];
+      $this->hData['action'] = $this->hData['call'][2] ?? 'view';
       $this->hData['subid'] = null;
 
-      if (isset($this->hData['call'][4]) && is_numeric($this->hData['call'][4]))
+      if (isset($this->hData['call'][3]) && is_numeric($this->hData['call'][3]))
       {
-        $this->hData['subid'] = $this->hData['call'][4];
-        $this->hData['subaction'] = $this->hData['call'][5] ?? null;
+        $this->hData['subid'] = $this->hData['call'][3];
+        $this->hData['subaction'] = $this->hData['call'][4] ?? null;
       }
       else
       {
-        $this->hData['subaction'] = $this->hData['call'][4] ?? null;
+        $this->hData['subaction'] = $this->hData['call'][3] ?? null;
       }
     }
     else
     {
-      $this->hData['action'] = $this->hData['call'][2] ?? 'list';
-      $this->hData['subaction'] = $this->hData['call'][3] ?? null;
+      $this->hData['action'] = $this->hData['call'][1] ?? 'list';
+      $this->hData['subaction'] = $this->hData['call'][2] ?? null;
     }
   }
 
   /**
-   * Process the specified array of "get" data into API data
+   * Process the specified array of "get" data into Router data
    *
    * @param array $hGet
    */
@@ -369,27 +284,14 @@ class Api
   protected function generate()
   {
     $oServer = Input::singleton('server');
+    $this->hData['method'] = isset($oServer['http_x_http_method_override']) ? strtolower($oServer['http_x_http_method_override']) : strtolower($oServer['request_method']);
 
-    if ($this->bCli)
-    {
-      $this->hData['method'] = $this->hDefault['method'];
-      $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
-      $hOptions = getopt('', ['mode::']);
-      $sMode = empty($hOptions) ? basename($oServer['php_self']) : $hOptions['mode'];
-      $this->hData['rawpath'] = preg_replace("#_#", '/', $sMode);
-      $this->processRawPath();
-    }
-    else
-    {
-      $this->hData['method'] = isset($oServer['http_x_http_method_override']) ? strtolower($oServer['http_x_http_method_override']) : strtolower($oServer['request_method']);
+    $oGet = Input::singleton('get');
+    $this->processGet($oGet->getRaw());
 
-      $oGet = Input::singleton('get');
-      $this->processGet($oGet->getRaw());
-
-      $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
-      $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
-      $this->processRawPath();
-    }
+    $this->hData['baseurl'] = rtrim(dirname($oServer['php_self']), '/') . '/';
+    $this->hData['rawpath'] = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $this->hData['baseurl'] . "#",  '', $oServer['request_uri'])), '/');
+    $this->processRawPath();
   }
 
   /**

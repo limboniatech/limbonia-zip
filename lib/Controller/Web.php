@@ -2,9 +2,9 @@
 namespace Limbonia\Controller;
 
 /**
- * Limbonia API Controller Class
+ * Limbonia Router Controller Class
  *
- * This allows the basic controller retrieve data base on the API URL and return
+ * This allows the basic controller retrieve data base on the Router URL and return
  * that data in either HTML or JSON format
  *
  * @author Lonnie Blansett <lonnie@limbonia.tech>
@@ -20,6 +20,24 @@ class Web extends \Limbonia\Controller
    * @var string
    */
   protected $sHtmlHeader = '';
+
+  /**
+   * Cached login data...
+   *
+   * @var array
+   */
+  protected static $hLoginData =
+  [
+    'user' => '',
+    'pass' => ''
+  ];
+
+  /**
+   * This web controller's router
+   *
+   * @var \Limbonia\Router
+   */
+  protected $oRouter = null;
 
   /**
    * Output the specified data as JSON
@@ -39,12 +57,11 @@ class Web extends \Limbonia\Controller
    *
    * NOTE: This constructor should only be used by the factory and *never* directly
    *
-   * @param \Limbonia\Api $oApi
    * @param array $hConfig - A hash of configuration data
    */
-  protected function __construct(\Limbonia\Api $oApi, array $hConfig = [])
+  protected function __construct(array $hConfig = [])
   {
-    parent::__construct($oApi, $hConfig);
+    parent::__construct($hConfig);
 
     if (isset($this->hConfig['sessionname']))
     {
@@ -53,7 +70,30 @@ class Web extends \Limbonia\Controller
     }
 
     \Limbonia\SessionManager::start();
+
     $oServer = \Limbonia\Input::singleton('server');
+
+    if (isset($oServer['PHP_AUTH_USER']) && isset($oServer['PHP_AUTH_PW']))
+    {
+      self::$hLoginData['user'] = $oServer['PHP_AUTH_USER'];
+      unset($oServer['PHP_AUTH_USER']);
+
+      self::$hLoginData['pass'] = $oServer['PHP_AUTH_PW'];
+      unset($oServer['PHP_AUTH_PW']);
+    }
+    else
+    {
+      $oPost = \Limbonia\Input::singleton('post');
+
+      if (isset($oPost['email']) && isset($oPost['password']))
+      {
+        self::$hLoginData['user'] = $oPost['email'];
+        unset($oPost['email']);
+
+        self::$hLoginData['pass'] = $oPost['password'];
+        unset($oPost['password']);
+      }
+    }
 
     if (empty($this->oDomain))
     {
@@ -63,7 +103,7 @@ class Web extends \Limbonia\Controller
       }
       else
       {
-        $this->oDomain = \Limbonia\Domain::getByDirectory($this->server['document_root']);
+        $this->oDomain = \Limbonia\Domain::getByDirectory($oServer['document_root']);
       }
 
       $this->hConfig['baseuri'] = $this->oDomain->uri;
@@ -76,17 +116,26 @@ class Web extends \Limbonia\Controller
       $this->hConfig['baseuri'] .= '/' . strtolower(preg_replace("#.*\\\#", '', get_class($this)));
     }
 
-    //if the requiest is coming from a URI
-    if (!empty($this->oDomain->uri))
+    if (empty($this->oDomain->uri))
     {
-      //then override the default API object
-      $this->oApi = \Limbonia\Api::fromArray
+      $this->oRouter = \Limbonia\Router::singleton();
+    }
+    //if the request is coming from a URI
+    else
+    {
+      //then override the default Router object
+      $this->oRouter = \Limbonia\Router::fromArray
       ([
         'uri' => $this->server['request_uri'],
         'baseurl' => $this->oDomain->uri,
         'method' => strtolower($oServer['request_method'])
       ]);
     }
+  }
+
+  public function getRouter()
+  {
+    return $this->oRouter;
   }
 
   /**
@@ -123,12 +172,12 @@ class Web extends \Limbonia\Controller
       return $this->itemFromId('user', $_SESSION['LoggedInUser']);
     }
 
-    if (!isset($this->oApi->user) || !isset($this->oApi->pass))
+    if (!isset(self::$hLoginData['user']) || !isset(self::$hLoginData['pass']))
     {
       return $this->itemFactory('user');
     }
 
-    if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && $this->oApi->user === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && $this->oApi->pass === $this->hConfig['master']['Password'])
+    if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && self::$hLoginData['user'] === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && self::$hLoginData['pass'] === $this->hConfig['master']['Password'])
     {
       $oUser = parent::generateUser();
 
@@ -141,8 +190,8 @@ class Web extends \Limbonia\Controller
       return $oUser;
     }
 
-    $oUser = $this->userByEmail($this->oApi->user);
-    $oUser->authenticate($this->oApi->pass);
+    $oUser = $this->userByEmail(self::$hLoginData['user']);
+    $oUser->authenticate(self::$hLoginData['pass']);
 
     if (!isset($_SESSION['LoggedInUser']))
     {
@@ -160,7 +209,7 @@ class Web extends \Limbonia\Controller
    */
   protected function render()
   {
-    $sTemplate = $this->templateFile($this->oApi->module);
+    $sTemplate = $this->templateFile($this->oRouter->module);
 
     if (empty($sTemplate))
     {
@@ -169,7 +218,7 @@ class Web extends \Limbonia\Controller
 
     try
     {
-      if (isset($this->oApi->ajax))
+      if (isset($this->oRouter->ajax))
       {
         return self::outputJson
         ([
@@ -183,7 +232,7 @@ class Web extends \Limbonia\Controller
     {
       $this->templateData('failure', 'Failed to generate the requested data: ' . $e->getMessage());
 
-      if (isset($this->oApi->search['click']))
+      if (isset($this->oRouter->search['click']))
       {
         return self::outputJson
         ([
@@ -200,7 +249,7 @@ class Web extends \Limbonia\Controller
    */
   public function run()
   {
-    if ($this->oApi->module == 'logout')
+    if ($this->oRouter->module == 'logout')
     {
       $this->logOut();
       header('Location: ' . $this->baseUri);

@@ -12,7 +12,88 @@ namespace Limbonia\Controller;
  */
 class Api extends \Limbonia\Controller\Web
 {
+  protected static $hJsonData = null;
+
+  public static function jsonData()
+  {
+    if (is_null(self::$hJsonData))
+    {
+      self::$hJsonData = json_decode(file_get_contents("php://input"), true);
+    }
+
+    return self::$hJsonData;
+  }
+
   /**
+   * The controller constructor
+   *
+   * NOTE: This constructor should only be used by the factory and *never* directly
+   *
+   * @param array $hConfig - A hash of configuration data
+   */
+  protected function __construct(array $hConfig = [])
+  {
+    \Limbonia\Controller::__construct($hConfig);
+    $oServer = \Limbonia\Input::singleton('server');
+
+    if (empty($this->oDomain))
+    {
+      if (!empty($oServer['context_prefix']) && !empty($oServer['context_document_root']))
+      {
+         $this->oDomain = new \Limbonia\Domain($oServer['server_name'] . $oServer['context_prefix'], $oServer['context_document_root']);
+      }
+      else
+      {
+        $this->oDomain = \Limbonia\Domain::getByDirectory($oServer['document_root']);
+      }
+
+      $this->hConfig['baseuri'] = $this->oDomain->uri;
+    }
+
+    if (empty($this->oDomain->uri))
+    {
+      $this->oRouter = \Limbonia\Router::singleton();
+    }
+    //if the request is coming from a URI
+    else
+    {
+      //then override the default Router object
+      $this->oRouter = \Limbonia\Router::fromArray
+      ([
+        'uri' => $oServer['request_uri'],
+        'baseurl' => $this->oDomain->uri,
+        'method' => strtolower($oServer['request_method'])
+      ]);
+    }
+  }
+
+  /**
+   * Get the user associated with the specified auth_token and return it
+   *
+   * @param type $sAuthToken
+   * @return type
+   */
+  public function userByAuthToken($sAuthToken)
+  {
+    $oUser = \Limbonia\Item\User::getByAuthToken($sAuthToken, $this->getDB());
+    $oUser->setController($this);
+    return $oUser;
+  }
+
+  /**
+   * Get the user associated with the specified API key and return it
+   *
+   * @param string $sApiKey
+   * @return \Limbonia\Item\User
+   */
+  public function userByApiKey($sApiKey)
+  {
+    $oUser = \Limbonia\Item\User::getByApiKey($sApiKey, $this->getDB());
+    $oUser->setController($this);
+    return $oUser;
+  }
+
+    /**
    * Generate and return the current user
    *
    * @return \Limbonia\Item\User
@@ -20,15 +101,19 @@ class Api extends \Limbonia\Controller\Web
    */
   protected function generateUser()
   {
-    try
+    $oServer = \Limbonia\Input::singleton('server');
+
+    if (isset($oServer['http_auth_token']))
     {
-      return parent::generateUser();
+      return $this->userByAuthToken($oServer['http_auth_token']);
     }
-    catch (\Exception $e)
+
+    if (isset($oServer['http_api_key']))
     {
-      http_response_code(401);
-      die(parent::outputJson($e->getMessage()));
+      return $this->userByApiKey($oServer['http_api_key']);
     }
+
+    throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
   }
 
   /**
@@ -38,61 +123,84 @@ class Api extends \Limbonia\Controller\Web
    */
   protected function render()
   {
+    if (is_null($this->oRouter->module))
+    {
+      throw new \Exception('No module found');
+    }
+
+    $oModule = $this->moduleFactory($this->oRouter->module);
+    $xResult = $oModule->processApi();
+
+    if (is_null($xResult))
+    {
+      return null;
+    }
+
+    if ($xResult instanceof \Limbonia\ItemList)
+    {
+      $hList = [];
+
+      foreach ($xResult as $oItem)
+      {
+        $hList[$oItem->id] = $oItem->getAll();
+      }
+
+      return $hList;
+    }
+
+    if ($xResult instanceof \Limbonia\Item)
+    {
+      return $xResult->getAll();
+    }
+
+    if ($xResult instanceof \Limbonia\Interfaces\Result)
+    {
+      return $xResult->getData();
+    }
+
+    return $xResult;
+  }
+
+  /**
+   * Run everything needed to react to input and display data in the way this controller is intended
+   */
+  public function run()
+  {
     try
     {
       ob_start();
-      if ($this->oUser->id == 0)
+
+      if ($this->oRouter->method != 'post' || $this->oRouter->module != 'auth')
       {
-        throw new \Exception('Authentication failed', 401);
+        $this->oUser = $this->generateUser();
+        $this->templateData('currentUser', $this->oUser);
       }
 
-      if (is_null($this->api->module))
-      {
-        throw new \Exception('No module found');
-      }
-
-      $oModule = $this->moduleFactory($this->api->module);
-
-      ob_end_clean();
-      $xResult = $oModule->processApi();
-
-      if (is_null($xResult))
-      {
-        return null;
-      }
-
-      if ($xResult instanceof \Limbonia\ItemList)
-      {
-        $hList = [];
-
-        foreach ($xResult as $oItem)
-        {
-          $hList[$oItem->id] = $oItem->getAll();
-        }
-
-        return parent::outputJson($hList);
-      }
-
-      if ($xResult instanceof \Limbonia\Item)
-      {
-        return parent::outputJson($xResult->getAll());
-      }
-
-      if ($xResult instanceof \Limbonia\Interfaces\Result)
-      {
-        return parent::outputJson($xResult->getAll());
-      }
-
-      return json_encode($xResult);
+      $this->templateData('controller', $this);
+      $sOutput = $this->render();
+    }
+    catch (\Limbonia\Exception\Web $e)
+    {
+      http_response_code($e->getResponseCode());
+      $sOutput =
+      [
+        'code' => $e->getCode(),
+        'message' => $e->getMessage()
+      ];
     }
     catch (\Exception $e)
     {
-      $iExceptionCode = $e->getCode();
-
-      //if the exception didn't have numeric code or at least 400, then use 400 instead...
-      $iResponseCode = empty($iExceptionCode) || !is_numeric($iExceptionCode) || $iExceptionCode < 400 ? 400 : $iExceptionCode;
-      http_response_code($iResponseCode);
-      return parent::outputJson($e->getMessage());
+      http_response_code(400);
+      $sOutput =
+      [
+        'code' => $e->getCode(),
+        'message' => $e->getMessage()
+      ];
+    }
+    finally
+    {
+      ob_end_clean();
+      die(parent::outputJson($sOutput));
     }
   }
 }

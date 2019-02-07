@@ -9,7 +9,7 @@ namespace Limbonia\Exception;
  * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @package Limbonia
  */
-class Database extends \Exception
+class Database extends \Limbonia\Exception
 {
   /**
    * The SQL server type

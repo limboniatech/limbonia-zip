@@ -11,7 +11,7 @@ namespace Limbonia\Exception;
  * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @package Limbonia
  */
-class Error extends \Exception
+class Error extends \Limbonia\Exception
 {
   /**
    * The context for this exception

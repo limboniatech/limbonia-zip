@@ -45,7 +45,7 @@ class TicketCategory extends \Limbonia\Module
   {
     $sTable = $this->oItem->getTable();
     $oDatabase = $this->oController->getDB();
-    $aRawFields = isset($this->oApi->fields) ? array_merge(['id'], $this->oApi->fields) : [];
+    $aRawFields = isset($this->oRouter->fields) ? array_merge(['id'], $this->oRouter->fields) : [];
     $aFields = array_diff($oDatabase->verifyColumns($sTable, $aRawFields), $this->aIgnore['view']);
     $aSqlFields = $aFields;
 
@@ -57,8 +57,8 @@ class TicketCategory extends \Limbonia\Module
     }
 
     //default order is according to the ID column of this item
-    $aOrder = $this->oApi->sort ?? ['id'];
-    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($sTable, $aSqlFields, $this->oApi->search, $aOrder));
+    $aOrder = $this->oRouter->sort ?? ['id'];
+    $oResult = $oDatabase->query($oDatabase->makeSearchQuery($sTable, $aSqlFields, $this->oRouter->search, $aOrder));
     $hList = [];
     $bFullNameSort = in_array('fullname ASC', $aOrder) || in_array('fullname DESC', $aOrder);
 
@@ -183,7 +183,7 @@ class TicketCategory extends \Limbonia\Module
     }
     elseif ($sLowerType == 'search')
     {
-      if ($this->sCurrentAction == 'list' || $this->oApi->method == 'post')
+      if ($this->sCurrentAction == 'list' || $this->oRouter->method == 'post')
       {
         $this->aIgnore['search'] =
         [

@@ -71,6 +71,19 @@ abstract class Controller
   protected static $hModuleList = [];
 
   /**
+   * List of controller types that are based on the web controller
+   *
+   * @var array
+   */
+  const WEB_TYPES =
+  [
+    'admin',
+    'ajax',
+    'api',
+    'web'
+  ];
+
+  /**
    * All the data that will be used by the templates
    *
    * @var array
@@ -122,13 +135,6 @@ abstract class Controller
    * @var array
    */
   protected $hConfig = [];
-
-  /**
-   * This controller's API
-   *
-   * @var \Limbonia\Api
-   */
-  protected $oApi = null;
 
   /**
    * The logged in user
@@ -412,9 +418,30 @@ abstract class Controller
 
     $hConfig = self::mergeArray(self::$hAutoConfig, $hConfig);
     $hLowerConfig = \array_change_key_case($hConfig, CASE_LOWER);
-    $oApi = $hLowerConfig['api'] ?? \Limbonia\Api::singleton();
-    $sControllerClass = __CLASS__ . '\\' . ucfirst($oApi->controller);
-    return new $sControllerClass($oApi, $hConfig);
+    $sControllerType = null;
+
+    if (isset($hLowerConfig['controller_type']))
+    {
+      $sControllerType = strtolower($hLowerConfig['controller_type']);
+      unset($hLowerConfig['controller_type']);
+    }
+
+    if (self::isCLI() || $sControllerType == 'cli')
+    {
+      return new Controller\Cli($hLowerConfig);
+    }
+
+    if (!in_array($sControllerType, self::WEB_TYPES))
+    {
+      $oServer = Input::singleton('server');
+      $sBaseUrl = rtrim(dirname($oServer['php_self']), '/') . '/';
+      $sRawPath = rtrim(preg_replace("#\?.*#", '', preg_replace("#^" . $sBaseUrl . "#",  '', $oServer['request_uri'])), '/');
+      $aCall = explode('/', strtolower($sRawPath));
+      $sControllerType = isset($aCall[0]) && in_array($aCall[0], self::WEB_TYPES) ? $aCall[0] : 'web';
+    }
+
+    $sWebControllerClass = __CLASS__ . '\\' . ucfirst($sControllerType);
+    return new $sWebControllerClass($hLowerConfig);
   }
 
   /**
@@ -422,17 +449,15 @@ abstract class Controller
    *
    * NOTE: This constructor should only be used by the factory and *never* directly
    *
-   * @param \Limbonia\Api $oApi
    * @param array $hConfig - A hash of configuration data
    */
-  protected function __construct(\Limbonia\Api $oApi, array $hConfig = [])
+  protected function __construct(array $hConfig = [])
   {
     if (isset($hConfig['debug']))
     {
       $this->bDebug = (boolean)$hConfig['debug'];
     }
 
-    $this->oApi = $oApi;
     $this->sType = strtolower(str_replace(__CLASS__ . "\\", '', get_class($this)));
 
     if (isset($hConfig['domaindirtemplate']))
@@ -531,11 +556,6 @@ abstract class Controller
       return \Limbonia\Input::singleton($sLowerName);
     }
 
-    if ($sLowerName == 'api')
-    {
-      return $this->oApi;
-    }
-
     if ($sLowerName == 'domain')
     {
       return $this->oDomain;
@@ -575,11 +595,6 @@ abstract class Controller
     if (in_array($sLowerName, self::$aAutoInput))
     {
       return true;
-    }
-
-    if ($sLowerName === 'api')
-    {
-      return !empty($this->oApi);
     }
 
     if ($sLowerName === 'domain')
@@ -962,6 +977,16 @@ abstract class Controller
   public function reportResultFactory($sType, array $hParam = [])
   {
     return \Limbonia\Report::resultFactory($sType, $hParam, $this);
+  }
+
+  /**
+   * Return the default router
+   *
+   * @return \Limbonia\Router
+   */
+  public function getRouter()
+  {
+    return \Limbonia\Router::singleton();
   }
 
   public function userByEmail($sEmail)

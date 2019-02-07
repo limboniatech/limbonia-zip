@@ -19,7 +19,7 @@ class Admin extends \Limbonia\Controller\Web
    */
   protected function render()
   {
-    $sModuleDriver = isset($this->oApi->module) ? \Limbonia\Module::driver($this->oApi->module) : '';
+    $sModuleDriver = isset($this->oRouter->module) ? \Limbonia\Module::driver($this->oRouter->module) : '';
 
     if (empty($sModuleDriver))
     {
@@ -32,7 +32,7 @@ class Admin extends \Limbonia\Controller\Web
       $oCurrentModule->prepareTemplate();
       $sModuleTemplate = $oCurrentModule->getTemplate();
 
-      if (isset($this->oApi->ajax))
+      if (isset($this->oRouter->ajax))
       {
          return parent::outputJson(array_merge(['moduleOutput' => $this->templateRender($sModuleTemplate)], $oCurrentModule->getAdminOutput()));
       }
@@ -42,9 +42,9 @@ class Admin extends \Limbonia\Controller\Web
     }
     catch (\Exception $e)
     {
-      $this->templateData('failure', "The module {$this->oApi->module} could not be instaniated: " . $e->getMessage());
+      $this->templateData('failure', "The module {$this->oRouter->module} could not be instaniated: " . $e->getMessage());
 
-      if (isset($this->oApi->search['click']))
+      if (isset($this->oRouter->search['click']))
       {
         return parent::outputJson
         ([
@@ -97,7 +97,7 @@ class Admin extends \Limbonia\Controller\Web
       $sLogin = 'Login page not found';
     }
 
-    if (isset($this->oApi->ajax))
+    if (isset($this->oRouter->ajax))
     {
       header("Cache-Control: no-cache, must-revalidate");
       header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");

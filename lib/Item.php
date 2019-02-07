@@ -319,7 +319,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    *
    * @param array $hItem - the data used to generate the item
    * @return array - the unused hash data that was passed in
-   * @throws \Limbonia\Exception\Object
+   * @throws \Limbonia\Exception
    */
   public function setAll(array $hItem = [])
   {
@@ -336,7 +336,7 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
         if ($this->isCreated() && $hItem[$sKey] != $this->hData[$this->sIdColumn])
         {
           //then this is an override...
-          throw new \Limbonia\Exception\Object("The existing $this->sType already has an ID of {$this->hData[$this->sIdColumn]} so it can't be changed to {$hItem[$sKey]}");
+          throw new \Limbonia\Exception("The existing $this->sType already has an ID of {$this->hData[$this->sIdColumn]} so it can't be changed to {$hItem[$sKey]}");
         }
 
         $this->__set($this->sIdColumn, $hItem[$sKey]);

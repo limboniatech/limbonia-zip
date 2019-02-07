@@ -458,15 +458,20 @@ class Database extends \PDO
 	 * @param string $sStatement <p>
 	 * The SQL statement to prepare and execute.
 	 * </p>
+	 * @param array $aInputParameters (optional) <p>
+	 * An array of values with as many elements as there are bound
+	 * parameters in the SQL statement being executed.
+	 * All values are treated as <b>PDO::PARAM_STR</b>.
+	 * </p>
    *
 	 * @return \Limbonia\Result\Database returns a \Limbonia\Result\Database object on success, or <b>false</b> on failure.
    *
 	 * @link http://php.net/manual/en/pdo.query.php
 	 */
-  public function query(string $sStatement)
+  public function query(string $sStatement, array $aInputParameters = [])
   {
     $oResult = $this->prepare($sStatement);
-    $oResult->execute();
+    $oResult->execute($aInputParameters);
     return $oResult;
   }
 

@@ -44,7 +44,7 @@ foreach ($currentItem->getReleaseList('roadmap') as $release)
     {
       if (count($ticketList) > 0)
       {
-        echo "    <div class=\"priority\">" . ucwords($priority) . "</div>
+        echo "    <div class=\"priority $priority\">" . ucwords($priority) . "</div>
       <ul>\n";
 
         foreach ($ticketList as $incompleteBug)

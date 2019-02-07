@@ -173,9 +173,9 @@ class Module
   /**
    * The API object for this class to use
    *
-   * @var \Limbonia\Api
+   * @var \Limbonia\Router
    */
-  protected $oApi = null;
+  protected $oRouter = null;
 
   /**
    * Generate and cache the driver list for the current object type
@@ -192,7 +192,7 @@ class Module
     $_SESSION['DriverList'][__CLASS__] = [];
     $sClassDir = preg_replace("#\\\#", '/', preg_replace("#Limbonia\\\\#", '', __CLASS__));
     $aBlackList = $oController->moduleBlackList ?? [];
-    $oApi = \Limbonia\Api::fromUri('admin');
+    $oRouter = \Limbonia\Router::fromUri('admin');
 
     foreach (\Limbonia\Controller::getLibs() as $sLib)
     {
@@ -212,7 +212,7 @@ class Module
           continue;
         }
 
-        $oModule = new $sTypeClass($oController, $oApi);
+        $oModule = new $sTypeClass($oController, $oRouter);
         $hComponent = $oModule->getComponents();
         ksort($hComponent);
         reset($hComponent);
@@ -280,10 +280,10 @@ class Module
    *
    * @param \Limbonia\Controller $oController
    */
-  protected function __construct(\Limbonia\Controller $oController, \Limbonia\Api $oApi = null)
+  protected function __construct(\Limbonia\Controller $oController, \Limbonia\Router $oRouter = null)
   {
     $this->oController = $oController;
-    $this->oApi = is_null($oApi) ? $this->oController->api : $oApi;
+    $this->oRouter = is_null($this->oRouter) ? $this->oController->getRouter() : $oRouter;
     $this->getType();
 
     if (count(static::$hSettingsFields) > 0)
@@ -302,7 +302,7 @@ class Module
     }
 
     $this->init();
-    $this->sCurrentAction = in_array($this->oApi->action, $this->aAllowedActions) ? $this->oApi->action : $this->sDefaultAction;
+    $this->sCurrentAction = in_array($this->oRouter->action, $this->aAllowedActions) ? $this->oRouter->action : $this->sDefaultAction;
   }
 
   /**
@@ -353,7 +353,7 @@ class Module
    */
   protected function processApiHead()
   {
-    throw new \Exception("Action (dispaly) not implemented by {$this->oApi->module}", 404);
+    throw new \Limbonia\Exception\Web("Action (dispaly) not implemented by {$this->oRouter->module}", null, 404);
   }
 
   /**
@@ -364,7 +364,7 @@ class Module
    */
   protected function processApiGet()
   {
-    throw new \Exception("Action (dispaly) not implemented by {$this->oApi->module}", 404);
+    throw new \Limbonia\Exception\Web("Action (dispaly) not implemented by {$this->oRouter->module}", null, 404);
   }
 
   /**
@@ -375,7 +375,7 @@ class Module
    */
   protected function processApiPut()
   {
-    throw new \Exception("Action (update) not implemented by {$this->oApi->module}", 404);
+    throw new \Limbonia\Exception\Web("Action (update) not implemented by {$this->oRouter->module}", null, 404);
   }
 
   /**
@@ -386,7 +386,7 @@ class Module
    */
   protected function processApiPost()
   {
-    throw new \Exception("Action (create) not implemented by {$this->oApi->module}", 404);
+    throw new \Limbonia\Exception\Web("Action (create) not implemented by {$this->oRouter->module}", null, 404);
   }
 
   /**
@@ -397,7 +397,7 @@ class Module
    */
   protected function processApiDelete()
   {
-    throw new \Exception("Action (delete) not implemented by {$this->oApi->module}", 404);
+    throw new \Limbonia\Exception\Web("Action (delete) not implemented by {$this->oRouter->module}", null, 404);
   }
 
   /**
@@ -410,17 +410,17 @@ class Module
   {
     http_response_code(200);
 
-    if (!in_array($this->oApi->method, static::$hHttpMethods))
+    if (!in_array($this->oRouter->method, static::$hHttpMethods))
     {
-      throw new \Exception("HTTP method ({$this->oApi->method}) not allowed by {$this->oApi->module}", 405);
+      throw new \Limbonia\Exception\Web("HTTP method ({$this->oRouter->method}) not allowed by {$this->oRouter->module}", null, 405);
     }
 
-    switch ($this->oApi->method)
+    switch ($this->oRouter->method)
     {
       case 'head':
         if (!$this->allow('search'))
         {
-          throw new \Exception("Action (dispaly) not allowed by {$this->oApi->module}", 405);
+          throw new \Limbonia\Exception\Web("Action (display) not allowed by {$this->oRouter->module}", null, 405);
         }
 
         return $this->processApiHead();
@@ -428,7 +428,7 @@ class Module
       case 'get':
         if (!$this->allow('search'))
         {
-          throw new \Exception("Action (dispaly) not allowed by {$this->oApi->module}", 405);
+          throw new \Limbonia\Exception\Web("Action (display) not allowed by {$this->oRouter->module}", null, 405);
         }
 
         return $this->processApiGet();
@@ -436,7 +436,7 @@ class Module
       case 'put':
         if (!$this->allow('edit'))
         {
-          throw new \Exception("Action (update) not allowed by {$this->oApi->module}", 405);
+          throw new \Limbonia\Exception\Web("Action (update) not allowed by {$this->oRouter->module}", null, 405);
         }
 
         return $this->processApiPut();
@@ -444,7 +444,7 @@ class Module
       case 'post':
         if (!$this->allow('create'))
         {
-          throw new \Exception("Action (create) not allowed by {$this->oApi->module}", 405);
+          throw new \Limbonia\Exception\Web("Action (create) not allowed by {$this->oRouter->module}", null, 405);
         }
 
         http_response_code(201);
@@ -453,7 +453,7 @@ class Module
       case 'delete':
         if (!$this->allow('delete'))
         {
-          throw new \Exception("Action (delete) not allowed by {$this->oApi->module}", 405);
+          throw new \Limbonia\Exception\Web("Action (delete) not allowed by {$this->oRouter->module}", null, 405);
         }
 
         http_response_code(204);
@@ -465,7 +465,7 @@ class Module
         return null;
     }
 
-    throw new \Exception("HTTP method ({$this->oApi->method}) not recognized by {$this->oApi->module}", 405);
+    throw new \Limbonia\Exception\Web("HTTP method ({$this->oRouter->method}) not recognized by {$this->oRouter->module}", null, 405);
   }
 
   /**
@@ -475,7 +475,7 @@ class Module
    */
   public function isSearch()
   {
-    return in_array($this->oApi->action, ['search', 'list']);
+    return in_array($this->oRouter->action, ['search', 'list']);
   }
 
   /**
@@ -570,10 +570,10 @@ class Module
     $this->oController->templateData('module', $this);
     $this->oController->templateData('method', $this->sCurrentAction);
     $aMethods = [];
-    $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction) . ucfirst($this->oApi->subAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction) . ucfirst($this->oRouter->subAction);
     $aMethods[] = 'prepareTemplate' . ucfirst($this->sCurrentAction);
-    $aMethods[] = 'prepareTemplate' . ucfirst($this->oApi->method) . ucfirst($this->sCurrentAction) . ucfirst($this->oApi->subAction);
-    $aMethods[] = 'prepareTemplate' . ucfirst($this->oApi->method) . ucfirst($this->sCurrentAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->oRouter->method) . ucfirst($this->sCurrentAction) . ucfirst($this->oRouter->subAction);
+    $aMethods[] = 'prepareTemplate' . ucfirst($this->oRouter->method) . ucfirst($this->sCurrentAction);
     $aMethods = array_unique($aMethods);
 
     foreach ($aMethods as $sMethod)
@@ -607,7 +607,7 @@ class Module
 
     $sModuleDir = strtolower($this->getType());
     $sActionTemplate = $this->sCurrentAction == 'list' ? 'search' : strtolower("{$this->sCurrentAction}");
-    $sMethod = $this->oApi->method == 'post' || $this->sCurrentAction == 'list' ? 'process' : 'display';
+    $sMethod = $this->oRouter->method == 'post' || $this->sCurrentAction == 'list' ? 'process' : 'display';
     $aTemplates =
     [
       $sModuleDir . '/' . $sActionTemplate,
