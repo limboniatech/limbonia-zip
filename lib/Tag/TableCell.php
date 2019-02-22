@@ -12,14 +12,12 @@ namespace Limbonia\Tag;
 class TableCell extends \Limbonia\Tag
 {
   /**
-   * Constructor
+   * Name of the basic HTML tag represented by the widget
    *
-   * Construct a "td" tag
+   * @var string $sType
    */
-  public function __construct()
-  {
-    parent::__construct('td');
-  }
+  protected $sType = 'td';
+
 
   /**
    * Return the HTML representation of this tag

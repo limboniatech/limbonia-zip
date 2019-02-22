@@ -27,6 +27,247 @@ class User extends \Limbonia\Item
   const PASSWORD_ENCRYPTION_ALGO = PASSWORD_BCRYPT;
 
   /**
+   * The database schema for creating this item's table in the database
+   *
+   * @var string
+   */
+  protected static $sSchema = "UserID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+Type ENUM('internal','contact','system') NOT NULL DEFAULT 'internal',
+Email VARCHAR(255) NOT NULL,
+FirstName VARCHAR(50) NULL,
+LastName VARCHAR(50) NULL,
+Position VARCHAR(100) NULL,
+Notes mediumtext,
+StreetAddress VARCHAR(255) NULL,
+ShippingAddress VARCHAR(255) NULL,
+City VARCHAR(50) NULL,
+State VARCHAR(2) NULL,
+Zip VARCHAR(9) NOT NULL DEFAULT '000000000',
+Country VARCHAR(50) NULL,
+WorkPhone VARCHAR(25) NULL,
+HomePhone VARCHAR(25) NULL,
+CellPhone VARCHAR(25) NULL,
+Active TINYINT(1) NOT NULL DEFAULT 1,
+Visible TINYINT(1) NOT NULL DEFAULT 1,
+Password VARCHAR(255) BINARY NOT NULL DEFAULT '',
+PRIMARY KEY (UserID),
+UNIQUE INDEX Unique_Email (Email)";
+
+  /**
+   * The columns for this item's tables
+   *
+   * @var array
+   */
+  protected static $hColumns =
+  [
+    'UserID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Key' => 'Primary',
+      'Default' => null,
+      'Extra' => 'auto_increment',
+    ],
+    'Type' =>
+    [
+      'Type' => "enum('internal','contact','system')",
+      'Default' => 'internal',
+    ],
+    'Email' =>
+    [
+      'Type' => 'varchar(255)',
+      'Key' => 'UNI',
+      'Default' => null
+    ],
+    'FirstName' =>
+    [
+      'Type' => 'varchar(50)',
+      'Default' => null
+    ],
+    'LastName' =>
+    [
+      'Type' => 'varchar(50)',
+      'Default' => null
+    ],
+    'Position' =>
+    [
+        'Type' => 'varchar(100)',
+        'Default' => null
+    ],
+    'Notes' =>
+    [
+      'Type' => 'mediumtext',
+      'Default' => ''
+    ],
+
+    'StreetAddress' =>
+    [
+      'Type' => 'varchar(255)',
+      'Default' => null
+    ],
+    'ShippingAddress' =>
+    [
+      'Type' => 'varchar(255)',
+      'Default' => null
+    ],
+    'City' =>
+    [
+      'Type' => 'varchar(50)',
+      'Default' => null
+    ],
+    'State' =>
+    [
+      'Type' => 'varchar(2)',
+      'Default' => null
+    ],
+    'Zip' =>
+    [
+      'Type' => 'varchar(9)',
+      'Default' => '000000000'
+    ],
+    'Country' =>
+    [
+      'Type' => 'varchar(50)',
+      'Default' => null
+    ],
+    'WorkPhone' =>
+    [
+      'Type' => 'varchar(25)',
+      'Default' => null
+    ],
+    'HomePhone' =>
+    [
+      'Type' => 'varchar(25)',
+      'Default' => null
+    ],
+    'CellPhone' =>
+    [
+      'Type' => 'varchar(25)',
+      'Default' => null
+    ],
+    'Active' =>
+    [
+      'Type' => 'tinyint(1)',
+      'Default' => 1
+    ],
+    'Visible' =>
+    [
+      'Type' => 'tinyint(1)',
+      'Default' => 1
+    ],
+    'Password' =>
+    [
+      'Type' => 'varchar(255)',
+      'Default' => ''
+    ]
+  ];
+
+  /**
+   * The aliases for this item's columns
+   *
+   * @var array
+   */
+  protected static $hColumnAlias =
+  [
+    'id' => 'UserID',
+    'userid' => 'UserID',
+    'type' => 'Type',
+    'email' => 'Email',
+    'firstname' => 'FirstName',
+    'lastname' => 'LastName',
+    'position' => 'Position',
+    'notes' => 'Notes',
+    'streetaddress' => 'StreetAddress',
+    'shippingaddress' => 'ShippingAddress',
+    'city' => 'City',
+    'state' => 'State',
+    'zip' => 'Zip',
+    'country' => 'Country',
+    'workphone' => 'WorkPhone',
+    'homephone' => 'HomePhone',
+    'cellphone' => 'CellPhone',
+    'active' => 'Active',
+    'visible' => 'Visible',
+    'password' => 'Password'
+  ];
+
+  /**
+   * The default data used for "blank" or "empty" items
+   *
+   * @var array
+   */
+  protected static $hDefaultData =
+  [
+    'UserID' => '',
+    'Type' => 'internal',
+    'Email' => '',
+    'FirstName' => '',
+    'LastName' => '',
+    'Position' => '',
+    'Notes' => '',
+    'StreetAddress' => '',
+    'ShippingAddress' => '',
+    'City' => '',
+    'State' => '',
+    'Zip' => '000000000',
+    'Country' => '',
+    'WorkPhone' => '',
+    'HomePhone' => '',
+    'CellPhone' => '',
+    'Active' => 1,
+    'Visible' => 1,
+    'Password' => ''
+  ];
+
+  /**
+   * This object's data
+   *
+   * @var array
+   */
+  protected $hData =
+  [
+    'UserID' => '',
+    'Type' => 'internal',
+    'Email' => '',
+    'FirstName' => '',
+    'LastName' => '',
+    'Position' => '',
+    'Notes' => '',
+    'StreetAddress' => '',
+    'ShippingAddress' => '',
+    'City' => '',
+    'State' => '',
+    'Zip' => '000000000',
+    'Country' => '',
+    'WorkPhone' => '',
+    'HomePhone' => '',
+    'CellPhone' => '',
+    'Active' => 1,
+    'Visible' => 1,
+    'Password' => ''
+  ];
+
+  /**
+   * List of columns that shouldn't be updated after the data has been created
+   *
+   * @var array
+   */
+  protected $aNoUpdate = ['UserID'];
+
+  /**
+   * The table that this object is referencing
+   *
+   * @var string
+   */
+  protected $sTable = 'User';
+
+  /**
+   * The name of the "ID" column associated with this object's table
+   *
+   * @var string
+   */
+  protected $sIdColumn = 'UserID';
+
+  /**
    * List of resources that this user has access to
    *
    * @var array
@@ -39,6 +280,15 @@ class User extends \Limbonia\Item
    * @var boolean
    */
   protected $bAdmin = false;
+
+  public static function getAdmin()
+  {
+    $oAdmin = parent::factory('User');
+    $oAdmin->hData['FirstName'] = 'Master';
+    $oAdmin->hData['LastName'] = 'Admin';
+    $oAdmin->bAdmin = true;
+    return $oAdmin;
+  }
 
   /**
    * Generate and return a user object from the specified email
@@ -53,7 +303,7 @@ class User extends \Limbonia\Item
 
     if (count($oUserList) == 0)
     {
-      throw new \Exception("Unkown user: $sEmail");
+      throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
     }
 
     return $oUserList[0];
@@ -70,20 +320,20 @@ class User extends \Limbonia\Item
   public static function getByAuthToken($sAuthToken, \Limbonia\Database $oDatabase = null)
   {
     $oDatabase = $oDatabase instanceof \Limbonia\Database ? $oDatabase : \Limbonia\Controller::getDefault()->getDB();
-    $oDatabase->query("DELETE FROM UserAuth WHERE TIMEDIFF(NOW(), LastUseTime) > '00:60:00'");
+    $oDatabase->query("DELETE FROM UserAuth WHERE TIMEDIFF(NOW(), LastUseTime) > '01:00:00'");
     $oResult = $oDatabase->query("SELECT * FROM UserAuth WHERE AuthToken = :AuthToken AND TIMEDIFF(NOW(), LastUseTime) < '00:20:00'", ['AuthToken' => $sAuthToken]);
     $hRow = $oResult->fetchOne();
 
     if (empty($hRow))
     {
-      throw new \Limbonia\Exception\Web('Valid auth_token not found', null, 401);
+      throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
     }
 
     $oUser = \Limbonia\Item::fromId('User', $hRow['UserID'], $oDatabase);
 
     if (!$oUser->active)
     {
-      throw new \Limbonia\Exception\Web('User not active', null, 401);
+      throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
     }
 
     $oDatabase->query("UPDATE UserAuth SET LastUseTime = NOW() WHERE AuthToken = '{$hRow['AuthToken']}' AND UserID = {$hRow['UserID']}");
@@ -105,7 +355,7 @@ class User extends \Limbonia\Item
 
     if (count($oUserList) == 0)
     {
-      throw new \Limbonia\Exception\Web("Unkown user: $sApiKey", null, 401);
+      throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
     }
 
     return $oUserList[0];
@@ -200,12 +450,12 @@ class User extends \Limbonia\Item
   {
     if (!$this->active)
     {
-      throw new \Limbonia\Exception\Web('User not active', null, 401);
+      throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
     }
 
     if (!password_verify($sPassword, $this->password))
     {
-      throw new \Limbonia\Exception\Web('Invalid password', null, 401);
+      throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
     }
   }
 

@@ -318,6 +318,13 @@ class Router
     {
       if (in_array($this->hData['method'], self::$aJsonMethods))
       {
+        $oServer = Input::singleton('server');
+
+        if ($oServer['content_type'] != 'application/json')
+        {
+          throw new \Limbonia\Exception\Web("Unsupported Media Type: {$oServer['content_type']}", null, 415);
+        }
+
         $this->hData['data'] = json_decode(file_get_contents("php://input"), true);
       }
     }

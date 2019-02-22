@@ -12,6 +12,157 @@ namespace Limbonia\Item;
 class TicketCategory extends \Limbonia\Item
 {
   /**
+   * The database schema for creating this item's table in the database
+   *
+   * @var string
+   */
+  protected static $sSchema = "`CategoryID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+`ParentID` int(10) unsigned NOT NULL DEFAULT '0',
+`ProjectID` int(10) unsigned NOT NULL DEFAULT '0',
+`Name` varchar(255) NOT NULL DEFAULT '',
+`UserID` int(10) unsigned NOT NULL DEFAULT '0',
+`RoleID` int(10) unsigned NOT NULL DEFAULT '0',
+`KeyID` int(10) unsigned NOT NULL DEFAULT '0',
+`Level` int(10) unsigned NOT NULL DEFAULT '0',
+`AssignmentMethod` enum('unassigned','direct','least tickets by role','round robin by role','least tickets by resource','round robin by resource') NOT NULL DEFAULT 'unassigned',
+PRIMARY KEY (`CategoryID`),
+KEY `Index_CategoryName` (`Name`)";
+
+  /**
+   * The columns for this item's tables
+   *
+   * @var array
+   */
+  protected static $hColumns =
+  [
+
+    'CategoryID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Key' => 'Primary',
+      'Default' => 0,
+      'Extra' => 'auto_increment'
+    ],
+    'ParentID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'ProjectID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Name' =>
+    [
+      'Type' => 'varchar(255)',
+      'Key' => 'Multi',
+      'Default' => ''
+    ],
+    'UserID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'RoleID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'KeyID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Level' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'AssignmentMethod' =>
+    [
+      'Type' => "enum('unassigned','direct','least tickets by role','round robin by role','least tickets by resource','round robin by resource')",
+      'Default' => 'unassigned'
+    ]
+  ];
+
+  /**
+   * The aliases for this item's columns
+   *
+   * @var array
+   */
+  protected static $hColumnAlias =
+  [
+    'categoryid' => 'CategoryID',
+    'id' => 'CategoryID',
+    'parentid' => 'ParentID',
+    'projectid' => 'ProjectID',
+    'name' => 'Name',
+    'userid' => 'UserID',
+    'roleid' => 'RoleID',
+    'keyid' => 'KeyID',
+    'level' => 'Level',
+    'assignmentmethod' => 'AssignmentMethod'
+  ];
+
+  /**
+   * The default data used for "blank" or "empty" items
+   *
+   * @var array
+   */
+  protected static $hDefaultData =
+  [
+    'CategoryID' => 0,
+    'ParentID' => 0,
+    'ProjectID' => 0,
+    'Name' => '',
+    'UserID' => 0,
+    'RoleID' => 0,
+    'KeyID' => 0,
+    'Level' => 0,
+    'AssignmentMethod' => 'unassigned'
+  ];
+
+  /**
+   * This object's data
+   *
+   * @var array
+   */
+  protected $hData =
+  [
+    'CategoryID' => 0,
+    'ParentID' => 0,
+    'ProjectID' => 0,
+    'Name' => '',
+    'UserID' => 0,
+    'RoleID' => 0,
+    'KeyID' => 0,
+    'Level' => 0,
+    'AssignmentMethod' => 'unassigned'
+  ];
+
+  /**
+   * List of columns that shouldn't be updated after the data has been created
+   *
+   * @var array
+   */
+  protected $aNoUpdate = ['CategoryID'];
+
+  /**
+   * The table that this object is referencing
+   *
+   * @var string
+   */
+  protected $sTable = 'TicketCategory';
+
+  /**
+   * The name of the "ID" column associated with this object's table
+   *
+   * @var string
+   */
+  protected $sIdColumn = 'CategoryID';
+
+  /**
    * Hash of all categories stored by ID
    *
    * @var array

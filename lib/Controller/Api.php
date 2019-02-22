@@ -131,11 +131,6 @@ class Api extends \Limbonia\Controller\Web
     $oModule = $this->moduleFactory($this->oRouter->module);
     $xResult = $oModule->processApi();
 
-    if (is_null($xResult))
-    {
-      return null;
-    }
-
     if ($xResult instanceof \Limbonia\ItemList)
     {
       $hList = [];
@@ -173,10 +168,8 @@ class Api extends \Limbonia\Controller\Web
       if ($this->oRouter->method != 'post' || $this->oRouter->module != 'auth')
       {
         $this->oUser = $this->generateUser();
-        $this->templateData('currentUser', $this->oUser);
       }
 
-      $this->templateData('controller', $this);
       $sOutput = $this->render();
     }
     catch (\Limbonia\Exception\Web $e)

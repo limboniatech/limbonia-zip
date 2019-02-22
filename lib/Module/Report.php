@@ -47,10 +47,11 @@ class Report extends \Limbonia\Module
    *
    * @var array
    */
-  protected $hComponent =
+  protected static $hComponent =
   [
     'search' => 'This is the ability to search and display data.',
-    'schedule' => 'The ability to schedule an email report.'
+    'schedule' => 'The ability to schedule an email report.',
+    'configure' => "The ability to alter the module's configuration."
   ];
 
   /**

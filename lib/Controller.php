@@ -11,6 +11,8 @@ namespace Limbonia;
  */
 abstract class Controller
 {
+  const SETTINGS_NAME_ACTIVE_MODULES = 'ActiveModules';
+
   /**
    * The config that comes from external sources
    *
@@ -71,6 +73,27 @@ abstract class Controller
   protected static $hModuleList = [];
 
   /**
+   * The list of currently available modules
+   *
+   * @var array
+   */
+  protected static $hAvailableModule = null;
+
+  /**
+   * The list of currently active modules
+   *
+   * @var array
+   */
+  protected static $hActiveModule = null;
+
+  /**
+   * The list of modules allowed for the current user
+   *
+   * @var array
+   */
+  protected static $hAllowedModule = null;
+
+  /**
    * List of controller types that are based on the web controller
    *
    * @var array
@@ -107,16 +130,7 @@ abstract class Controller
    *
    * @var array
    */
-  protected $hDatabaseConfig =
-  [
-    'default' =>
-    [
-      'driver' => '',
-      'database' => '',
-      'user' => '',
-      'password' => ''
-    ]
-  ];
+  protected $hDatabaseConfig = [];
 
   /**
    * List of configured directories
@@ -129,6 +143,24 @@ abstract class Controller
     'libs' => []
   ];
 
+  /**
+   * List of default Item type names and what they should default to
+   *
+   * @var array
+   */
+  protected $hItemTypeDefaults = [];
+
+  protected $aDefaultActiveModules =
+  [
+    'system',
+    'zipcode',
+    'resourcekey',
+    'resourcelock',
+    'role',
+    'user',
+    'auth',
+    'profile'
+  ];
   /**
    * List of configuration data
    *
@@ -156,6 +188,13 @@ abstract class Controller
    * @var boolean
    */
   protected $bDebug = false;
+
+  /**
+   * This Controller's router, if there is one
+   *
+   * @var \Limbonia\Router
+   */
+  protected $oRouter = null;
 
   /**
    * Generate the build data so it can be used in other places
@@ -520,6 +559,18 @@ abstract class Controller
       unset($hConfig['database']);
     }
 
+    if (isset($hConfig['itemtypedefaults']))
+    {
+      $this->hItemTypeDefaults = $hConfig['itemtypedefaults'];
+      unset($hConfig['itemtypedefaults']);
+    }
+
+    if (isset($hConfig['defaultactivemodules']))
+    {
+      $this->aDefaultActiveModules = $hConfig['defaultactivemodules'];
+      unset($hConfig['defaultactivemodules']);
+    }
+
     $this->hConfig = array_merge($this->hConfig, $hConfig);
 
     if (\is_null(self::$oDefaultController))
@@ -628,6 +679,38 @@ abstract class Controller
   }
 
   /**
+   * Run basic system setup
+   */
+  public function setup()
+  {
+    $oDatabase = $this->getDB();
+
+    //create the settings table
+
+    echo "Initialize Settings:";
+    $oDatabase->createTable('Settings', "Type VARCHAR(255) NOT NULL,
+Data TEXT NULL,
+PRIMARY KEY(Type)");
+
+    //activate the default modules
+    echo "Initialize Default Modules:";
+
+    foreach ($this->aDefaultActiveModules as $sModule)
+    {
+
+    }
+
+    $this->activateModule('system');
+    $this->activateModule('zipcode');
+    $this->activateModule('resourcekey');
+    $this->activateModule('resourcelock');
+    $this->activateModule('role');
+    $this->activateModule('user');
+    $this->activateModule('auth');
+    $this->activateModule('profile');
+  }
+
+  /**
    * Generate and return a database object based on the specified database config section
    *
    * @param string $sSection (optional)
@@ -636,6 +719,11 @@ abstract class Controller
    */
   public function getDB($sSection = 'default')
   {
+    if (empty($this->hDatabaseConfig))
+    {
+      throw new Exception\Database("Database not configured");
+    }
+
     if (empty($sSection) || !isset($this->hDatabaseConfig[$sSection]))
     {
       $sSection = 'default';
@@ -643,6 +731,11 @@ abstract class Controller
 
     if (!isset($this->hDatabaseList[$sSection]))
     {
+      if (!isset($this->hDatabaseConfig[$sSection]))
+      {
+        throw new Exception\Database("Database default not configured");
+      }
+
       $this->hDatabaseList[$sSection] = Database::factory($this->hDatabaseConfig[$sSection], $this);
     }
 
@@ -723,11 +816,12 @@ abstract class Controller
    */
   public function saveSettings($sType, array $hSettings = [])
   {
-    $sSettings = addslashes(serialize($hSettings));
-    $oStatement = $this->getDB()->prepare('UPDATE Settings SET Data = :Data WHERE Type = :Type');
-    $oStatement->bindParam(':Data', $sSettings);
-    $oStatement->bindParam(':Type', $sType);
-    return $oStatement->execute();
+    $oStatement = $this->getDB()->prepare('INSERT INTO Settings (Type, Data) VALUES (:Type, :Data) ON DUPLICATE KEY UPDATE Data = :Data');
+    return $oStatement->execute
+    ([
+      ':Type' => $sType,
+      ':Data' => addslashes(serialize($hSettings))
+    ]);
   }
 
   /**
@@ -752,7 +846,19 @@ abstract class Controller
     return empty($sSettings) ? [] : unserialize(stripslashes($sSettings));
   }
 
-    /**
+  /**
+   * Return the default for the specified type
+   *
+   * @param string $sType
+   * @return striing
+   */
+  public function defaultItemType($sType)
+  {
+    $sLowerType = strtolower($sType);
+    return isset($this->hItemTypeDefaults[$sLowerType]) ? $this->hItemTypeDefaults[$sLowerType] : $sType;
+  }
+
+  /**
    * Add the specified data to the template under the specified name
    *
    * @param string $sName
@@ -855,12 +961,12 @@ abstract class Controller
   /**
    * Generate and return an empty item object based on the specified table.
    *
-   * @param string $sTable
+   * @param string $sType
    * @return \Limbonia\Item
    */
-  public function itemFactory($sTable): \Limbonia\Item
+  public function itemFactory($sType): \Limbonia\Item
   {
-    $oItem = Item::factory($sTable, $this->getDB());
+    $oItem = Item::factory($this->defaultItemType($sType), $this->getDB());
     $oItem->setController($this);
     return $oItem;
   }
@@ -868,14 +974,14 @@ abstract class Controller
   /**
    * Generate and return an item object filled with data from the specified table id
    *
-   * @param string $sTable
+   * @param string $sType
    * @param integer $iItem
    * @throws \Limbonia\Exception\Database
    * @return \Limbonia\Item
    */
-  public function itemFromId($sTable, $iItem): \Limbonia\Item
+  public function itemFromId($sType, $iItem): \Limbonia\Item
   {
-    $oItem = Item::fromId($sTable, $iItem, $this->getDB());
+    $oItem = Item::fromId($this->defaultItemType($sType), $iItem, $this->getDB());
     $oItem->setController($this);
     return $oItem;
   }
@@ -883,14 +989,14 @@ abstract class Controller
   /**
    * Generate and return an item object filled with data from the specified array
    *
-   * @param string $sTable
+   * @param string $sType
    * @param array $hItem
    * @return \Limbonia\Item
    * @throws \Limbonia\Exception\Object
    */
-  public function itemFromArray($sTable, $hItem): \Limbonia\Item
+  public function itemFromArray($sType, $hItem): \Limbonia\Item
   {
-    $oItem = Item::fromArray($sTable, $hItem, $this->getDB());
+    $oItem = Item::fromArray($this->defaultItemType($sType), $hItem, $this->getDB());
     $oItem->setController($this);
     return $oItem;
   }
@@ -904,7 +1010,7 @@ abstract class Controller
    */
   public function itemList($sType, $sQuery): \Limbonia\ItemList
   {
-    $oList = Item::getList($sType, $sQuery, $this->getDB());
+    $oList = Item::getList($this->defaultItemType($sType), $sQuery, $this->getDB());
     $oList->setController($this);
     return $oList;
   }
@@ -919,7 +1025,7 @@ abstract class Controller
    */
   public function itemSearch($sType, $hWhere = null, $xOrder = null)
   {
-    $oList = Item::search($sType, $hWhere, $xOrder, $this->getDB());
+    $oList = Item::search($this->defaultItemType($sType), $hWhere, $xOrder, $this->getDB());
     $oList->setController($this);
     return $oList;
   }
@@ -986,12 +1092,166 @@ abstract class Controller
    */
   public function getRouter()
   {
-    return \Limbonia\Router::singleton();
+    if (empty($this->oRouter))
+    {
+      $this->oRouter = \Limbonia\Router::singleton();
+    }
+
+    return $this->oRouter;
   }
 
+  public function availableModules()
+  {
+    if (is_null(self::$hAvailableModule))
+    {
+      $hDriverList = \Limbonia\Module::driverList();
+      $aBlackList = $this->moduleBlackList ?? [];
+
+      foreach ($hDriverList as $sDriver)
+      {
+        if (in_array($sDriver, $aBlackList))
+        {
+          continue;
+        }
+
+        self::$hAvailableModule[strtolower($sDriver)] = $sDriver;
+      }
+
+      ksort(self::$hAvailableModule);
+      reset(self::$hAvailableModule);
+    }
+
+    return self::$hAvailableModule;
+  }
+
+  public function activeModules()
+  {
+    if (is_null(self::$hActiveModule))
+    {
+      self::$hActiveModule = $this->getSettings(self::SETTINGS_NAME_ACTIVE_MODULES);
+    }
+
+    return self::$hActiveModule;
+  }
+
+  public function activateModule($sModule)
+  {
+    if (empty($sModule))
+    {
+      throw new Exception("Module driver not specified");
+    }
+
+    $sDriver = Module::driver($sModule);
+
+    if (empty($sDriver))
+    {
+      throw new Exception("Module driver not found: $sModule");
+    }
+
+    $sLowerDriver = strtolower($sDriver);
+    $hActiveModule = $this->activeModules();
+
+    //if this module type is already one of the active modules
+    if (isset($hActiveModule[$sLowerDriver]))
+    {
+      //then fail
+      throw new Exception("That module is already active");
+    }
+
+    $oModule = $this->moduleFactory($sDriver);
+
+    foreach ($oModule->activate($hActiveModule) as $sActivedDriver)
+    {
+      self::$hActiveModule[strtolower($sActivedDriver)] = $sActivedDriver;
+    }
+
+    if (!$this->saveSettings(self::SETTINGS_NAME_ACTIVE_MODULES, self::$hActiveModule))
+    {
+      throw new Exception("Failed to save new acitive module list");
+    }
+  }
+
+  public function deactivateModule($sModule)
+  {
+    if (empty($sModule))
+    {
+      throw new Exception("Module driver not specified");
+    }
+
+    $sDriver = Module::driver($sModule);
+
+    if (empty($sDriver))
+    {
+      throw new Exception("Module driver not found: $sModule");
+    }
+
+    $sLowerDriver = strtolower($sDriver);
+    $hActiveModule = $this->activeModules();
+
+    //if this module type is not one of the active modules
+    if (!isset($hActiveModule[$sLowerDriver]))
+    {
+      //then fail
+      throw new Exception("The $sDriver module is already inactive");
+    }
+
+    $oModule = $this->moduleFactory($sDriver);
+
+    foreach ($oModule->deactivate($hActiveModule) as $sDeactivedDriver)
+    {
+      unset(self::$hActiveModule[strtolower($sDeactivedDriver)]);
+    }
+
+    if (!$this->saveSettings(self::SETTINGS_NAME_ACTIVE_MODULES, self::$hActiveModule))
+    {
+      throw new Exception("Failed to save new acitive module list");
+    }
+  }
+
+  public function allowedModules()
+  {
+    if (is_null(self::$hAllowedModule))
+    {
+      $hDriverList = \Limbonia\Module::driverList();
+
+      foreach ($hDriverList as $sDriver)
+      {
+        if (!$this->oUser->hasResource($sDriver))
+        {
+          continue;
+        }
+
+        self::$hAllowedModule[strtolower($sDriver)] = $sDriver;
+      }
+
+      ksort(self::$hAllowedModule);
+      reset(self::$hAllowedModule);
+    }
+
+    return self::$hAllowedModule;
+  }
+
+  /**
+   * Return the user represented by the specified email, if there is one
+   *
+   * @param string $sEmail
+   * @return \Limbonia\Item\User
+   */
   public function userByEmail($sEmail)
   {
     $oUser = \Limbonia\Item\User::getByEmail($sEmail, $this->getDB());
+    $oUser->setController($this);
+    return $oUser;
+  }
+
+  /**
+   * Return a default admin User object
+   *
+   * @return \Limbonia\Item\User
+   */
+  public function userAdmin()
+  {
+    $oUser = \Limbonia\Item\User::getAdmin();
     $oUser->setController($this);
     return $oUser;
   }
@@ -1014,7 +1274,7 @@ abstract class Controller
    */
   protected function generateUser()
   {
-    return $this->userByEmail('MasterAdmin');
+    return $this->userAdmin();
   }
 
   /**

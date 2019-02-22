@@ -12,11 +12,138 @@ namespace Limbonia\Item;
 class ProjectRelease extends \Limbonia\Item
 {
   /**
+   * The database schema for creating this item's table in the database
+   *
+   * @var string
+   */
+  protected static $sSchema = "`ReleaseID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+`ProjectID` int(11) unsigned NOT NULL,
+`TicketID` int(11) unsigned NOT NULL DEFAULT '0',
+`Major` int(10) unsigned NOT NULL DEFAULT '0',
+`Minor` int(10) unsigned NOT NULL DEFAULT '0',
+`Patch` int(10) unsigned NOT NULL DEFAULT '0',
+`Note` text,
+PRIMARY KEY (`ReleaseID`),
+UNIQUE KEY `Unique_ProjectVersion` (`ProjectID`,`Major`,`Minor`,`Patch`),
+KEY `Index_Project` (`ProjectID`)";
+
+  /**
+   * The columns for this item's tables
+   *
+   * @var array
+   */
+  protected static $hColumns =
+  [
+
+    'ReleaseID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Key' => 'Primary',
+      'Default' => 0,
+      'Extra' => 'auto_increment'
+    ],
+    'ProjectID' =>
+    [
+      'Type' => 'int(11) unsigned',
+      'Key' => 'Multi',
+      'Default' => 0
+    ],
+    'TicketID' =>
+    [
+      'Type' => 'int(11) unsigned',
+      'Default' => 0
+    ],
+    'Major' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Minor' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Patch' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Note' =>
+    [
+      'Type' => 'text',
+      'Default' => ''
+    ]
+  ];
+
+  /**
+   * The aliases for this item's columns
+   *
+   * @var array
+   */
+  protected static $hColumnAlias =
+  [
+    'releaseid' => 'ReleaseID',
+    'id' => 'ReleaseID',
+    'projectid' => 'ProjectID',
+    'ticketid' => 'TicketID',
+    'major' => 'Major',
+    'minor' => 'Minor',
+    'patch' => 'Patch',
+    'note' => 'Note'
+  ];
+
+  /**
+   * The default data used for "blank" or "empty" items
+   *
+   * @var array
+   */
+  protected static $hDefaultData =
+  [
+    'ReleaseID' => 0,
+    'ProjectID' => 0,
+    'TicketID' => 0,
+    'Major' => 0,
+    'Minor' => 0,
+    'Patch' => 0,
+    'Note' => ''
+  ];
+
+  /**
+   * This object's data
+   *
+   * @var array
+   */
+  protected $hData =
+  [
+    'ReleaseID' => 0,
+    'ProjectID' => 0,
+    'TicketID' => 0,
+    'Major' => 0,
+    'Minor' => 0,
+    'Patch' => 0,
+    'Note' => ''
+  ];
+
+  /**
    * List of columns that shouldn't be updated after the data has been created
    *
    * @var array
    */
-  protected $aNoUpdate = ['TicketID'];
+  protected $aNoUpdate = ['ReleaseID', 'TicketID'];
+
+  /**
+   * The table that this object is referencing
+   *
+   * @var string
+   */
+  protected $sTable = 'ProjectRelease';
+
+  /**
+   * The name of the "ID" column associated with this object's table
+   *
+   * @var string
+   */
+  protected $sIdColumn = 'ReleaseID';
 
   /**
    * Loop through the specified array looking for keys that match column names.  For each match

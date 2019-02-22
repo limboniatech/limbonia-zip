@@ -18,6 +18,18 @@ class User extends \Limbonia\Module
   }
 
   /**
+   * List of modules this module depends on to function correctly
+   *
+   * @var array
+   */
+  protected static $aModuleDependencies =
+  [
+    'resourcekey',
+    'resourcelock',
+    'role'
+  ];
+
+  /**
    * Lists of columns to ignore when filling template data
    *
    * @var array
@@ -91,7 +103,7 @@ class User extends \Limbonia\Module
     return $this->originalProcessApiGetItem();
   }
 
-    /**
+  /**
    * Delete the API specified list of items then return true
    *
    * @return array
@@ -99,7 +111,43 @@ class User extends \Limbonia\Module
    */
   protected function processApiDeleteList()
   {
-    throw new \Limbonia\Exception\Web('Deleting all users is not allowed', null, 405);
+    if (empty($this->oRouter->search))
+    {
+      throw new \Limbonia\Exception\Web("No list criteria specified", null, 403);
+    }
+
+    $hList = $this->getList(['id']);
+    $aList = array_keys($hList);
+
+    if (empty($aList))
+    {
+      throw new \Limbonia\Exception\Web("List criteria produced no results", null, 403);
+    }
+
+    if (in_array($this->oController->user()->id, $aList))
+    {
+      throw new \Limbonia\Exception\Web("List results cannot contain the current user", null, 403);
+    }
+
+    $oMasterUser = $this->oController->userByEmail('MasterAdmin');
+
+    if (in_array($oMasterUser->id, $aList))
+    {
+      throw new \Limbonia\Exception\Web("List results cannot contain the master user", null, 403);
+    }
+
+    $sTable = $this->oItem->getTable();
+    $sIdColumn = $this->oItem->getIDColumn();
+    $sSql = "DELETE FROM $sTable WHERE $sIdColumn IN (" . implode(', ', $aList) . ")";
+    $iRowsDeleted = $this->oController->getDB()->exec($sSql);
+
+    if ($iRowsDeleted === false)
+    {
+      $aError = $this->errorInfo();
+      throw new \Limbonia\Exception\DBResult("Item list not deleted from $sTable: {$aError[0]} - {$aError[2]}", $this->getType(), $sSql, $aError[1]);
+    }
+
+    return true;
   }
 
   /**

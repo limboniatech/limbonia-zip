@@ -12,6 +12,8 @@ namespace Limbonia\Traits;
  */
 trait DriverList
 {
+  protected static $hDriverList = [];
+
   /**
    * The subclass of any inheriting class
    *
@@ -27,52 +29,6 @@ trait DriverList
   public static function classType()
   {
     return preg_replace("#Limbonia\\\\#", '', __CLASS__);
-  }
-
-  /**
-   * Generate and cache the driver list for the current object type
-   */
-  public static function generateDriverList()
-  {
-    if (!isset($_SESSION['DriverList']))
-    {
-      $_SESSION['DriverList'] = [];
-    }
-
-    if (!isset($_SESSION['DriverList'][__CLASS__]))
-    {
-      $_SESSION['DriverList'][__CLASS__] = [];
-      $sClassDir = preg_replace("#\\\#", '/', self::classType());
-
-      foreach (\Limbonia\Controller::getLibs() as $sLib)
-      {
-        foreach (glob("$sLib/$sClassDir/*.php") as $sClassFile)
-        {
-          $sDriverName = basename($sClassFile, ".php");
-
-          if (isset($_SESSION['DriverList'][__CLASS__][strtolower($sDriverName)]))
-          {
-            continue;
-          }
-
-          include_once $sClassFile;
-
-          $sClassName = __CLASS__ . "\\" . $sDriverName;
-
-          if (!class_exists($sClassName, false))
-          {
-            continue;
-          }
-
-          if (!is_subclass_of($sClassName, __CLASS__, true))
-          {
-            continue;
-          }
-
-          $_SESSION['DriverList'][__CLASS__][strtolower($sDriverName)] = $sDriverName;
-        }
-      }
-    }
   }
 
   /**
@@ -108,14 +64,63 @@ trait DriverList
   }
 
   /**
-   * Return the driver list for the current object type
+   * Generate and cache the driver list for the current object type
    *
    * @return array
    */
   public static function driverList(): array
   {
-    self::generateDriverList();
-    return $_SESSION['DriverList'][__CLASS__];
+    if (empty(static::$hDriverList))
+    {
+      if (\Limbonia\SessionManager::isStarted() && isset($_SESSION['DriverList'][__CLASS__]))
+      {
+        static::$hDriverList = $_SESSION['DriverList'][__CLASS__];
+      }
+      else
+      {
+        static::$hDriverList = [];
+        $sClassDir = preg_replace("#\\\#", '/', self::classType());
+
+        foreach (\Limbonia\Controller::getLibs() as $sLib)
+        {
+          foreach (glob("$sLib/$sClassDir/*.php") as $sClassFile)
+          {
+            $sDriverName = basename($sClassFile, ".php");
+
+            if (isset(static::$hDriverList[strtolower($sDriverName)]))
+            {
+              continue;
+            }
+
+            include_once $sClassFile;
+
+            $sClassName = __CLASS__ . "\\" . $sDriverName;
+
+            if (!class_exists($sClassName, false))
+            {
+              continue;
+            }
+
+            if (!is_subclass_of($sClassName, __CLASS__, true))
+            {
+              continue;
+            }
+
+            static::$hDriverList[strtolower($sDriverName)] = $sDriverName;
+          }
+        }
+
+        ksort(static::$hDriverList);
+        reset(static::$hDriverList);
+
+        if (\Limbonia\SessionManager::isStarted())
+        {
+          $_SESSION['DriverList'][__CLASS__] = static::$hDriverList;
+        }
+      }
+    }
+
+    return static::$hDriverList;
   }
 
   /**
@@ -126,8 +131,8 @@ trait DriverList
    */
   public static function driver(string $sName): string
   {
-    self::generateDriverList();
-    return $_SESSION['DriverList'][__CLASS__][strtolower($sName)] ?? '';
+    $hDriverList = self::driverList();
+    return $hDriverList[strtolower($sName)] ?? '';
   }
 
   /**

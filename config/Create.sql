@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS Project (
   Description text,
   PRIMARY KEY (ProjectID),
   UNIQUE INDEX Unique_ProjectName (Name)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS ProjectRelease (
   ReleaseID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -25,14 +25,14 @@ CREATE TABLE IF NOT EXISTS ProjectRelease (
   PRIMARY KEY (ReleaseID),
   UNIQUE INDEX Unique_ProjectVersion (ProjectID,Major,Minor,Patch),
   INDEX Index_Project (ProjectID)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS ResourceKey (
   KeyID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   Name VARCHAR(25) NOT NULL,
   PRIMARY KEY(KeyID),
   UNIQUE INDEX Unique_ResourceName(Name)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO ResourceKey (Name) VALUES ('Admin');
 
 CREATE TABLE IF NOT EXISTS ResourceLock (
@@ -42,15 +42,15 @@ CREATE TABLE IF NOT EXISTS ResourceLock (
   Resource VARCHAR(255) NULL,
   Component VARCHAR(255) NULL,
   PRIMARY KEY(LockID)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS Role (
+CREATE TABLE IF NOT EXISTS `Role` (
   RoleID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   Name VARCHAR(255) NOT NULL,
   Description text,
   PRIMARY KEY (RoleID),
   UNIQUE INDEX Unique_RoleName (Name)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO Role (Name, Description) VALUES ('Admin', 'This is the main administrator role, a user with this has access to everything!');
 
 CREATE TABLE IF NOT EXISTS Role_Key (
@@ -58,14 +58,14 @@ CREATE TABLE IF NOT EXISTS Role_Key (
   KeyID INTEGER UNSIGNED NOT NULL,
   Level INTEGER UNSIGNED NOT NULL DEFAULT 0,
   INDEX Unique_RoleKey(RoleID, KeyID)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO Role_Key (RoleID, KeyID, `Level`) VALUES ((SELECT r.RoleID FROM Role r WHERE r.Name = 'Admin'), (SELECT r.KeyID FROM ResourceKey r WHERE r.Name = 'Admin'), 1000);
 
 CREATE TABLE IF NOT EXISTS Settings (
   Type VARCHAR(255) NOT NULL,
   Data TEXT NULL,
   PRIMARY KEY(Type)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS Template (
   TemplateID INTEGER UNSIGNED NOT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS Template (
   PRIMARY KEY (TemplateID),
   UNIQUE INDEX Unique_Uri (Uri),
   FULLTEXT INDEX Fulltext_Template_TemplateText (TemplateText)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS Ticket (
   TicketID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS Ticket (
   PRIMARY KEY (TicketID),
   FULLTEXT INDEX Fulltext_Ticket_Description (Description),
   FULLTEXT INDEX Fulltext_Ticket_StepsToReproduce (StepsToReproduce)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS TicketCategory (
   CategoryID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS TicketCategory (
   AssignmentMethod ENUM('unassigned','direct','least tickets by role','round robin by role','least tickets by resource','round robin by resource') NOT NULL DEFAULT 'unassigned',
   INDEX Index_CategoryName (Name),
   PRIMARY KEY (CategoryID)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS TicketContent (
   ContentID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS TicketContent (
   PRIMARY KEY (ContentID),
   INDEX Index_Ticket (TicketID),
   FULLTEXT INDEX Fulltext_TicketContent_UpdateText (UpdateText)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS TicketHistory (
   HistoryID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -171,13 +171,13 @@ CREATE TABLE IF NOT EXISTS TicketHistory (
   Note text,
   PRIMARY KEY (HistoryID),
   INDEX Index_Content (ContentID)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS Ticket_User (
   TicketID INTEGER UNSIGNED NOT NULL DEFAULT 0,
   UserID INTEGER UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (TicketID,UserID)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS User (
   UserID INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -201,20 +201,20 @@ CREATE TABLE IF NOT EXISTS User (
   Password VARCHAR(255) BINARY NOT NULL DEFAULT '',
   PRIMARY KEY (UserID),
   UNIQUE INDEX Unique_Email (Email)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS User_Role (
   UserID INTEGER UNSIGNED NOT NULL,
   RoleID INTEGER UNSIGNED NOT NULL,
   INDEX Unique_UserRole(UserID, RoleID)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS UserAuth (
   UserID INTEGER UNSIGNED NOT NULL,
   AuthToken VARCHAR(255) NOT NULL,
   LastUseTime TIMESTAMP NOT NULL,
   INDEX Unique_UserAuth(UserID, AuthToken)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO User (Email, FirstName, LastName, Visible) VALUES ('MasterAdmin', 'Master', 'Admin', 0);
 INSERT INTO User_Role (RoleID, UserID) VALUES ((SELECT r.RoleID FROM Role r WHERE r.Name = 'Admin'), (SELECT u.UserID FROM `User` u WHERE u.Email = 'MasterAdmin'));

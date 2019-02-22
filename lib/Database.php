@@ -147,6 +147,23 @@ class Database extends \PDO
     return self::columnIs($xData, 'char|binary|blob|text|string|enum') || self::columnIsDate($xData);
   }
 
+  public static function aliasColumns(array $hColumns = [])
+  {
+    $hAlias = [];
+
+    foreach ($hColumns as $sColumn => $hColumnData)
+    {
+      $hAlias[\strtolower($sColumn)] = $sColumn;
+
+      if (isset($hColumnData['Key']) && $hColumnData['Key'] == 'Primary')
+      {
+        $hAlias['id'] = $sColumn;
+      }
+    }
+
+    return $hAlias;
+  }
+
   /**
    * Filter the specified value to be compatible with the specified type
    *
@@ -495,41 +512,47 @@ class Database extends \PDO
     return $this->bAllowCursor;
   }
 
+  public function getSchema($sTable)
+  {
+    switch ($this->getType())
+    {
+      case 'mysql':
+        //show create table User;
+        $sShowCreateSQL = "SHOW CREATE TABLE $sTable";
+        break;
+
+      default:
+        throw new Exception\Database(__METHOD__ . ": Can not get the schema of this type, yet.", $this->getType());
+    }
+
+    $oResult = $this->query($sShowCreateSQL);
+    return preg_replace("#  #", '', preg_replace("#\n\) ENGINE=.*$#", '', preg_replace("#^.*CREATE TABLE `$sTable` \(\n#", '', $oResult->fetchAll()[0]['Create Table'])));
+  }
+
   /**
    * Create a new table based on the specified parameters
    *
    * @param string $sName - name for the table to create
-   * @param array $hColumns - list of column data for the table to create
+   * @param type $sSchema
    * @param string $sDatabase (optional) - name of the database to create the table in, defaults to the "current" database for the connection
    * @throws Exception\Database
    */
-  public function createTable($sName, array $hColumns, $sDatabase = '')
+  public function createTable($sName, $sSchema, $sDatabase = '')
   {
-    if (empty($sName))
+    if ($this->hasTable($sName, $sDatabase))
     {
-      throw new Exception\Database(__METHOD__ . ": Name is invalid!", $this->getType());
-    }
-
-    if (count($hColumns) == 0)
-    {
-      throw new Exception\Database(__METHOD__ . ": Columns is invalid!", $this->getType());
+      return;
     }
 
     switch ($this->getType())
     {
       case 'mysql':
-        $aColumns = [];
-        foreach ($hColumns as $sColumn => $aColumnConfig)
-        {
-          $aColumns[] = $sColumn . ' ' . implode(' ', $aColumnConfig);
-        }
-
         if (!empty($sDatabase))
         {
           $sDatabase .= '.';
         }
 
-        $sCreateSQL = "CREATE TABLE IF NOT EXISTS $sDatabase$sName (" . implode(', ', $aColumns) . ")";
+        $sCreateSQL = "CREATE TABLE IF NOT EXISTS $sDatabase$sName ($sSchema)";
         break;
 
       default:
@@ -615,7 +638,7 @@ class Database extends \PDO
   }
 
   /**
-   * Generate the list of column data from the specified table
+   * Generate the list of column data from the specified tablee
    *
    * @param string $sTable - name of the table to get column data from
    * @param boolean $bUseTableName (optional) - Should the table name be prepended to each column name (defaults to false)
@@ -624,67 +647,77 @@ class Database extends \PDO
    */
   public function getColumns($sTable, $bUseTableName = false)
   {
-    if (isset(self::$hColumnList[$sTable]))
+    if (!isset(self::$hColumnList[$sTable]))
     {
-      return self::$hColumnList[$sTable];
-    }
-
-    if (SessionManager::isStarted() && isset($_SESSION['LimboniaTableColumns'][$sTable]))
-    {
-      self::$hColumnList[$sTable] = $_SESSION['LimboniaTableColumns'][$sTable];
-      return self::$hColumnList[$sTable];
-    }
-
-    switch ($this->getType())
-    {
-      case 'mysql':
-        $sColumnSQL = "DESC $sTable";
-        break;
-
-      default:
-        throw new Exception\Database(__METHOD__ . ": Can not list columns from this database type, yet.", $this->getType());
-    }
-
-    try
-    {
-      $oGetColumns = $this->query($sColumnSQL);
-    }
-    catch (\PDOException $e)
-    {
-      return [];
-    }
-
-    self::$hColumnList[$sTable] = [];
-
-    foreach ($oGetColumns as $hRow)
-    {
-      $sName = $bUseTableName ? "$sTable.{$hRow['Field']}" : $hRow['Field'];
-      self::$hColumnList[$sTable][$sName]['Type'] = $hRow['Type'];
-      $hRow['Key'] = trim($hRow['Key']);
-
-      if (!empty($hRow['Key']))
+      if (SessionManager::isStarted() && isset($_SESSION['LimboniaTableColumns'][$sTable]))
       {
-        self::$hColumnList[$sTable][$sName]['Key'] = str_replace('PRI', 'Primary', $hRow['Key']);
-        self::$hColumnList[$sTable][$sName]['Key'] = str_replace('MUL', 'Multi', self::$hColumnList[$sTable][$sName]['Key']);
+        self::$hColumnList[$sTable] = $_SESSION['LimboniaTableColumns'][$sTable];
+      }
+      else
+      {
+        switch ($this->getType())
+        {
+          case 'mysql':
+            $sColumnSQL = "DESC $sTable";
+            break;
+
+          default:
+            throw new Exception\Database(__METHOD__ . ": Can not list columns from this database type, yet.", $this->getType());
+        }
+
+        try
+        {
+          $oGetColumns = $this->query($sColumnSQL);
+        }
+        catch (\PDOException $e)
+        {
+          return [];
+        }
+
+        self::$hColumnList[$sTable] = [];
+
+        foreach ($oGetColumns as $hRow)
+        {
+          self::$hColumnList[$sTable][$hRow['Field']]['Type'] = $hRow['Type'];
+          $hRow['Key'] = trim($hRow['Key']);
+
+          if (!empty($hRow['Key']))
+          {
+            self::$hColumnList[$sTable][$hRow['Field']]['Key'] = str_replace('PRI', 'Primary', $hRow['Key']);
+            self::$hColumnList[$sTable][$hRow['Field']]['Key'] = str_replace('MUL', 'Multi', self::$hColumnList[$sTable][$hRow['Field']]['Key']);
+          }
+
+          self::$hColumnList[$sTable][$hRow['Field']]['Default'] = trim($hRow['Default']);
+          $hRow['Extra'] = trim($hRow['Extra']);
+
+          if (!empty($hRow['Extra']))
+          {
+            self::$hColumnList[$sTable][$hRow['Field']]['Extra'] = $hRow['Extra'];
+          }
+        }
+
+        if (SessionManager::isStarted())
+        {
+          if (!isset($_SESSION['LimboniaTableColumns']))
+          {
+            $_SESSION['LimboniaTableColumns'] = [];
+          }
+
+          $_SESSION['LimboniaTableColumns'][$sTable] = self::$hColumnList[$sTable];
+        }
+      }
+    }
+
+    if ((boolean)$bUseTableName)
+    {
+      $hWithTableName = [];
+
+      foreach (self::$hColumnList[$sTable] as $sName => $hColumn)
+      {
+        $hWithTableName["$sTable.$sName"] = $hColumn;
       }
 
-      self::$hColumnList[$sTable][$sName]['Default'] = trim($hRow['Default']);
-      $hRow['Extra'] = trim($hRow['Extra']);
-
-      if (!empty($hRow['Extra']))
-      {
-        self::$hColumnList[$sTable][$sName]['Extra'] = $hRow['Extra'];
-      }
-    }
-
-    if (SessionManager::isStarted())
-    {
-      if (!isset($_SESSION['LimboniaTableColumns']))
-      {
-        $_SESSION['LimboniaTableColumns'] = [];
-      }
-
-      $_SESSION['LimboniaTableColumns'][$sTable] = self::$hColumnList[$sTable];
+      return $hWithTableName;
     }
 
     return self::$hColumnList[$sTable];
@@ -709,17 +742,7 @@ class Database extends \PDO
       return $this->hColumnAlias[$sTable];
     }
 
-    $this->hColumnAlias[$sTable] = [];
-
-    foreach ($this->getColumns($sTable) as $sColumn => $hColumnData)
-    {
-      $this->hColumnAlias[$sTable][\strtolower($sColumn)] = $sColumn;
-
-      if (isset($hColumnData['Key']) && $hColumnData['Key'] == 'Primary')
-      {
-        $this->hColumnAlias[$sTable]['id'] = $sColumn;
-      }
-    }
+    $this->hColumnAlias[$sTable] = self::aliasColumns($this->getColumns($sTable));
 
     if (SessionManager::isStarted())
     {

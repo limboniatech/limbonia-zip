@@ -11,12 +11,9 @@ namespace Limbonia\Tag;
  */class TableHeader extends \Limbonia\Tag
 {
   /**
-   * Constructor
+   * Name of the basic HTML tag represented by the widget
    *
-   * Construct a "th" tag
+   * @var string $sType
    */
-  public function __construct()
-  {
-    parent::__construct('th');
-  }
+  protected $sType = 'th';
 }

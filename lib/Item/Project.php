@@ -12,11 +12,119 @@ namespace Limbonia\Item;
 class Project extends \Limbonia\Item
 {
   /**
+   * The database schema for creating this item's table in the database
+   *
+   * @var string
+   */
+  protected static $sSchema = "`ProjectID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+`TopCategoryID` int(10) unsigned NOT NULL DEFAULT '0',
+`Name` varchar(255) NOT NULL,
+`Repository` varchar(255) NOT NULL DEFAULT '',
+`Description` text,
+PRIMARY KEY (`ProjectID`),
+UNIQUE KEY `Unique_ProjectName` (`Name`)";
+
+  /**
+   * The columns for this item's tables
+   *
+   * @var array
+   */
+  protected static $hColumns =
+  [
+
+    'ProjectID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Key' => 'Primary',
+      'Default' => 0,
+      'Extra' => 'auto_increment'
+    ],
+    'TopCategoryID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Name' =>
+    [
+      'Type' => 'varchar(255)',
+      'Key' => 'UNI',
+      'Default' => ''
+    ],
+    'Repository' =>
+    [
+      'Type' => 'varchar(255)',
+      'Default' => ''
+    ],
+    'Description' =>
+    [
+      'Type' => 'text',
+      'Default' => ''
+    ]
+  ];
+
+  /**
+   * The aliases for this item's columns
+   *
+   * @var array
+   */
+  protected static $hColumnAlias =
+  [
+    'projectid' => 'ProjectID',
+    'id' => 'ProjectID',
+    'topcategoryid' => 'TopCategoryID',
+    'name' => 'Name',
+    'repository' => 'Repository',
+    'description' => 'Description'
+  ];
+
+  /**
+   * The default data used for "blank" or "empty" items
+   *
+   * @var array
+   */
+  protected static $hDefaultData =
+  [
+    'ProjectID' => 0,
+    'TopCategoryID' => 0,
+    'Name' => '',
+    'Repository' => '',
+    'Description' => ''
+  ];
+
+  /**
+   * This object's data
+   *
+   * @var array
+   */
+  protected $hData =
+  [
+    'ProjectID' => 0,
+    'TopCategoryID' => 0,
+    'Name' => '',
+    'Repository' => '',
+    'Description' => ''
+  ];
+
+  /**
    * List of columns that shouldn't be updated after the data has been created
    *
    * @var array
    */
-  protected $aNoUpdate = ['TopCategoryID'];
+  protected $aNoUpdate = ['ProjectID', 'TopCategoryID'];
+
+  /**
+   * The table that this object is referencing
+   *
+   * @var string
+   */
+  protected $sTable = 'Project';
+
+  /**
+   * The name of the "ID" column associated with this object's table
+   *
+   * @var string
+   */
+  protected $sIdColumn = 'ProjectID';
 
   /**
    * List of names and their associated types, used by __get to generate item objects
@@ -73,7 +181,7 @@ class Project extends \Limbonia\Item
   {
     $sLowerName = strtolower($sName);
 
-    if ($sLowerName = 'topcategory' && !isset($this->hItemObjects[$sLowerName]))
+    if ($sLowerName == 'topcategory' && !isset($this->hItemObjects[$sLowerName]))
     {
       try
       {

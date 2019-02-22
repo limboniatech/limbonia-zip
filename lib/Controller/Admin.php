@@ -42,9 +42,12 @@ class Admin extends \Limbonia\Controller\Web
     }
     catch (\Exception $e)
     {
-      $this->templateData('failure', "The module {$this->oRouter->module} could not be instaniated: " . $e->getMessage());
+      $sModuleName = isset($oCurrentModule) ? $oCurrentModule->getTitle() : $sModuleDriver;
+      $sMessage = isset($sModuleTemplate) ? "The $sModuleName module could not render the $sModuleTemplate template" : "The $sModuleName module's action could not be rendered";
 
-      if (isset($this->oRouter->search['click']))
+      $this->templateData('failure', "$sMessage: " . $e->getMessage());
+
+      if (isset($this->oRouter->ajax))
       {
         return parent::outputJson
         ([
@@ -70,12 +73,12 @@ class Admin extends \Limbonia\Controller\Web
     }
     catch (\Exception $e)
     {
-      $this->printPasswordForm($e->getMessage());
-    }
+      if ($e->getCode() == 1000)
+      {
+        $this->printPasswordForm();
+      }
 
-    if ($oUser->id == 0)
-    {
-      $this->printPasswordForm();
+      $this->printPasswordForm($e->getMessage());
     }
 
     return $oUser;

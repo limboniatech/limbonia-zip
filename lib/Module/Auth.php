@@ -16,7 +16,7 @@ class Auth extends \Limbonia\Module
    *
    * @var string
    */
-  protected $sGroup = 'Hidden';
+  protected static $sGroup = 'Hidden';
 
   /**
    * List of valid HTTP methods
@@ -42,6 +42,33 @@ class Auth extends \Limbonia\Module
     'create' => true,
     'delete' => true
   ];
+
+  /**
+   * Do whatever setup is needed to make this module work...
+   *
+   * @throws Exception on failure
+   */
+  public function setup()
+  {
+    $this->oController->getDB()->createTable('UserAuth', "UserID INTEGER UNSIGNED NOT NULL,
+AuthToken VARCHAR(255) NOT NULL,
+LastUseTime TIMESTAMP NOT NULL,
+INDEX Unique_UserAuth(UserID, AuthToken)");
+  }
+
+  /**
+   * Deactivate this module then return a list of types that were deactivated
+   *
+   * @param array $hActiveModule - the active module list
+   * @return array
+   * @throws Exception on failure
+   */
+  public function deactivate(array $hActiveModule)
+  {
+    //check if an other auth module is active and if so then allow deactivation
+    //otherwise throw an exception
+    throw new \Limbonia\Exception("The system requires an auth module so this can *not* be deactivated");
+  }
 
   /**
    * Perform the base "GET" code then return null on success
@@ -78,17 +105,18 @@ class Auth extends \Limbonia\Module
 
     if (empty($hData['email']) || empty($hData['password']))
     {
+      throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
     }
 
-      if ($hData['email'] === $this->oController->master['User'] && $hData['password'] === $this->oController->master['Password'])
-      {
-        $oUser = \Limbonia\Controller::generateUser();
-      }
-      else
-      {
-        $oUser = $this->oController->userByEmail($hData['email']);
-        $oUser->authenticate($hData['password']);
-      }
+    if ($hData['email'] === $this->oController->master['User'] && $hData['password'] === $this->oController->master['Password'])
+    {
+      $oUser = $this->oController->userByEmail('MasterAdmin');
+    }
+    else
+    {
+      $oUser = $this->oController->userByEmail($hData['email']);
+      $oUser->authenticate($hData['password']);
+    }
 
     return
     [

@@ -37,6 +37,27 @@ class Ticket extends \Limbonia\Module
   ];
 
   /**
+   * List of components that this module contains along with their descriptions
+   *
+   * @var array
+   */
+  protected static $hComponent =
+  [
+    'search' => 'This is the ability to search and display data.',
+    'edit' => 'The ability to edit existing data.',
+    'create' => 'The ability to create new data.',
+    'delete' => 'The ability to delete existing data.',
+    'configure' => "The ability to alter the module's configuration."
+  ];
+
+  /**
+   * List of modules this module depends on to function correctly
+   *
+   * @var array
+   */
+  protected static $aModuleDependencies = ['ticketcategory'];
+
+  /**
    * Lists of columns to ignore when filling template data
    *
    * @var array
@@ -165,6 +186,25 @@ class Ticket extends \Limbonia\Module
       'Description'
     ];
    }
+
+
+  /**
+   * Activate this module and any required dependencies then return a list of types that were activated
+   *
+   * @param array $hActiveModule - the active module list
+   * @return array
+   * @throws Exception on failure
+   */
+  public function activate(array $hActiveModule)
+  {
+    $oTicketContent = $this->oController->itemFactory('ticketcontent');
+    $oTicketContent->setup();
+
+    $oTicketHistory = $this->oController->itemFactory('tickethistory');
+    $oTicketHistory->setup();
+
+    return parent::activate($hActiveModule);
+  }
 
   /**
    * Return the default settings

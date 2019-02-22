@@ -60,6 +60,29 @@ class Cli extends \Limbonia\Controller
     ]
   ];
 
+  protected $sMode = '';
+
+  protected $sCliName = '';
+
+  /**
+   * The CLI controller constructor
+   *
+   * NOTE: This constructor should only be used by the factory and *never* directly
+   *
+   * @param array $hConfig - A hash of configuration data
+   */
+  protected function __construct(array $hConfig = [])
+  {
+    $oServer = \Limbonia\Input::singleton('server');
+    $this->sCliName = preg_replace("/^limbonia_/", '', basename($oServer['argv'][0]));
+
+    $hOptions = getopt('', ['mode::']);
+    $this->sMode = empty($hOptions) ? $this->sCliName : $hOptions['mode'];
+
+    $this->oRouter = \Limbonia\Router::fromUri(strtolower(preg_replace("#_#", '/', $this->sMode)));
+    parent::__construct($hConfig);
+  }
+
   /**
    * Display the help information
    */
@@ -193,31 +216,22 @@ Options:\n";
    */
   protected function generateTemplateFile()
   {
-    $oServer = \Limbonia\Input::singleton('server');
-    $sCliName = preg_replace("/^limbonia_/", '', basename($oServer['argv'][0]));
-    $this->sTemplateName = $sCliName;
-    $sTemplateFile = $this->templateFile($sCliName);
+    $sTemplateFile = $this->templateFile($this->sCliName);
 
-    //if the template file is either empty and not the current running file
-    if (!empty($sTemplateFile) && $sTemplateFile !== $sCliName)
+    //if the template file is not empty and not the current running file
+    if (!empty($sTemplateFile) && $sTemplateFile !== $this->sCliName)
     {
       //then return it as is...
+      $this->sTemplateName = $this->sCliName;
       return $sTemplateFile;
     }
 
-    $hModeOpt = getopt('', ['mode::']);
-
-    if (isset($hModeOpt['mode']) && empty($hModeOpt['mode']))
-    {
-      throw new \Exception('Mode not specified');
-    }
-
-    $sTemplateName = isset($hModeOpt['mode']) ? $hModeOpt['mode'] : '';
-    $sTemplateFile = $this->templateFile($sTemplateName);
+    //attempt to use the mode for the template
+    $sTemplateFile = $this->templateFile($this->sMode);
 
     if (!empty($sTemplateFile))
     {
-      $this->sTemplateName = $sTemplateName;
+      $this->sTemplateName = $this->sMode;
       return $sTemplateFile;
     }
 
@@ -231,23 +245,7 @@ Options:\n";
    */
   protected function render()
   {
-    $hOptions = getopt('', ['mode::']);
-
-    if (empty($hOptions))
-    {
-      $oServer = Input::singleton('server');
-      $sMode = basename($oServer['php_self']);
-    }
-    else
-    {
-      $sMode = $hOptions['mode'];
-    }
-
-    $sPath = strtolower(preg_replace("#_#", '/', $sMode));
-    $aPath = explode('/', $sPath);
-    $sModule = $aPath[0] ?? null;
-    $sAction = $aPath[1] ?? 'list';
-    $sModuleDriver = \Limbonia\Module::driver($sModule);
+    $sModuleDriver = \Limbonia\Module::driver($this->oRouter->module);
 
     if (empty($sModuleDriver))
     {
@@ -302,7 +300,7 @@ Options:\n";
     try
     {
       $oCurrentModule = $this->moduleFactory($sModuleDriver);
-      $this->sTemplateName = strtolower($sModuleDriver) . '_' . $sAction;
+      $this->sTemplateName = strtolower($sModuleDriver) . '_' . $this->oRouter->action;
       $oCurrentModule->prepareTemplate();
       $this->templateData('options', $this->processOptions());
       $sModuleTemplate = $oCurrentModule->getTemplate();
@@ -310,7 +308,7 @@ Options:\n";
     }
     catch (\Exception $e)
     {
-      $this->templateData('failure', "The module {$sModule} could not be instaniated: " . $e->getMessage());
+      $this->templateData('failure', "The module {$this->oRouter->module} could not be instaniated: " . $e->getMessage());
       return $this->templateRender('error');
     }
   }

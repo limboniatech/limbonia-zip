@@ -12,14 +12,11 @@ namespace Limbonia\Tag;
 class TableRow extends \Limbonia\Tag
 {
   /**
-   * Constructor
+   * Name of the basic HTML tag represented by the widget
    *
-   * Construct a "tr" tag
+   * @var string $sType
    */
-  public function __construct()
-  {
-    parent::__construct('tr');
-  }
+  protected $sType = 'tr';
 
   /**
    * Return the HTML representation of this tag

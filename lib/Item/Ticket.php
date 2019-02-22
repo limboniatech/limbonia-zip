@@ -13,11 +13,275 @@ namespace Limbonia\Item;
 class Ticket extends \Limbonia\Item
 {
   /**
+   * The database schema for creating this item's table in the database
+   *
+   * @var string
+   */
+  protected static $sSchema = "`TicketID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+`OwnerID` int(10) unsigned NOT NULL,
+`CategoryID` int(10) unsigned NOT NULL,
+`ParentID` int(10) unsigned NOT NULL DEFAULT '0',
+`Type` enum('internal','contact','system','software') NOT NULL DEFAULT 'internal',
+`Subject` varchar(255) NOT NULL,
+`CreateTime` timestamp NULL DEFAULT NULL,
+`CreatorID` int(10) unsigned NOT NULL,
+`StartDate` date DEFAULT NULL,
+`LastUpdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+`DueDate` date DEFAULT NULL,
+`CompletionTime` timestamp NULL DEFAULT NULL,
+`Status` enum('new','active','pending','closed') NOT NULL DEFAULT 'new',
+`ProjectID` int(10) unsigned NOT NULL DEFAULT '0',
+`Priority` enum('low','normal','high','critical') NOT NULL DEFAULT 'normal',
+`ReleaseID` int(10) unsigned NOT NULL,
+`Severity` enum('wish list','feature','change','performance','minor bug','major bug','crash') NOT NULL DEFAULT 'feature',
+`Projection` enum('unknown','very minor','minor','average','major','very major','redesign') NOT NULL DEFAULT 'unknown',
+`DevStatus` enum('review','verified','unable to reproduce','not fixable','duplicate','no change required','won''t fix','in progress','complete') NOT NULL DEFAULT 'review',
+`QualityStatus` enum('failed','passed','untested','retest','in progress','pending developer response') NOT NULL DEFAULT 'untested',
+`Description` text,
+`StepsToReproduce` text,
+PRIMARY KEY (`TicketID`),
+FULLTEXT KEY `Fulltext_Ticket_Description` (`Description`),
+FULLTEXT KEY `Fulltext_Ticket_StepsToReproduce` (`StepsToReproduce`)";
+
+  /**
+   * The columns for this item's tables
+   *
+   * @var array
+   */
+  protected static $hColumns =
+  [
+
+    'TicketID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Key' => 'Primary',
+      'Default' => 0,
+      'Extra' => 'auto_increment'
+    ],
+    'OwnerID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'CategoryID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'ParentID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Type' =>
+    [
+      'Type' => "enum('internal','contact','system','software')",
+      'Default' => 'internal'
+    ],
+    'Subject' =>
+    [
+      'Type' => 'varchar(255)',
+      'Default' => ''
+    ],
+    'CreateTime' =>
+    [
+      'Type' => 'timestamp',
+      'Default' => ''
+    ],
+    'CreatorID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'StartDate' =>
+    [
+      'Type' => 'date',
+      'Default' => ''
+    ],
+    'LastUpdate' =>
+    [
+      'Type' => 'timestamp',
+      'Default' => 'CURRENT_TIMESTAMP',
+      'Extra' => 'on update CURRENT_TIMESTAMP'
+    ],
+    'DueDate' =>
+    [
+      'Type' => 'date',
+      'Default' => ''
+    ],
+    'CompletionTime' =>
+    [
+      'Type' => 'timestamp',
+      'Default' => ''
+    ],
+    'Status' =>
+    [
+      'Type' => "enum('new','active','pending','closed')",
+      'Default' => 'new'
+    ],
+    'ProjectID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Priority' =>
+    [
+      'Type' => "enum('low','normal','high','critical')",
+      'Default' => 'normal'
+    ],
+    'ReleaseID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'Severity' =>
+    [
+      'Type' => "enum('wish list','feature','change','performance','minor bug','major bug','crash')",
+      'Default' => 'feature'
+    ],
+    'Projection' =>
+    [
+      'Type' => "enum('unknown','very minor','minor','average','major','very major','redesign')",
+      'Default' => 'unknown'
+    ],
+    'DevStatus' =>
+    [
+      'Type' => "enum('review','verified','unable to reproduce','not fixable','duplicate','no change required','won''t fix','in progress','complete')",
+      'Default' => 'review'
+    ],
+    'QualityStatus' =>
+    [
+      'Type' => "enum('failed','passed','untested','retest','in progress','pending developer response')",
+      'Default' => 'untested'
+    ],
+    'Description' =>
+    [
+      'Type' => 'text',
+      'Key' => 'Multi',
+      'Default' => ''
+    ],
+    'StepsToReproduce' =>
+    [
+      'Type' => 'text',
+      'Key' => 'Multi',
+      'Default' => ''
+    ]
+  ];
+
+  /**
+   * The aliases for this item's columns
+   *
+   * @var array
+   */
+  protected static $hColumnAlias =
+  [
+    'ticketid' => 'TicketID',
+    'id' => 'TicketID',
+    'ownerid' => 'OwnerID',
+    'categoryid' => 'CategoryID',
+    'parentid' => 'ParentID',
+    'type' => 'Type',
+    'subject' => 'Subject',
+    'createtime' => 'CreateTime',
+    'creatorid' => 'CreatorID',
+    'startdate' => 'StartDate',
+    'lastupdate' => 'LastUpdate',
+    'duedate' => 'DueDate',
+    'completiontime' => 'CompletionTime',
+    'status' => 'Status',
+    'projectid' => 'ProjectID',
+    'priority' => 'Priority',
+    'releaseid' => 'ReleaseID',
+    'severity' => 'Severity',
+    'projection' => 'Projection',
+    'devstatus' => 'DevStatus',
+    'qualitystatus' => 'QualityStatus',
+    'description' => 'Description',
+    'stepstoreproduce' => 'StepsToReproduce'
+  ];
+
+  /**
+   * The default data used for "blank" or "empty" items
+   *
+   * @var array
+   */
+  protected static $hDefaultData =
+  [
+    'TicketID' => 0,
+    'OwnerID' => 0,
+    'CategoryID' => 0,
+    'ParentID' => 0,
+    'Type' => 'internal',
+    'Subject' => '',
+    'CreateTime' => '',
+    'CreatorID' => 0,
+    'StartDate' => '',
+    'LastUpdate' => 'CURRENT_TIMESTAMP',
+    'DueDate' => '',
+    'CompletionTime' => '',
+    'Status' => 'new',
+    'ProjectID' => 0,
+    'Priority' => 'normal',
+    'ReleaseID' => 0,
+    'Severity' => 'feature',
+    'Projection' => 'unknown',
+    'DevStatus' => 'review',
+    'QualityStatus' => 'untested',
+    'Description' => '',
+    'StepsToReproduce' => ''
+  ];
+
+  /**
+   * This object's data
+   *
+   * @var array
+   */
+  protected $hData =
+  [
+    'TicketID' => 0,
+    'OwnerID' => 0,
+    'CategoryID' => 0,
+    'ParentID' => 0,
+    'Type' => 'internal',
+    'Subject' => '',
+    'CreateTime' => '',
+    'CreatorID' => 0,
+    'StartDate' => '',
+    'LastUpdate' => 'CURRENT_TIMESTAMP',
+    'DueDate' => '',
+    'CompletionTime' => '',
+    'Status' => 'new',
+    'ProjectID' => 0,
+    'Priority' => 'normal',
+    'ReleaseID' => 0,
+    'Severity' => 'feature',
+    'Projection' => 'unknown',
+    'DevStatus' => 'review',
+    'QualityStatus' => 'untested',
+    'Description' => '',
+    'StepsToReproduce' => ''
+  ];
+
+  /**
    * List of columns that shouldn't be updated after the data has been created
    *
    * @var array
    */
-  protected $aNoUpdate = ['CreateTime', 'CompletionTime', 'LastUpdate'];
+  protected $aNoUpdate = ['TicketID', 'CreateTime', 'CompletionTime', 'LastUpdate'];
+
+  /**
+   * The table that this object is referencing
+   *
+   * @var string
+   */
+  protected $sTable = 'Ticket';
+
+  /**
+   * The name of the "ID" column associated with this object's table
+   *
+   * @var string
+   */
+  protected $sIdColumn = 'TicketID';
 
   /**
    * List of history hashes for this ticket

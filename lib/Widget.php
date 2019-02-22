@@ -9,8 +9,14 @@ namespace Limbonia;
  * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @package Limbonia
  */
-class Widget extends Tag
+class Widget implements \Limbonia\Interfaces\Tag
 {
+  use \Limbonia\Traits\Tag
+  {
+    \Limbonia\Traits\Tag::toString as originalToString;
+    \Limbonia\Traits\Tag::setAll as originalSetAll;
+  }
+
   use \Limbonia\Traits\DriverList;
   use \Limbonia\Traits\HasController;
 
@@ -217,23 +223,8 @@ class Widget extends Tag
    */
   public function __construct($sName=null, \Limbonia\Controller $oController = null)
   {
-    $this->sType = strtolower(str_replace(__CLASS__ . '\\', '', get_class($this)));
-
-    if (empty($this->sType))
-    {
-      throw new Limbonia\Exception\Object(__CLASS__ . " couldn't find a valid type!");
-    }
-
-    if ($oController instanceof \Limbonia\Controller)
-    {
-/*
-      if ($oController instanceof \Limbonia\Controller\Web)
-      {
-        If it's a web type then allow scripts to be placed in the head instead of the body?
-      }
-*/
-      $this->oController = $oController;
-    }
+    $this->getType();
+    $this->setController($oController);
 
     $this->sWebShareDir = $this->getController()->domain->uri . '/' . $this->getController()->getDir('share');
     self::$iCount++;
@@ -241,6 +232,26 @@ class Widget extends Tag
     $this->setParam('name', $this->sName);
     $this->sId = preg_replace("/\[|\]/", "", $this->sName);
     $this->setParam('id', $this->sId);
+  }
+
+  /**
+   * Set this object's controller
+   *
+   * @param \Limbonia\Controller $oController
+   */
+  public function setController($oController)
+  {
+    if ($oController instanceof \Limbonia\Controller)
+    {
+      $this->oController = $oController;
+    }
+
+    if ($this->oController instanceof \Limbonia\Controller\Web)
+    {
+      /**
+       * @todo If it's a web type then allow scripts to be placed in the head instead of the body?
+       */
+    }
   }
 
   /**
@@ -376,7 +387,7 @@ class Widget extends Tag
       unset($hExpandedParam['html_text_to_filter']);
     }
 
-    parent::setAll($hExpandedParam);
+    $this->originalSetAll($hExpandedParam);
   }
 
   /**
@@ -398,7 +409,7 @@ class Widget extends Tag
    */
   protected function init()
   {
-    $this->sPreScript .= parent::toString();
+    $this->sPreScript .= $this->originalToString();
     return true;
   }
 

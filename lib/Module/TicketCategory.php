@@ -17,6 +17,28 @@ class TicketCategory extends \Limbonia\Module
   }
 
   /**
+   * Deactivate this module then return a list of types that were deactivated
+   *
+   * @param array $hActiveModule - the active module list
+   * @return array
+   * @throws Exception on failure
+   */
+  public function deactivate(array $hActiveModule)
+  {
+    $hDeactiveModule = parent::deactivate($hActiveModule);
+
+    //if TicketCategory is active
+    if (isset($hActiveModule['ticket']))
+    {
+      //then deactivate it
+      $oTicketModule = $this->oController->moduleFactory('ticket');
+      $hDeactiveModule = array_merge($hDeactiveModule, $oTicketModule->deactivate($hActiveModule));
+    }
+
+    return $hDeactiveModule;
+  }
+
+  /**
    * List of column names in the order required
    *
    * @return array

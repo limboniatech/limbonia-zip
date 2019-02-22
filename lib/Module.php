@@ -15,6 +15,13 @@ class Module
   use \Limbonia\Traits\HasController;
 
   /**
+   * The admin group that this module belongs to
+   *
+   * @var string
+   */
+  protected static $sGroup = 'Admin';
+
+  /**
    * List of fields used by module settings
    *
    * @var array
@@ -79,13 +86,6 @@ class Module
   protected $aEditColumn = [];
 
   /**
-   * The admin group that this module belongs to
-   *
-   * @var string
-   */
-  protected $sGroup = 'Admin';
-
-  /**
    * List of column names that should remain static
    *
    * @var array
@@ -111,13 +111,20 @@ class Module
    *
    * @var array
    */
-  protected $hComponent =
+  protected static $hComponent =
   [
     'search' => 'This is the ability to search and display data.',
     'edit' => 'The ability to edit existing data.',
     'create' => 'The ability to create new data.',
     'delete' => 'The ability to delete existing data.'
   ];
+
+  /**
+   * List of modules this module depends on to function correctly
+   *
+   * @var array
+   */
+  protected static $aModuleDependencies = [];
 
   /**
    * List of menu items that this module should display
@@ -178,62 +185,23 @@ class Module
   protected $oRouter = null;
 
   /**
-   * Generate and cache the driver list for the current object type
+   * Return the list of this module's components
+   *
+   * @return array
    */
-  public static function overrideDriverList(\Limbonia\Controller $oController, \Limbonia\Item\User $oUser)
+  public static function getComponents()
   {
-    if (!isset($_SESSION['DriverList']))
-    {
-      $_SESSION['DriverList'] = [];
-    }
+    return static::$hComponent;
+  }
 
-    $_SESSION['ResourceList'] = [];
-    $_SESSION['ModuleGroups'] = [];
-    $_SESSION['DriverList'][__CLASS__] = [];
-    $sClassDir = preg_replace("#\\\#", '/', preg_replace("#Limbonia\\\\#", '', __CLASS__));
-    $aBlackList = $oController->moduleBlackList ?? [];
-    $oRouter = \Limbonia\Router::fromUri('admin');
-
-    foreach (\Limbonia\Controller::getLibs() as $sLib)
-    {
-      foreach (glob("$sLib/$sClassDir/*.php") as $sClassFile)
-      {
-        $sClasseName = basename($sClassFile, ".php");
-
-        if (isset($_SESSION['DriverList'][__CLASS__][strtolower($sClasseName)]) || in_array($sClasseName, $aBlackList) || !$oUser->hasResource($sClasseName))
-        {
-          continue;
-        }
-
-        $sTypeClass = __CLASS__ . '\\' . $sClasseName;
-
-        if (!class_exists($sTypeClass, true))
-        {
-          continue;
-        }
-
-        $oModule = new $sTypeClass($oController, $oRouter);
-        $hComponent = $oModule->getComponents();
-        ksort($hComponent);
-        reset($hComponent);
-        $_SESSION['ResourceList'][$oModule->getType()] = $hComponent;
-        $_SESSION['ModuleGroups'][$oModule->getGroup()][strtolower($oModule->getType())] = $oModule->getType();
-        $_SESSION['DriverList'][__CLASS__][strtolower($sClasseName)] = $sClasseName;
-      }
-    }
-
-    ksort($_SESSION['DriverList'][__CLASS__]);
-    reset($_SESSION['DriverList'][__CLASS__]);
-
-    ksort($_SESSION['ResourceList']);
-    reset($_SESSION['ResourceList']);
-
-    ksort($_SESSION['ModuleGroups']);
-
-    foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
-    {
-      ksort($_SESSION['ModuleGroups'][$sKey]);
-    }
+  /**
+   * Return this module's admin group
+   *
+   * @return string
+   */
+  public static function getGroup()
+  {
+    return static::$sGroup;
   }
 
   /**
@@ -290,7 +258,6 @@ class Module
     {
       $this->hMenuItems['settings'] = 'Settings';
       $this->aAllowedActions[] = 'settings';
-      $this->hComponent['configure'] = "The ability to alter the module's configuration.";
       $this->hSettings = $this->oController->getSettings($this->sType);
 
       if (empty($this->hSettings))
@@ -311,6 +278,54 @@ class Module
   public function __destruct()
   {
     $this->saveSettings();
+  }
+
+  /**
+   * Activate this module and any required dependencies then return a list of types that were activated
+   *
+   * @param array $hActiveModule - the active module list
+   * @return array
+   * @throws Exception on failure
+   */
+  public function activate(array $hActiveModule)
+  {
+    $aNewActiveModule = [$this->getType()];
+
+    if (!empty(static::$aModuleDependencies))
+    {
+      foreach (static::$aModuleDependencies as $sModule)
+      {
+        if (!isset($hActiveModule[$sModule]))
+        {
+          $this->oController->activateModule($sModule);
+          $aNewActiveModule = array_merge($aNewActiveModule, [$sModule]);
+        }
+      }
+    }
+
+    $this->setup();
+    return $aNewActiveModule;
+  }
+
+  /**
+   * Do whatever setup is needed to make this module work...
+   *
+   * @throws Exception on failure
+   */
+  public function setup()
+  {
+  }
+
+  /**
+   * Deactivate this module then return a list of types that were deactivated
+   *
+   * @param array $hActiveModule - the active module list
+   * @return array
+   * @throws Exception on failure
+   */
+  public function deactivate(array $hActiveModule)
+  {
+    return [$this->getType()];
   }
 
   /**
@@ -489,16 +504,6 @@ class Module
   }
 
   /**
-   * Return the list of this module's components
-   *
-   * @return array
-   */
-  public function getComponents()
-  {
-    return $this->hComponent;
-  }
-
-  /**
    * Should the specified component type be allowed to be used by the current user of this module?
    *
    * @param string $sComponent
@@ -512,16 +517,6 @@ class Module
     }
 
     return $this->hAllow[$sComponent];
-  }
-
-  /**
-   * Return this module's admin group
-   *
-   * @return string
-   */
-  public function getGroup()
-  {
-    return $this->sGroup;
   }
 
   public function getHttpMethods()
@@ -1238,6 +1233,7 @@ class Module
       case 'swing':
         return null;
 
+      case 'boolean':
       case 'tinyint':
         $sChecked = $sValue ? ' checked="checked"' : '';
         return self::field("<input type=\"checkbox\" name=\"$this->sType[$sName]\" id=\"$this->sType$sName\" value=\"1\"$sChecked>", $sLabel, "$this->sType$sName");

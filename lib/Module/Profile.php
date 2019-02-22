@@ -18,7 +18,14 @@ class Profile extends \Limbonia\Module
    *
    * @var string
    */
-  protected $sGroup = 'Hidden';
+  protected static $sGroup = 'Hidden';
+
+  /**
+   * List of modules this module depends on to function correctly
+   *
+   * @var array
+   */
+  protected static $aModuleDependencies = ['user'];
 
   /**
    * The type of module this is

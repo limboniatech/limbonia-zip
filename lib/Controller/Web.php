@@ -132,6 +132,46 @@ class Web extends \Limbonia\Controller
       ]);
     }
   }
+  public function activateModule($sModule)
+  {
+    parent::activateModule($sModule);
+    $aBlackList = $this->moduleBlackList ?? [];
+    $sDriver = \Limbonia\Module::driver($sModule);
+
+    if (!in_array($sDriver, $aBlackList) && $this->user()->hasResource($sDriver))
+    {
+      $sTypeClass = '\\Limbonia\\Module\\' . $sDriver;
+      $hComponent = $sTypeClass::getComponents();
+      ksort($hComponent);
+      reset($hComponent);
+      $_SESSION['ResourceList'][$sDriver] = $hComponent;
+      $_SESSION['ModuleGroups'][$sTypeClass::getGroup()][strtolower($sDriver)] = $sDriver;
+
+      ksort($_SESSION['ResourceList']);
+      reset($_SESSION['ResourceList']);
+
+      ksort($_SESSION['ModuleGroups']);
+
+      foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
+      {
+        ksort($_SESSION['ModuleGroups'][$sKey]);
+      }
+    }
+  }
+
+  public function deactivateModule($sModule)
+  {
+    parent::deactivateModule($sModule);
+    $sDriver = \Limbonia\Module::driver($sModule);
+    $sTypeClass = '\\Limbonia\\Module\\' . $sDriver;
+    unset($_SESSION['ResourceList'][$sDriver]);
+    unset($_SESSION['ModuleGroups'][$sTypeClass::getGroup()][strtolower($sDriver)]);
+
+    if (empty($_SESSION['ModuleGroups'][$sTypeClass::getGroup()]))
+    {
+      unset($_SESSION['ModuleGroups'][$sTypeClass::getGroup()]);
+    }
+  }
 
   public function getRouter()
   {
@@ -169,34 +209,62 @@ class Web extends \Limbonia\Controller
   {
     if (isset($_SESSION['LoggedInUser']))
     {
+      if ($_SESSION['LoggedInUser'] === 'master')
+      {
+        return $this->userAdmin();
+      }
+
       return $this->itemFromId('user', $_SESSION['LoggedInUser']);
     }
 
-    if (!isset(self::$hLoginData['user']) || !isset(self::$hLoginData['pass']))
+    if (empty(self::$hLoginData['user']) || empty(self::$hLoginData['pass']))
     {
-      return $this->itemFactory('user');
+      throw new \Limbonia\Exception\Web('Authentication failed', 1000, 401);
     }
 
     if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && self::$hLoginData['user'] === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && self::$hLoginData['pass'] === $this->hConfig['master']['Password'])
     {
-      $oUser = parent::generateUser();
-
-      if (!isset($_SESSION['LoggedInUser']))
-      {
-        $_SESSION['LoggedInUser'] = $oUser->id;
-        \Limbonia\Module::overrideDriverList($this, $oUser);
-      }
-
-      return $oUser;
+      $oUser = $this->userAdmin();
+      $_SESSION['LoggedInUser'] = 'master';
+    }
+    else
+    {
+      $oUser = $this->userByEmail(self::$hLoginData['user']);
+      $oUser->authenticate(self::$hLoginData['pass']);
+      $_SESSION['LoggedInUser'] = $oUser->id;
     }
 
-    $oUser = $this->userByEmail(self::$hLoginData['user']);
-    $oUser->authenticate(self::$hLoginData['pass']);
+    $hModuleList = $this->activeModules();
 
-    if (!isset($_SESSION['LoggedInUser']))
+    $_SESSION['ResourceList'] = [];
+    $_SESSION['ModuleGroups'] = [];
+    $aBlackList = $this->moduleBlackList ?? [];
+
+    foreach ($hModuleList as $sModule)
     {
-      $_SESSION['LoggedInUser'] = $oUser->id;
-      \Limbonia\Module::overrideDriverList($this, $oUser);
+      $sDriver = \Limbonia\Module::driver($sModule);
+
+      if (in_array($sDriver, $aBlackList) || !$oUser->hasResource($sDriver))
+      {
+        continue;
+      }
+
+      $sTypeClass = '\\Limbonia\\Module\\' . $sDriver;
+      $hComponent = $sTypeClass::getComponents();
+      ksort($hComponent);
+      reset($hComponent);
+      $_SESSION['ResourceList'][$sDriver] = $hComponent;
+      $_SESSION['ModuleGroups'][$sTypeClass::getGroup()][strtolower($sDriver)] = $sDriver;
+    }
+
+    ksort($_SESSION['ResourceList']);
+    reset($_SESSION['ResourceList']);
+
+    ksort($_SESSION['ModuleGroups']);
+
+    foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
+    {
+      ksort($_SESSION['ModuleGroups'][$sKey]);
     }
 
     return $oUser;

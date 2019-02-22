@@ -15,8 +15,9 @@ CREATE TABLE IF NOT EXISTS ZipCode (
   Longitude float NOT NULL,
   City varchar(30) NOT NULL,
   State char(2) NOT NULL,
-  County varchar(30) NOT NULL,
   ZipClass varchar(15) DEFAULT 'STANDARD',
+  LocationType varchar(15) DEFAULT 'PRIMARY',
+  Decommisioned INT(1) NOT NULL DEFAULT 0,
   PRIMARY KEY(Zip),
   KEY Index_State(State),
   KEY Index_Latitude_Longitude(Latitude, Longitude)

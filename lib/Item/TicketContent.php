@@ -12,6 +12,141 @@ namespace Limbonia\Item;
 class TicketContent extends \Limbonia\Item
 {
   /**
+   * The database schema for creating this item's table in the database
+   *
+   * @var string
+   */
+  protected static $sSchema = "`ContentID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+`TicketID` int(10) unsigned NOT NULL DEFAULT '0',
+`UserID` int(10) unsigned NOT NULL DEFAULT '0',
+`UpdateTime` datetime DEFAULT NULL,
+`UpdateText` longtext,
+`UpdateType` enum('public','private','system') NOT NULL DEFAULT 'private',
+`TimeWorked` int(10) unsigned NOT NULL DEFAULT '0',
+PRIMARY KEY (`ContentID`),
+KEY `Index_Ticket` (`TicketID`),
+FULLTEXT KEY `Fulltext_TicketContent_UpdateText` (`UpdateText`)";
+
+  /**
+   * The columns for this item's tables
+   *
+   * @var array
+   */
+  protected static $hColumns =
+  [
+
+    'ContentID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Key' => 'Primary',
+      'Default' => 0,
+      'Extra' => 'auto_increment'
+    ],
+    'TicketID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Key' => 'Multi',
+      'Default' => 0
+    ],
+    'UserID' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ],
+    'UpdateTime' =>
+    [
+      'Type' => 'datetime',
+      'Default' => ''
+    ],
+    'UpdateText' =>
+    [
+      'Type' => 'longtext',
+      'Key' => 'Multi',
+      'Default' => ''
+    ],
+    'UpdateType' =>
+    [
+      'Type' => "enum('public','private','system')",
+      'Default' => 'private'
+    ],
+    'TimeWorked' =>
+    [
+      'Type' => 'int(10) unsigned',
+      'Default' => 0
+    ]
+  ];
+
+  /**
+   * The aliases for this item's columns
+   *
+   * @var array
+   */
+  protected static $hColumnAlias =
+  [
+    'contentid' => 'ContentID',
+    'id' => 'ContentID',
+    'ticketid' => 'TicketID',
+    'userid' => 'UserID',
+    'updatetime' => 'UpdateTime',
+    'updatetext' => 'UpdateText',
+    'updatetype' => 'UpdateType',
+    'timeworked' => 'TimeWorked'
+  ];
+
+  /**
+   * The default data used for "blank" or "empty" items
+   *
+   * @var array
+   */
+  protected static $hDefaultData =
+  [
+    'ContentID' => 0,
+    'TicketID' => 0,
+    'UserID' => 0,
+    'UpdateTime' => '',
+    'UpdateText' => '',
+    'UpdateType' => 'private',
+    'TimeWorked' => 0
+  ];
+
+  /**
+   * This object's data
+   *
+   * @var array
+   */
+  protected $hData =
+  [
+    'ContentID' => 0,
+    'TicketID' => 0,
+    'UserID' => 0,
+    'UpdateTime' => '',
+    'UpdateText' => '',
+    'UpdateType' => 'private',
+    'TimeWorked' => 0
+  ];
+
+  /**
+   * List of columns that shouldn't be updated after the data has been created
+   *
+   * @var array
+   */
+  protected $aNoUpdate = ['ContentID'];
+
+  /**
+   * The table that this object is referencing
+   *
+   * @var string
+   */
+  protected $sTable = 'TicketContent';
+
+  /**
+   * The name of the "ID" column associated with this object's table
+   *
+   * @var string
+   */
+  protected $sIdColumn = 'ContentID';
+
+  /**
    * List of this content's history data
    *
    * @var array

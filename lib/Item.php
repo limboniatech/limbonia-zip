@@ -24,6 +24,27 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   protected static $hStatement = [];
 
   /**
+   * The database schema for creating this item's table in the database
+   *
+   * @var string
+   */
+  protected static $sSchema = '';
+
+  /**
+   * The columns for this item's tables
+   *
+   * @var array
+   */
+  protected static $hColumns = [];
+
+  /**
+   * The aliases for this item's columns
+   *
+   * @var array
+   */
+  protected static $hColumnAlias = [];
+
+  /**
    * The default data used for "blank" or "empty" items
    *
    * @var array
@@ -125,15 +146,17 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
 
     if (\class_exists($sOverrideClass, true))
     {
-      return new $sOverrideClass(null, $oDatabase);
+      return new $sOverrideClass($oDatabase);
     }
 
     if (\class_exists($sTypeClass, true))
     {
-      return new $sTypeClass(null, $oDatabase);
+      return new $sTypeClass($oDatabase);
     }
 
-    return new Item($sTable, $oDatabase);
+    $oItem = new Item($oDatabase);
+    $oItem->setTable($sTable);
+    return $oItem;
   }
 
   /**
@@ -201,17 +224,31 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   /**
    * The item constructor
    *
-   * @param string $sType (optional)
    * @param \Limbonia\Database $oDatabase (optional)
    */
-  public function __construct($sType = null, \Limbonia\Database $oDatabase = null)
+  public function __construct(\Limbonia\Database $oDatabase = null)
   {
     $this->setDatabase($oDatabase);
 
     if (empty($this->sTable))
     {
-      $this->sTable = empty($sType) ? preg_replace("/Override$/", '', str_replace(__CLASS__ . '\\', '', get_class($this))) : $sType;
+      $this->sTable = preg_replace("/Override$/", '', str_replace(__CLASS__ . '\\', '', get_class($this)));
     }
+  }
+
+  protected function setTable($sTable)
+  {
+    if (empty($sTable))
+    {
+      throw new Exception("Table not specified");
+    }
+
+    if (!$this->getDatabase()->hasTable($sTable))
+    {
+      throw new Exception("Table does not exist: $sTable");
+    }
+
+    $this->sTable = $sTable;
 
     if (empty($this->sIdColumn))
     {
@@ -220,20 +257,38 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
 
     $this->aNoUpdate[] = $this->sIdColumn;
 
-    //if the default data for this table hasn't been set yet...
-    if (!isset(self::$hDefaultData[$this->sTable]))
+    if (empty(static::$hDefaultData))
     {
-      self::$hDefaultData[$this->sTable] = [];
-
-      //then generate it
       foreach ($this->getColumns() as $sColumn => $hColumnData)
       {
         self::$hDefaultData[$this->sTable][$sColumn] = isset($hColumnData['Default']) ? $hColumnData['Default'] : null;
       }
     }
 
-    //assing the default data to the freshly minted item...
-    $this->hData = self::$hDefaultData[$this->sTable];
+    $this->hData = static::$hDefaultData[$this->sTable];
+  }
+
+  /**
+   * Create the table required for this item type
+   *
+   * @throws Exception
+   */
+  public function setup()
+  {
+    if (get_class($this) == __CLASS__)
+    {
+      throw new Exception("The base Item class can not set up tables!");
+    }
+
+    if (!$this->getDatabase()->hasTable($this->sTable))
+    {
+      if (empty(static::$sSchema))
+      {
+        throw new Exception("Schema not found for table: $this->sTable");
+      }
+
+      $this->getDatabase()->createTable($this->sTable, static::$sSchema);
+    }
   }
 
   /**
@@ -268,7 +323,12 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function getColumns()
   {
-    return $this->getDatabase()->getColumns($this->sTable);
+    if (empty(static::$hColumns))
+    {
+      static::$hColumns = $this->getDatabase()->getColumns($this->sTable);
+    }
+
+    return static::$hColumns;
   }
 
   /**
@@ -289,7 +349,9 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function getColumn($sColumn)
   {
-    return $this->getDatabase()->getColumnData($this->sTable, $sColumn);
+    $hColumns = $this->getColumns();
+    $sRealColumn = $this->hasColumn($sColumn);
+    return $sRealColumn ? $hColumns[$sRealColumn] : [];
   }
 
   /**
@@ -581,7 +643,13 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
    */
   public function hasColumn($sColumn)
   {
-    return $this->getDatabase()->hasColumn($this->sTable, $sColumn);
+    if (empty(static::$hColumnAlias))
+    {
+      static::$hColumnAlias = \Limbonia\Database::aliasColumns($this->getColumns());
+    }
+
+    $sLowerColumn = \strtolower($sColumn);
+    return isset(static::$hColumnAlias[$sLowerColumn]) ? static::$hColumnAlias[$sLowerColumn] : false;
   }
 
   /**
@@ -624,11 +692,11 @@ class Item implements \ArrayAccess, \Countable, \SeekableIterator
   {
     if ($sRealName = $this->hasColumn($sName))
     {
-      $this->hData[$sRealName] = null;
+      $this->hData[$sRealName] = static::$hDefaultData[$sRealName];
     }
     elseif ($sRealName = $this->hasColumn("{$sName}id"))
     {
-      $this->hData[$sRealName] = null;
+      $this->hData[$sRealName] = static::$hDefaultData[$sRealName];
     }
   }
 

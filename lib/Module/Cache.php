@@ -16,7 +16,7 @@ class Cache extends \Limbonia\Module
    *
    * @var string
    */
-  protected $sGroup = 'Site';
+  protected static $sGroup = 'Site';
 
   /**
    * The default method for this module
@@ -30,7 +30,7 @@ class Cache extends \Limbonia\Module
    *
    * @var array
    */
-  protected $hComponent =
+  protected static $hComponent =
   [
     'reset' => "Reset all the cache for this site."
   ];
@@ -63,6 +63,17 @@ class Cache extends \Limbonia\Module
   ];
 
   /**
+   * Do whatever setup is needed to make this module work...
+   *
+   * @throws Exception on failure
+   */
+  public function setup()
+  {
+    //if a cache object can be created then setup is complete
+    $this->oController->cacheFactory();
+  }
+
+  /**
    * Perform the base "GET" code then return null on success
    *
    * @return null
@@ -70,11 +81,7 @@ class Cache extends \Limbonia\Module
    */
   protected function processApiHead()
   {
-    if (!is_dir($this->oController->cacheDir) || !is_readable($this->oController->cacheDir) || !is_writable($this->oController->cacheDir))
-    {
-      throw new \Exception('Valid cache directory not found');
-    }
-
+    $this->oController->cacheFactory();
     return null;
   }
 

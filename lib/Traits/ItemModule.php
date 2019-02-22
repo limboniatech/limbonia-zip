@@ -12,6 +12,13 @@ namespace Limbonia\Traits;
 trait ItemModule
 {
   /**
+   * The type of Item that this module uses
+   *
+   * @var string
+   */
+  protected $sItemType = '';
+
+  /**
    * The item object associated with this module
    *
    * @var \Limbonia\Item
@@ -29,20 +36,33 @@ trait ItemModule
   }
 
   /**
+   * Do whatever setup is needed to make this module work...
+   */
+  public function setup()
+  {
+    $this->oItem->setup();
+  }
+
+  /**
    * Initialize this module's custom data, if there is any
    *
    * @throws \Limbonia\Exception
    */
   protected function init()
   {
-    $sItemDriver = \Limbonia\Item::driver($this->sType);
+    if (empty($this->sItemType))
+    {
+      $this->sItemType = $this->getType();
+    }
+
+    $sItemDriver = \Limbonia\Item::driver($this->sItemType);
 
     if (empty($sItemDriver))
     {
-      throw new \Limbonia\Exception("Driver for type ($this->sType) not found");
+      throw new \Limbonia\Exception("Driver for type ($this->sItemType) not found");
     }
 
-    $this->oItem = $this->oController->itemFactory($this->sType);
+    $this->oItem = $this->oController->itemFactory($this->sItemType);
 
     if (isset($this->oRouter->id) && strtolower($this->sType) == $this->oRouter->module)
     {
@@ -75,7 +95,7 @@ trait ItemModule
   {
     if ($this->oItem->id == 0)
     {
-      throw new \Limbonia\Exception\Web($this->getType() . ' #' . $this->oRouter->id . ' not found', null, 404);
+      throw new \Limbonia\Exception\Web($this->getType() . ' #' . $this->oRouter->call[1] . ' not found', null, 404);
     }
   }
 
@@ -87,7 +107,7 @@ trait ItemModule
    */
   protected function processApiHead()
   {
-    if (is_null($this->oRouter->id))
+    if (empty($this->oRouter->call[1]))
     {
       $oDatabase = $this->oController->getDB();
       $oDatabase->query($oDatabase->makeSearchQuery($this->oItem->getTable(), ['id'], $this->oRouter->search, null));
@@ -100,11 +120,6 @@ trait ItemModule
 
   protected function getList(array $aFields = [])
   {
-    if (empty($this->oRouter->search))
-    {
-      throw new \Limbonia\Exception\Web("No list criteria specified", null, 403);
-    }
-
     $sTable = $this->oItem->getTable();
     $oDatabase = $this->oController->getDB();
     $aRawFields = empty($aFields) ? [] : array_merge(['id'], $aFields);
@@ -152,7 +167,8 @@ trait ItemModule
    */
   protected function processApiGetList()
   {
-    return $this->getList($this->oRouter->fields);
+    $aField = empty($this->oRouter->fields) ? [] : $this->oRouter->fields;
+    return array_values($this->getList($aField));
   }
 
   /**
@@ -197,7 +213,7 @@ trait ItemModule
    */
   protected function processApiGet()
   {
-    if (is_null($this->oRouter->id))
+    if (empty($this->oRouter->call[1]))
     {
       return $this->processApiGetList();
     }
@@ -244,6 +260,11 @@ trait ItemModule
    */
   protected function processApiPutList()
   {
+    if (empty($this->oRouter->search))
+    {
+      throw new \Limbonia\Exception\Web("No list criteria specified", null, 403);
+    }
+
     $hItemList = $this->getList(['id']);
 
     if (empty($hItemList))
@@ -252,7 +273,7 @@ trait ItemModule
     }
 
     $aItemList = array_keys($hItemList);
-    $hList = [];
+    $aList = [];
     $sTable = $this->oItem->getTable();
     $hPutData = $this->putData();
 
@@ -261,10 +282,10 @@ trait ItemModule
       $oItem = $this->oController->itemFromId($sTable, $iItem);
       $oItem->setAll($hPutData);
       $oItem->save();
-      $hList[$oItem->id] = $oItem->getAll();
+      $aList[] = $oItem->getAll();
     }
 
-    return $hList;
+    return $aList;
   }
 
   /**
@@ -280,7 +301,7 @@ trait ItemModule
       throw new \Exception('No valid data found to process');
     }
 
-    if (is_null($this->oRouter->id))
+    if (empty($this->oRouter->call[1]))
     {
       return $this->processApiPutList();
     }
@@ -336,12 +357,12 @@ trait ItemModule
     {
       $oItem = $this->itemFromArray($hItem);
       $oItem->save();
-      $hItem[$oItem->id] = $oItem->getAll();
+      $hList[$oItem->id] = $oItem->getAll();
     }
 
     $aIdList = array_keys($hList);
     header('Location: ' . $this->oController->getDomain()->currenturl . '/' . $this->oRouter->rawPath . '/?id=' . implode(',', $aIdList));
-    return $hList;
+    return array_values($hList);
   }
 
   /**
@@ -389,12 +410,17 @@ trait ItemModule
    */
   protected function processApiDeleteList()
   {
+    if (empty($this->oRouter->search))
+    {
+      throw new \Limbonia\Exception\Web("No list criteria specified", null, 403);
+    }
+
     $hList = $this->getList(['id']);
     $aList = array_keys($hList);
 
     if (empty($aList))
     {
-      return true;
+      throw new \Limbonia\Exception\Web("List criteria produced no results", null, 403);
     }
 
     $sTable = $this->oItem->getTable();
@@ -419,7 +445,7 @@ trait ItemModule
    */
   protected function processApiDelete()
   {
-    if (is_null($this->oRouter->id))
+    if (empty($this->oRouter->call[1]))
     {
       return $this->processApiDeleteList();
     }

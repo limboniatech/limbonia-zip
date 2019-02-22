@@ -18,7 +18,7 @@ class Template extends \Limbonia\Module
    *
    * @var string
    */
-  protected $sGroup = 'Site';
+  protected static $sGroup = 'Site';
 
   /**
    * List of fields used by module settings
@@ -31,6 +31,20 @@ class Template extends \Limbonia\Module
     'basedir' => ['Type' => 'char'],
     'templatedir' => ['Type' => 'char'],
     'defaulttemplate' => ['Type' => 'char']
+  ];
+
+  /**
+   * List of components that this module contains along with their descriptions
+   *
+   * @var array
+   */
+  protected static $hComponent =
+  [
+    'search' => 'This is the ability to search and display data.',
+    'edit' => 'The ability to edit existing data.',
+    'create' => 'The ability to create new data.',
+    'delete' => 'The ability to delete existing data.',
+    'configure' => "The ability to alter the module's configuration."
   ];
 
   /**
