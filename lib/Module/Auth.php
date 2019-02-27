@@ -71,6 +71,21 @@ INDEX Unique_UserAuth(UserID, AuthToken)");
   }
 
   /**
+   * Is the current user valid?
+   *
+   * @return boolean
+   */
+  protected function validUser()
+  {
+    if ($this->oRouter->method == 'post')
+    {
+      return true;
+    }
+
+    return parent::validUser();
+  }
+
+  /**
    * Perform the base "GET" code then return null on success
    *
    * @return null

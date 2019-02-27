@@ -19,44 +19,24 @@ class Admin extends \Limbonia\Controller\Web
    */
   protected function render()
   {
-    $sModuleDriver = isset($this->oRouter->module) ? \Limbonia\Module::driver($this->oRouter->module) : '';
+    $sModuleDriver = \Limbonia\Module::driver((string)$this->oRouter->module);
 
     if (empty($sModuleDriver))
     {
-      return $this->templateRender('index');
+      return parent::render();
     }
 
-    try
+    $oCurrentModule = $this->moduleFactory($sModuleDriver);
+    $oCurrentModule->prepareTemplate();
+    $sModuleTemplate = $oCurrentModule->getTemplate();
+
+    if (isset($this->oRouter->ajax))
     {
-      $oCurrentModule = $this->moduleFactory($sModuleDriver);
-      $oCurrentModule->prepareTemplate();
-      $sModuleTemplate = $oCurrentModule->getTemplate();
-
-      if (isset($this->oRouter->ajax))
-      {
-         return parent::outputJson(array_merge(['moduleOutput' => $this->templateRender($sModuleTemplate)], $oCurrentModule->getAdminOutput()));
-      }
-
-      $this->templateData('moduleOutput', $this->templateRender($sModuleTemplate));
-      return $this->templateRender('index');
+       return array_merge(['content' => $this->templateRender($sModuleTemplate)], $oCurrentModule->getAdminOutput());
     }
-    catch (\Exception $e)
-    {
-      $sModuleName = isset($oCurrentModule) ? $oCurrentModule->getTitle() : $sModuleDriver;
-      $sMessage = isset($sModuleTemplate) ? "The $sModuleName module could not render the $sModuleTemplate template" : "The $sModuleName module's action could not be rendered";
 
-      $this->templateData('failure', "$sMessage: " . $e->getMessage());
-
-      if (isset($this->oRouter->ajax))
-      {
-        return parent::outputJson
-        ([
-          'error' => $this->templateRender('error'),
-        ]);
-      }
-
-      return $this->templateRender('error');
-    }
+    $this->templateData('content', $this->templateRender($sModuleTemplate));
+    return $this->templateRender('index');
   }
 
   /**
@@ -70,14 +50,46 @@ class Admin extends \Limbonia\Controller\Web
     try
     {
       $oUser = parent::generateUser();
-    }
-    catch (\Exception $e)
-    {
-      if ($e->getCode() == 1000)
+
+      if ($oUser->id == 0)
       {
         $this->printPasswordForm();
       }
 
+      $hModuleList = $this->activeModules();
+      $_SESSION['ResourceList'] = [];
+      $_SESSION['ModuleGroups'] = [];
+      $aBlackList = $this->moduleBlackList ?? [];
+
+      foreach ($hModuleList as $sModule)
+      {
+        $sDriver = \Limbonia\Module::driver($sModule);
+
+        if (in_array($sDriver, $aBlackList) || !$oUser->hasResource($sDriver))
+        {
+          continue;
+        }
+
+        $sTypeClass = '\\Limbonia\\Module\\' . $sDriver;
+        $hComponent = $sTypeClass::getComponents();
+        ksort($hComponent);
+        reset($hComponent);
+        $_SESSION['ResourceList'][$sDriver] = $hComponent;
+        $_SESSION['ModuleGroups'][$sTypeClass::getGroup()][strtolower($sDriver)] = $sDriver;
+      }
+
+      ksort($_SESSION['ResourceList']);
+      reset($_SESSION['ResourceList']);
+
+      ksort($_SESSION['ModuleGroups']);
+
+      foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
+      {
+        ksort($_SESSION['ModuleGroups'][$sKey]);
+      }
+    }
+    catch (\Exception $e)
+    {
       $this->printPasswordForm($e->getMessage());
     }
 
@@ -102,13 +114,7 @@ class Admin extends \Limbonia\Controller\Web
 
     if (isset($this->oRouter->ajax))
     {
-      header("Cache-Control: no-cache, must-revalidate");
-      header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
-      header("Content-Type: application/json");
-      die(json_encode
-      ([
-        'replacePage' => $sLogin
-      ]));
+      parent::outputJson(['content' => $sLogin]);
     }
 
     die($sLogin);

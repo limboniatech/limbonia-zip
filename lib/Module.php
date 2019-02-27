@@ -35,12 +35,12 @@ class Module
    */
   protected static $hHttpMethods =
   [
-    'head',
-    'get',
-    'post',
-    'put',
-    'delete',
-    'options'
+    'head' => 'search',
+    'get' => 'search',
+    'post' => 'create',
+    'put' => 'edit',
+    'delete' => 'delete',
+    'options' => ''
   ];
 
   /**
@@ -368,7 +368,7 @@ class Module
    */
   protected function processApiHead()
   {
-    throw new \Limbonia\Exception\Web("Action (dispaly) not implemented by {$this->oRouter->module}", null, 404);
+    throw new \Limbonia\Exception\Web("Action not implemented by " . $this->getType(), null, 404);
   }
 
   /**
@@ -379,7 +379,7 @@ class Module
    */
   protected function processApiGet()
   {
-    throw new \Limbonia\Exception\Web("Action (dispaly) not implemented by {$this->oRouter->module}", null, 404);
+    throw new \Limbonia\Exception\Web("Action not implemented by " . $this->getType(), null, 404);
   }
 
   /**
@@ -390,7 +390,7 @@ class Module
    */
   protected function processApiPut()
   {
-    throw new \Limbonia\Exception\Web("Action (update) not implemented by {$this->oRouter->module}", null, 404);
+    throw new \Limbonia\Exception\Web("Action not implemented by " . $this->getType(), null, 404);
   }
 
   /**
@@ -401,7 +401,7 @@ class Module
    */
   protected function processApiPost()
   {
-    throw new \Limbonia\Exception\Web("Action (create) not implemented by {$this->oRouter->module}", null, 404);
+    throw new \Limbonia\Exception\Web("Action not implemented by " . $this->getType(), null, 404);
   }
 
   /**
@@ -412,7 +412,24 @@ class Module
    */
   protected function processApiDelete()
   {
-    throw new \Limbonia\Exception\Web("Action (delete) not implemented by {$this->oRouter->module}", null, 404);
+    throw new \Limbonia\Exception\Web("Action not implemented by " . $this->getType(), null, 404);
+  }
+
+  /**
+   * Is the current user valid?
+   *
+   * @return boolean
+   */
+  protected function validUser()
+  {
+    $oUser = $this->oController->user();
+
+    if ($oUser instanceof \Limbonia\Item\User)
+    {
+      return $oUser->id > 0;
+    }
+
+    return false;
   }
 
   /**
@@ -425,62 +442,47 @@ class Module
   {
     http_response_code(200);
 
-    if (!in_array($this->oRouter->method, static::$hHttpMethods))
+    if (!$this->validUser())
     {
-      throw new \Limbonia\Exception\Web("HTTP method ({$this->oRouter->method}) not allowed by {$this->oRouter->module}", null, 405);
+      throw new \Limbonia\Exception\Web('Authentication required', null, 401);
+    }
+
+    if (!in_array($this->oRouter->method, array_keys(static::$hHttpMethods)))
+    {
+      throw new \Limbonia\Exception\Web("HTTP method ({$this->oRouter->method}) not allowed", null, 405);
+    }
+
+    if (!empty(static::$hHttpMethods[$this->oRouter->method]) && !$this->allow(static::$hHttpMethods[$this->oRouter->method]))
+    {
+      throw new \Limbonia\Exception\Web("Action not allowed to user", null, 405);
     }
 
     switch ($this->oRouter->method)
     {
       case 'head':
-        if (!$this->allow('search'))
-        {
-          throw new \Limbonia\Exception\Web("Action (display) not allowed by {$this->oRouter->module}", null, 405);
-        }
-
         return $this->processApiHead();
 
       case 'get':
-        if (!$this->allow('search'))
-        {
-          throw new \Limbonia\Exception\Web("Action (display) not allowed by {$this->oRouter->module}", null, 405);
-        }
-
         return $this->processApiGet();
 
       case 'put':
-        if (!$this->allow('edit'))
-        {
-          throw new \Limbonia\Exception\Web("Action (update) not allowed by {$this->oRouter->module}", null, 405);
-        }
-
         return $this->processApiPut();
 
       case 'post':
-        if (!$this->allow('create'))
-        {
-          throw new \Limbonia\Exception\Web("Action (create) not allowed by {$this->oRouter->module}", null, 405);
-        }
-
         http_response_code(201);
         return $this->processApiPost();
 
       case 'delete':
-        if (!$this->allow('delete'))
-        {
-          throw new \Limbonia\Exception\Web("Action (delete) not allowed by {$this->oRouter->module}", null, 405);
-        }
-
         http_response_code(204);
         return $this->processApiDelete();
 
       case 'options':
-        $sMethods = implode(',', static::$hHttpMethods);
+        $sMethods = implode(',', array_keys(static::$hHttpMethods));
         header('Allow: ' . strtoupper($sMethods));
         return null;
     }
 
-    throw new \Limbonia\Exception\Web("HTTP method ({$this->oRouter->method}) not recognized by {$this->oRouter->module}", null, 405);
+    throw new \Limbonia\Exception\Web("HTTP method ({$this->oRouter->method}) not recognized", null, 405);
   }
 
   /**
@@ -1095,7 +1097,7 @@ class Module
         $oSelect->addOption($hKey['Name'], $hKey['KeyID']);
       }
 
-      return self::widgetField($oSelect, 'Required resource');
+      return self::widgetField($oSelect, 'Required Key');
     }
 
     if (preg_match('/(.+?)id$/i', $sName, $aMatch))
@@ -1256,11 +1258,6 @@ class Module
   public function getField($sName, $sValue = null, $hData = [])
   {
     $sLabel = $this->getColumnTitle($sName);
-
-    if ($sName == 'KeyID')
-    {
-      $sLabel = 'Required resource';
-    }
 
     if (preg_match('/(.+?)id$/i', $sName, $aMatch) && Item::driver($aMatch[1]))
     {

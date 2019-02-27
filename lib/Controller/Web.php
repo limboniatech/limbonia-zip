@@ -28,8 +28,8 @@ class Web extends \Limbonia\Controller
    */
   protected static $hLoginData =
   [
-    'user' => '',
-    'pass' => ''
+    'user' => null,
+    'pass' => null
   ];
 
   /**
@@ -132,6 +132,13 @@ class Web extends \Limbonia\Controller
       ]);
     }
   }
+
+  /**
+   * Activate the specified module
+   *
+   * @param string $sModule the name of the module to activate
+   * @throws Exception
+   */
   public function activateModule($sModule)
   {
     parent::activateModule($sModule);
@@ -159,6 +166,12 @@ class Web extends \Limbonia\Controller
     }
   }
 
+  /**
+   * Deactivate the specified module
+   *
+   * @param string $sModule the name of the module to deactivate
+   * @throws Exception
+   */
   public function deactivateModule($sModule)
   {
     parent::deactivateModule($sModule);
@@ -173,6 +186,11 @@ class Web extends \Limbonia\Controller
     }
   }
 
+  /**
+   * Return the default router
+   *
+   * @return \Limbonia\Router
+   */
   public function getRouter()
   {
     return $this->oRouter;
@@ -217,57 +235,21 @@ class Web extends \Limbonia\Controller
       return $this->itemFromId('user', $_SESSION['LoggedInUser']);
     }
 
-    if (empty(self::$hLoginData['user']) || empty(self::$hLoginData['pass']))
+    if (!is_null(self::$hLoginData['user']))
     {
-      throw new \Limbonia\Exception\Web('Authentication failed', 1000, 401);
-    }
+      if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && self::$hLoginData['user'] === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && self::$hLoginData['pass'] === $this->hConfig['master']['Password'])
+      {
+        $_SESSION['LoggedInUser'] = 'master';
+        return $this->userAdmin();
+      }
 
-    if (isset($this->hConfig['master']) && !empty($this->hConfig['master']['User']) && self::$hLoginData['user'] === $this->hConfig['master']['User'] && !empty($this->hConfig['master']['Password']) && self::$hLoginData['pass'] === $this->hConfig['master']['Password'])
-    {
-      $oUser = $this->userAdmin();
-      $_SESSION['LoggedInUser'] = 'master';
-    }
-    else
-    {
       $oUser = $this->userByEmail(self::$hLoginData['user']);
       $oUser->authenticate(self::$hLoginData['pass']);
       $_SESSION['LoggedInUser'] = $oUser->id;
+      return $oUser;
     }
 
-    $hModuleList = $this->activeModules();
-
-    $_SESSION['ResourceList'] = [];
-    $_SESSION['ModuleGroups'] = [];
-    $aBlackList = $this->moduleBlackList ?? [];
-
-    foreach ($hModuleList as $sModule)
-    {
-      $sDriver = \Limbonia\Module::driver($sModule);
-
-      if (in_array($sDriver, $aBlackList) || !$oUser->hasResource($sDriver))
-      {
-        continue;
-      }
-
-      $sTypeClass = '\\Limbonia\\Module\\' . $sDriver;
-      $hComponent = $sTypeClass::getComponents();
-      ksort($hComponent);
-      reset($hComponent);
-      $_SESSION['ResourceList'][$sDriver] = $hComponent;
-      $_SESSION['ModuleGroups'][$sTypeClass::getGroup()][strtolower($sDriver)] = $sDriver;
-    }
-
-    ksort($_SESSION['ResourceList']);
-    reset($_SESSION['ResourceList']);
-
-    ksort($_SESSION['ModuleGroups']);
-
-    foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
-    {
-      ksort($_SESSION['ModuleGroups'][$sKey]);
-    }
-
-    return $oUser;
+    return $this->itemFactory('user');
   }
 
   /**
@@ -277,39 +259,22 @@ class Web extends \Limbonia\Controller
    */
   protected function render()
   {
-    $sTemplate = $this->templateFile($this->oRouter->module);
+    $aTemplatePath = $this->oRouter->call;
+    $sTemplate = '';
 
-    if (empty($sTemplate))
+    while (count($aTemplatePath) > 0)
     {
-      return $this->templateRender('index');
+      $sTemplate = $this->templateFile(implode('/', $aTemplatePath));
+      array_pop($aTemplatePath);
     }
 
-    try
+    if (isset($this->oRouter->ajax))
     {
-      if (isset($this->oRouter->ajax))
-      {
-        return self::outputJson
-        ([
-          'main' => $this->templateRender($sTemplate)
-        ]);
-      }
-
-      return $this->templateRender($sTemplate);
+      return  ['content' => $this->templateRender($sTemplate)];
     }
-    catch (Exception $e)
-    {
-      $this->templateData('failure', 'Failed to generate the requested data: ' . $e->getMessage());
 
-      if (isset($this->oRouter->search['click']))
-      {
-        return self::outputJson
-        ([
-          'error' => $this->templateRender('error'),
-        ]);
-      }
-
-      return $this->templateRender('error');
-    }
+    $this->templateData('content', $this->templateRender($sTemplate));
+    return $this->templateRender('index');
   }
 
   /**
@@ -317,12 +282,6 @@ class Web extends \Limbonia\Controller
    */
   public function run()
   {
-    if ($this->oRouter->module == 'logout')
-    {
-      $this->logOut();
-      header('Location: ' . $this->baseUri);
-    }
-
     $this->templateData('controller', $this);
 
     try
@@ -335,8 +294,19 @@ class Web extends \Limbonia\Controller
       echo 'Invalid Login:  ' . $e->getMessage();
     }
 
-
     $this->templateData('currentUser', $this->oUser);
-    die($this->render());
+
+    try
+    {
+      $xOutput = $this->render();
+    }
+    catch (Exception $e)
+    {
+      $this->templateData('failure', 'Failed to generate the requested data: ' . $e->getMessage());
+      $xOutput = isset($this->oRouter->ajax) ? isset($this->oRouter->ajax) : $this->templateRender('error');
+    }
+
+    $sOutput = is_string($xOutput) ? $xOutput : self::outputJson($xOutput);
+    die($sOutput);
   }
 }

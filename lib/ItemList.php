@@ -41,7 +41,24 @@ class ItemList implements \ArrayAccess, \Countable, \SeekableIterator
 		$this->oResult = $oResult;
 	}
 
-	/**
+  /**
+   * Return a hash of all items in this list indexed by their ID
+   *
+   * @return array
+   */
+  public function getAll()
+  {
+    $hList = [];
+
+    foreach ($this as $oItem)
+    {
+      $hList[$oItem->id] = $oItem->getAll();
+    }
+
+    return $hList;
+  }
+
+    /**
 	 * Attempt to create and return an item based on the data
 	 *
 	 * @param array $hItem

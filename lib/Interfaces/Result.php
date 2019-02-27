@@ -28,6 +28,15 @@ interface Result
   public function getData();
 
   /**
+   * Return an array of all the data in the result set
+   *
+   * NOTE: This is a convenience function that is a clone of getData
+   *
+   * @return array on success or null on failure
+   */
+  public function getAll();
+
+  /**
    * Set the specified array offset with the specified value
    *
    * @note This is an implementation detail of the ArrayAccess Interface

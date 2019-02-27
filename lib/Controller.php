@@ -715,28 +715,28 @@ abstract class Controller
     $oDatabase = $this->getDB();
 
     //create the settings table
-
-    echo "Initialize Settings:";
+    echo "Initialize Settings: ";
     $oDatabase->createTable('Settings', "Type VARCHAR(255) NOT NULL,
 Data TEXT NULL,
 PRIMARY KEY(Type)");
+    echo "complete" . static::eol();
 
     //activate the default modules
-    echo "Initialize Default Modules:";
+    echo "Initialize Default Modules:" . static::eol();
 
     foreach ($this->aDefaultActiveModules as $sModule)
     {
-
+      try
+      {
+        echo "\t$sModule: ";
+        $this->activateModule($sModule);
+        echo "complete" . static::eol();
+      }
+      catch (Exception $e)
+      {
+        echo $e->getMessage() . static::eol();
+      }
     }
-
-    $this->activateModule('system');
-    $this->activateModule('zipcode');
-    $this->activateModule('resourcekey');
-    $this->activateModule('resourcelock');
-    $this->activateModule('role');
-    $this->activateModule('user');
-    $this->activateModule('auth');
-    $this->activateModule('profile');
   }
 
   /**
@@ -931,7 +931,7 @@ PRIMARY KEY(Type)");
       return '';
     }
 
-    if (is_readable($sTemplateName))
+    if (is_readable($sTemplateName) && !is_dir($sTemplateName))
     {
       return $sTemplateName;
     }
@@ -940,7 +940,7 @@ PRIMARY KEY(Type)");
     {
       $sFilePath = $sLib . '/' . $this->sType . '/' .$sTemplateName;
 
-      if (is_readable($sFilePath))
+      if (is_readable($sFilePath) && !is_dir($sFilePath))
       {
         return $sFilePath;
       }
@@ -1129,6 +1129,11 @@ PRIMARY KEY(Type)");
     return $this->oRouter;
   }
 
+  /**
+   * Return the list of all available modules
+   *
+   * @return array
+   */
   public function availableModules()
   {
     if (is_null(self::$hAvailableModule))
@@ -1153,6 +1158,11 @@ PRIMARY KEY(Type)");
     return self::$hAvailableModule;
   }
 
+  /**
+   * Return the list of all active modules
+   *
+   * @return array
+   */
   public function activeModules()
   {
     if (is_null(self::$hActiveModule))
@@ -1163,6 +1173,12 @@ PRIMARY KEY(Type)");
     return self::$hActiveModule;
   }
 
+  /**
+   * Activate the specified module
+   *
+   * @param string $sModule the name of the module to activate
+   * @throws Exception
+   */
   public function activateModule($sModule)
   {
     if (empty($sModule))
@@ -1196,10 +1212,16 @@ PRIMARY KEY(Type)");
 
     if (!$this->saveSettings(self::SETTINGS_NAME_ACTIVE_MODULES, self::$hActiveModule))
     {
-      throw new Exception("Failed to save new acitive module list");
+      throw new Exception("Failed to save new active module list");
     }
   }
 
+  /**
+   * Deactivate the specified module
+   *
+   * @param string $sModule the name of the module to deactivate
+   * @throws Exception
+   */
   public function deactivateModule($sModule)
   {
     if (empty($sModule))
@@ -1233,10 +1255,15 @@ PRIMARY KEY(Type)");
 
     if (!$this->saveSettings(self::SETTINGS_NAME_ACTIVE_MODULES, self::$hActiveModule))
     {
-      throw new Exception("Failed to save new acitive module list");
+      throw new Exception("Failed to save new active module list");
     }
   }
 
+  /**
+   * The list of all modules the current user is allowed to access
+   *
+   * @return array
+   */
   public function allowedModules()
   {
     if (is_null(self::$hAllowedModule))

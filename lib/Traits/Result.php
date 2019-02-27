@@ -55,6 +55,16 @@ trait Result
   }
 
   /**
+   * Returns an array of all the data
+   *
+   * @return array
+   */
+  public function getAll()
+  {
+    return $this->getData();
+  }
+
+  /**
    * Set the specified array offset with the specified value
    *
    * @note This is an implementation detail of the ArrayAccess Interface

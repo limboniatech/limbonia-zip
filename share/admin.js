@@ -153,10 +153,10 @@ function updateNav(sUrl, sType, sFormData, bHasFiles)
   $.ajax(hAjaxConfig)
   .done(function(oData, sStatus, oRequest)
   {
-    if (oData.replacePage)
+    if (oData.content.match(/<html/g))
     {
       document.open('text/html');
-      document.write(oData.replacePage);
+      document.write(oData.content);
       document.close();
     }
     else if (oData.error)
@@ -185,7 +185,7 @@ function updateNav(sUrl, sType, sFormData, bHasFiles)
             buildItem(oData);
           }
 
-          $('#item > #page').empty().html(oData.moduleOutput);
+          $('#item > #page').empty().html(oData.content);
           $('#item > .tabSet > a.' + oData.moduleType.toLowerCase() + '.' + oData.action).addClass('current').siblings().removeClass('current');
           break;
 
@@ -193,7 +193,7 @@ function updateNav(sUrl, sType, sFormData, bHasFiles)
           var sPageTitle = oData.moduleType + ' > ' + oData.action.charAt(0).toUpperCase() + oData.action.slice(1);
           $(document).prop('title', sPageTitle);
 
-          $('#moduleOutput').empty().html(oData.moduleOutput);
+          $('#moduleOutput').empty().html(oData.content);
           $('#content > .tabSet > span').remove();
           $('#content > .tabSet > a.' + oData.moduleType.toLowerCase() + '.' + oData.action).addClass('current').siblings().removeClass('current');
       }

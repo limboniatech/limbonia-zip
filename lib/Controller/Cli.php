@@ -255,6 +255,11 @@ Options:\n";
 
         foreach (\Limbonia\Controller::templateDirs() as $sDir)
         {
+          foreach (glob($sDir . '/' . $this->type . '/*.php') as $sFileName)
+          {
+            $aAvailableModes[] = basename($sFileName, '.php');
+          }
+
           foreach (glob($sDir . '/' . $this->type . '/*/*.php') as $sFileName)
           {
             $aAvailableModes[] = basename(dirname($sFileName)) . '_' . basename($sFileName, '.php');

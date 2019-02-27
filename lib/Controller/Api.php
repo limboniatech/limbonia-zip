@@ -103,17 +103,17 @@ class Api extends \Limbonia\Controller\Web
   {
     $oServer = \Limbonia\Input::singleton('server');
 
-    if (isset($oServer['http_auth_token']))
+    if (!empty($oServer['http_auth_token']))
     {
       return $this->userByAuthToken($oServer['http_auth_token']);
     }
 
-    if (isset($oServer['http_api_key']))
+    if (!empty($oServer['http_api_key']))
     {
       return $this->userByApiKey($oServer['http_api_key']);
     }
 
-    throw new \Limbonia\Exception\Web('Authentication failed', null, 401);
+    return $this->itemFactory('user');
   }
 
   /**
@@ -131,26 +131,9 @@ class Api extends \Limbonia\Controller\Web
     $oModule = $this->moduleFactory($this->oRouter->module);
     $xResult = $oModule->processApi();
 
-    if ($xResult instanceof \Limbonia\ItemList)
-    {
-      $hList = [];
-
-      foreach ($xResult as $oItem)
-      {
-        $hList[$oItem->id] = $oItem->getAll();
-      }
-
-      return $hList;
-    }
-
-    if ($xResult instanceof \Limbonia\Item)
+    if ($xResult instanceof \Limbonia\ItemList || $xResult instanceof \Limbonia\Item || $xResult instanceof \Limbonia\Interfaces\Result)
     {
       return $xResult->getAll();
-    }
-
-    if ($xResult instanceof \Limbonia\Interfaces\Result)
-    {
-      return $xResult->getData();
     }
 
     return $xResult;
@@ -164,18 +147,13 @@ class Api extends \Limbonia\Controller\Web
     try
     {
       ob_start();
-
-      if ($this->oRouter->method != 'post' || $this->oRouter->module != 'auth')
-      {
-        $this->oUser = $this->generateUser();
-      }
-
-      $sOutput = $this->render();
+      $this->oUser = $this->generateUser();
+      $xOutput = $this->render();
     }
     catch (\Limbonia\Exception\Web $e)
     {
       http_response_code($e->getResponseCode());
-      $sOutput =
+      $xOutput =
       [
         'code' => $e->getCode(),
         'message' => $e->getMessage()
@@ -184,7 +162,7 @@ class Api extends \Limbonia\Controller\Web
     catch (\Exception $e)
     {
       http_response_code(400);
-      $sOutput =
+      $xOutput =
       [
         'code' => $e->getCode(),
         'message' => $e->getMessage()
@@ -193,7 +171,7 @@ class Api extends \Limbonia\Controller\Web
     finally
     {
       ob_end_clean();
-      die(parent::outputJson($sOutput));
+      die(parent::outputJson($xOutput));
     }
   }
 }

@@ -76,28 +76,24 @@ if (empty($sAdminNav))
   $sAdminNav = "No modules were found!<br>Try either: <a href=\"" . $controller->generateUri('setup') . "\">Setup</a><a href=\"" . $controller->generateUri('system', 'managemodules') . "\">Manage Modules</a>";
 }
 
-if (isset($moduleOutput))
+if (!empty($content))
 {
-  $sTemp = $moduleOutput;
-  $moduleOutput = "<script type=\"text/javascript\">
+  $sTemp = $content;
+  $content = "<script type=\"text/javascript\">
  updateAdminNav('" . $module->getType() . "');\n";
 
   if (method_exists($module, 'getItem') && $module->getItem()->id > 0)
   {
-    $moduleOutput .= "   buildItem(" . json_encode($module->getAdminOutput()) . ");
+    $content .= "   buildItem(" . json_encode($module->getAdminOutput()) . ");
  $('#item > #page').html(" . json_encode($sTemp) . ");\n";
   }
   else
   {
     $sPageTitle = ucwords($module->getType() . " > $method");
-    $moduleOutput .= "   $('#moduleOutput').html(" . json_encode($sTemp) . ");\n";
+    $content .= "   $('#moduleOutput').html(" . json_encode($sTemp) . ");\n";
   }
 
-  $moduleOutput .= "\n</script>\n";
-}
-else
-{
-  $moduleOutput = '';
+  $content .= "\n</script>\n";
 }
 ?>
 <!DOCTYPE html>
@@ -144,7 +140,13 @@ else
   </script>
 </head>
 <body>
-  <header><span class="hamburger">☰</span><span>User: <?= $controller->oUser->name ?></span><span class="tools"><?= $system_menu ?><?= $profile_menu ?><a href="<?= $controller->generateUri('logout') ?>" target="_top">Logout</a></span></header>
+
+  <header>
+    <span class="hamburger">☰</span>
+    <span>User: <?= $controller->oUser->name ?></span>
+    <span class="tools"><?= $system_menu ?><?= $profile_menu ?><a href="<?= $controller->generateUri('logout') ?>" target="_top">Logout</a></span>
+  </header>
+
   <section id="admin">
     <nav class="moduleList" id="menu">
 <?= $sAdminNav ?>
@@ -153,10 +155,11 @@ else
       <nav class="tabSet">
 <?= $sModuleNav ?>
       </nav>
-      <div id="moduleOutput">
-<?= $moduleOutput ?>
-      </div>
+      <main id="moduleOutput">
+<?= $content ?>
+      </main>
     </section>
   </section>
+
 </body>
 </html>
