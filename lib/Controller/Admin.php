@@ -51,7 +51,7 @@ class Admin extends \Limbonia\Controller\Web
     {
       $oUser = parent::generateUser();
 
-      if ($oUser->id == 0)
+      if ($oUser->id == 0 && !$oUser->isAdmin())
       {
         $this->printPasswordForm();
       }
