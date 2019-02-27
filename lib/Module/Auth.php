@@ -2,9 +2,9 @@
 namespace Limbonia\Module;
 
 /**
- * Limbonia Cache Module class
+ * Limbonia Auth Module class
  *
- * Admin module for handling the site's cache
+ * Admin module for handling user authentication
  *
  * @author Lonnie Blansett <lonnie@limbonia.tech>
  * @package Limbonia

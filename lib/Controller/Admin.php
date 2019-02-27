@@ -65,7 +65,7 @@ class Admin extends \Limbonia\Controller\Web
       {
         $sDriver = \Limbonia\Module::driver($sModule);
 
-        if (in_array($sDriver, $aBlackList) || !$oUser->hasResource($sDriver))
+        if (empty($sDriver) || in_array($sDriver, $aBlackList) || !$oUser->hasResource($sDriver))
         {
           continue;
         }

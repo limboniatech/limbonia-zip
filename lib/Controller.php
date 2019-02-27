@@ -976,18 +976,6 @@ PRIMARY KEY(Type)");
   }
 
   /**
-   * Generate and return a cache object
-   *
-   * @param string $sCacheDir (optional)- The directory the cache object will use, if empty it will default to the controller's cache directory
-   * @return \Limbonia\Cache
-   */
-  public function cacheFactory($sCacheDir = null)
-  {
-    $sCacheDir = $sCacheDir ?? $this->cacheDir;
-    return \Limbonia\Cache::factory($sCacheDir);
-  }
-
-  /**
    * Generate and return an empty item object based on the specified table.
    *
    * @param string $sType
