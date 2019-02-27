@@ -1,3 +1,11 @@
+Limbonia - 1.9.0 (2019-02-26 23:46:23)
+Install and config
+
+    Minor Bug #166: Admin - Fix AJAX URL handling to allow for fragments (Lonnie Blansett)
+    Feature #106: Admin - Add pre-login config page (Lonnie Blansett)
+    Feature #168: Base - Create an init system (Lonnie Blansett)
+
+
 Limbonia - 1.8.1 (2019-01-09 09:10:36)
 bugfix
 
