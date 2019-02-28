@@ -210,9 +210,17 @@ class Web extends \Limbonia\Controller
 
   /**
    * Process the basic logout
+   *
+   * @param string $sMessage - the message to display, if there is one
    */
-  public function logOut()
+  public function logOut($sMessage = '')
   {
+    if (!empty($sMessage))
+    {
+      echo $sMessage . static::eol();
+    }
+
+    $this->oUser = $this->itemFactory('user');
     $_SESSION = [];
     session_destroy();
   }
@@ -290,8 +298,7 @@ class Web extends \Limbonia\Controller
     }
     catch (\Exception $e)
     {
-      $this->logOut();
-      echo 'Invalid Login:  ' . $e->getMessage();
+      $this->logOut($e->getMessage());
     }
 
     $this->templateData('currentUser', $this->oUser);

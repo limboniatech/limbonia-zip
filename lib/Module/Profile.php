@@ -161,7 +161,7 @@ class Profile extends \Limbonia\Module
 
     try
     {
-      \Limbonia\Item\User::validatePassword($hData['Password']);
+      $this->oController->validatePassword($hData['Password']);
     }
     catch (\Exception $e)
     {

@@ -21,7 +21,7 @@ else
 </head>
 <body onLoad="document.passCheck.email.focus();">
 <form action="" method="post" name="passCheck">
-<?= $sFailure ?>
+    <?= (isset($failure) ? $failure : '') ?>
     <div class="field"><span class="name">Email:</span><span class="value"><input type="text" name="email"></span></div>
     <div class="field"><span class="name">Password:</span><span class="value"><input type="password" name="password"></span></div>
     <div class="field"><span class="name"></span><span class="value"><input type="submit" name="submit" value="Authorization"></span></div>

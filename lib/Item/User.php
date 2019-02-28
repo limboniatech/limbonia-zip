@@ -299,6 +299,11 @@ UNIQUE INDEX Unique_Email (Email)";
    */
   public static function getByEmail($sEmail, \Limbonia\Database $oDatabase = null)
   {
+    if (empty($sEmail))
+    {
+      throw new \Limbonia\Exception\Web('Email not given', null, 401);
+    }
+
     $oUserList = parent::search('User', ['Email' => $sEmail], null, $oDatabase);
 
     if (count($oUserList) == 0)
@@ -359,22 +364,6 @@ UNIQUE INDEX Unique_Email (Email)";
     }
 
     return $oUserList[0];
-  }
-
-  /**
-   * Make sure the specified password follows all the current guidelines
-   *
-   * @todo Create method for adding / controlling the password guidelines with config and scripting options
-   *
-   * @param string $sPassword
-   * @throws \Exception
-   */
-  public static function validatePassword($sPassword)
-  {
-    if (empty($sPassword))
-    {
-      throw new \Exception('Empty password.');
-    }
   }
 
   /**
@@ -448,6 +437,11 @@ UNIQUE INDEX Unique_Email (Email)";
    */
   public function authenticate(string $sPassword)
   {
+    if (empty($sPassword))
+    {
+      throw new \Limbonia\Exception\Web('Password not given', null, 401);
+    }
+
     if (!$this->active)
     {
       throw new \Limbonia\Exception\Web('Authentication failed', null, 401);

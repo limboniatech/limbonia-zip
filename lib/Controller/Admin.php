@@ -19,6 +19,16 @@ class Admin extends \Limbonia\Controller\Web
    */
   protected function render()
   {
+    if ($this->oUser->id == 0 && !$this->oUser->isAdmin())
+    {
+      if (isset($this->oRouter->ajax))
+      {
+         return ['content' => $this->templateRender('login')];
+      }
+
+      return $this->templateRender('login');
+    }
+
     $sModuleDriver = \Limbonia\Module::driver((string)$this->oRouter->module);
 
     if (empty($sModuleDriver))
@@ -47,77 +57,51 @@ class Admin extends \Limbonia\Controller\Web
    */
   protected function generateUser()
   {
-    try
+    $oUser = parent::generateUser();
+    $hModuleList = $this->activeModules();
+    $_SESSION['ResourceList'] = [];
+    $_SESSION['ModuleGroups'] = [];
+    $aBlackList = $this->moduleBlackList ?? [];
+
+    foreach ($hModuleList as $sModule)
     {
-      $oUser = parent::generateUser();
+      $sDriver = \Limbonia\Module::driver($sModule);
 
-      if ($oUser->id == 0 && !$oUser->isAdmin())
+      if (empty($sDriver) || in_array($sDriver, $aBlackList) || !$oUser->hasResource($sDriver))
       {
-        $this->printPasswordForm();
+        continue;
       }
 
-      $hModuleList = $this->activeModules();
-      $_SESSION['ResourceList'] = [];
-      $_SESSION['ModuleGroups'] = [];
-      $aBlackList = $this->moduleBlackList ?? [];
-
-      foreach ($hModuleList as $sModule)
-      {
-        $sDriver = \Limbonia\Module::driver($sModule);
-
-        if (empty($sDriver) || in_array($sDriver, $aBlackList) || !$oUser->hasResource($sDriver))
-        {
-          continue;
-        }
-
-        $sTypeClass = '\\Limbonia\\Module\\' . $sDriver;
-        $hComponent = $sTypeClass::getComponents();
-        ksort($hComponent);
-        reset($hComponent);
-        $_SESSION['ResourceList'][$sDriver] = $hComponent;
-        $_SESSION['ModuleGroups'][$sTypeClass::getGroup()][strtolower($sDriver)] = $sDriver;
-      }
-
-      ksort($_SESSION['ResourceList']);
-      reset($_SESSION['ResourceList']);
-
-      ksort($_SESSION['ModuleGroups']);
-
-      foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
-      {
-        ksort($_SESSION['ModuleGroups'][$sKey]);
-      }
+      $sTypeClass = '\\Limbonia\\Module\\' . $sDriver;
+      $hComponent = $sTypeClass::getComponents();
+      ksort($hComponent);
+      reset($hComponent);
+      $_SESSION['ResourceList'][$sDriver] = $hComponent;
+      $_SESSION['ModuleGroups'][$sTypeClass::getGroup()][strtolower($sDriver)] = $sDriver;
     }
-    catch (\Exception $e)
+
+    ksort($_SESSION['ResourceList']);
+    reset($_SESSION['ResourceList']);
+
+    ksort($_SESSION['ModuleGroups']);
+
+    foreach (array_keys($_SESSION['ModuleGroups']) as $sKey)
     {
-      $this->printPasswordForm($e->getMessage());
+      ksort($_SESSION['ModuleGroups'][$sKey]);
     }
 
     return $oUser;
   }
 
   /**
-   * Display the password form on the login page displaying the specified error, if there is one
+   * Process the basic logout
    *
-   * @param string $sError
+   * @param string $sMessage - the message to display, if there is one
    */
-  protected function printPasswordForm($sError = '')
+  public function logOut($sMessage = '')
   {
-    $sFailure = empty($sError) ? '' : "  <h1>$sError</h1>\n";
-    $this->templateData('sFailure', $sFailure);
-    $sLogin = $this->templateRender('login');
-
-    if (empty($sLogin))
-    {
-      $sLogin = 'Login page not found';
-    }
-
-    if (isset($this->oRouter->ajax))
-    {
-      parent::outputJson(['content' => $sLogin]);
-    }
-
-    die($sLogin);
+    parent::logOut();
+    $this->templateData('failure', "<h1>$sMessage</h1>\n");
   }
 
   /**

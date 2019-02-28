@@ -190,6 +190,20 @@ abstract class Controller
   protected $bDebug = false;
 
   /**
+   * Hash of rules used to ensure password strength
+   *
+   * @var array
+   */
+  protected $hPasswordRules =
+  [
+    'empty' => false,
+    'charactermin' => 8,
+    'requirespecial' => true,
+    'requirenumber' => true,
+    'charactermax' => 255
+  ];
+
+  /**
    * This Controller's router, if there is one
    *
    * @var \Limbonia\Router
@@ -598,6 +612,12 @@ abstract class Controller
     {
       $this->aDefaultActiveModules = $hConfig['defaultactivemodules'];
       unset($hConfig['defaultactivemodules']);
+    }
+
+    if (isset($hConfig['passwordrules']))
+    {
+      $this->hPasswordRules = array_merge($this->hPasswordRules, array_change_key_case($hConfig['passwordrules'], CASE_LOWER));
+      unset($hConfig['passwordrules']);
     }
 
     $this->hConfig = array_merge($this->hConfig, $hConfig);
@@ -1273,6 +1293,129 @@ PRIMARY KEY(Type)");
     }
 
     return self::$hAllowedModule;
+  }
+
+  /**
+   * Make sure the specified password follows all the current guidelines
+   *
+   * @todo Create method for adding / controlling the password guidelines with config and scripting options
+   *
+   * @param string $sPassword
+   * @throws \Exception
+   */
+  public function validatePassword($sPassword)
+  {
+    $aPasswordProblems = [];
+
+    if (!empty($this->hPasswordRules))
+    {
+      foreach ($this->hPasswordRules as $sRule => $xValue)
+      {
+        switch ($sRule)
+        {
+          case 'empty':
+            if (!(boolean)$xValue)
+            {
+              if (empty($sPassword))
+              {
+                $aPasswordProblems[] = 'Password may not be empty';
+              }
+            }
+            break;
+
+          case 'requirenumber':
+            if ((boolean)$xValue)
+            {
+              if (!preg_match("/[0-9]/", $sPassword))
+              {
+                $aPasswordProblems[] = 'Password requires at least 1 number';
+              }
+            }
+
+            break;
+
+          case 'requirespecial':
+            if ((boolean)$xValue)
+            {
+              if (!preg_match("/[\!\@\#\$\%\^\&\*\(\)\-\=\_\+\[\]\\\`\{\}\|\~\;\'\:\"\,\.\/\<\>\?]/", $sPassword))
+              {
+                $aPasswordProblems[] = 'Password requires at least 1 special character';
+              }
+            }
+            break;
+
+          case 'requireupper':
+            if ((boolean)$xValue)
+            {
+              if (!preg_match("/[A-Z]/", $sPassword))
+              {
+                $aPasswordProblems[] = 'Password requires at least 1 uppercase character';
+              }
+            }
+            break;
+
+          case 'requirelower':
+            if ((boolean)$xValue)
+            {
+              if (!preg_match("/[a-z]/", $sPassword))
+              {
+                $aPasswordProblems[] = 'Password requires at least 1 lowercase character';
+              }
+            }
+            break;
+
+          case 'charactermin':
+            $iMin = (int)$xValue;
+            $iCharCount = strlen($sPassword);
+
+            if ($iCharCount < $iMin)
+            {
+              $aPasswordProblems[] = "Password is only $iCharCount characters long but must be at least $iMin characters long";
+            }
+
+            break;
+
+          case 'charactermax':
+            $iMax = (int)$xValue;
+            $iCharCount = strlen($sPassword);
+
+            if (isset($this->hPasswordRules['charactermin']))
+            {
+              $iMin = (int)$this->hPasswordRules['charactermin'];
+
+              if ($iMax < $iMin)
+              {
+                $iMax = $iMin;
+              }
+            }
+
+            $oUser = $this->itemFactory('user');
+            $hPasswordColumn = $oUser->getColumn('password');
+
+            if (preg_match("/varchar\((\d+)\)/", $hPasswordColumn['Type'], $aMatch))
+            {
+              $iDatabaseMax = (int)$aMatch[1];
+
+              if ($iMax > $iDatabaseMax)
+              {
+                $iMax = $iDatabaseMax;
+              }
+            }
+
+            if ($iCharCount > $iMax)
+            {
+              $aPasswordProblems[] = "Password is $iCharCount characters long but can not be more than $iMax characters long";
+            }
+
+            break;
+        }
+      }
+    }
+
+    if (!empty($aPasswordProblems))
+    {
+      throw new Exception('The password contains the following problems: ' . static::eol() . implode(static::eol(), $aPasswordProblems) . static::eol());
+    }
   }
 
   /**
