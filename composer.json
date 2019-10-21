@@ -2,6 +2,7 @@
     "name": "limboniatech/limbonia-zip",
     "description": "This is the Limbonia Zip Library",
     "type": "library",
+    "license": "BSD-3-Clause",
     "authors": [
         {
             "name": "Lonnie Blansett",
@@ -9,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "^7.0"
+        "php": "^7.1"
     },
     "autoload": {
         "psr-4": {
