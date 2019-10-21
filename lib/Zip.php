@@ -28,7 +28,7 @@ class Zip
   private static $sEmptyUnsignedShort = null;
 
   /**
-   * The unix timestamp for 12:00 AM 01-01-1980
+   * The UNIX timestamp for 12:00 AM 01-01-1980
    *
    * @note due to being based on DOS timestamps this is the lowest date that zip allows
    *
