@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "limboniatech/limbonia-loader",
-            "version": "1.0.0",
+            "version": "1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/limboniatech/limbonia-loader.git",
-                "reference": "ace5d38a753c2fee9ce3fe50268dc4a44ba2dda1"
+                "reference": "fd2128d4b95257eaf074997be18150dae3dac084"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/limboniatech/limbonia-loader/zipball/ace5d38a753c2fee9ce3fe50268dc4a44ba2dda1",
-                "reference": "ace5d38a753c2fee9ce3fe50268dc4a44ba2dda1",
+                "url": "https://api.github.com/repos/limboniatech/limbonia-loader/zipball/fd2128d4b95257eaf074997be18150dae3dac084",
+                "reference": "fd2128d4b95257eaf074997be18150dae3dac084",
                 "shasum": ""
             },
             "require": {
@@ -40,7 +40,7 @@
                 }
             ],
             "description": "This is the Limbonia Loader",
-            "time": "2019-10-29T23:15:46+00:00"
+            "time": "2019-10-30T15:25:46+00:00"
         }
     ],
     "packages-dev": [],
